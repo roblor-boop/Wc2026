@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="48" fill="#06091a"/>
+  <circle cx="50" cy="50" r="44" fill="none" stroke="#00e676" stroke-width="2.5"/>
+  <!-- Football panels (simplified) -->
+  <circle cx="50" cy="50" r="28" fill="white"/>
+  <polygon points="50,22 57,32 43,32" fill="#1a2640"/>
+  <polygon points="50,78 57,68 43,68" fill="#1a2640"/>
+  <polygon points="22,50 32,43 32,57" fill="#1a2640"/>
+  <polygon points="78,50 68,43 68,57" fill="#1a2640"/>
+  <polygon points="50,38 58,44 55,54 45,54 42,44" fill="#1a2640"/>
+  <text x="50" y="97" font-size="8" text-anchor="middle" fill="#00e676" font-family="Arial" font-weight="bold" letter-spacing="1">WC2026</text>
+</svg>

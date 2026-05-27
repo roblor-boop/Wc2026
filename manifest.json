@@ -1,0 +1,17 @@
+{
+  "name": "WC 2026 Sweepstake",
+  "short_name": "WC2026",
+  "description": "Office World Cup 2026 Sweepstake",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#06091a",
+  "theme_color": "#00e676",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ]
+}
