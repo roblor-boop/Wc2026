@@ -88,10 +88,12 @@ input,select,button{font-family:'Barlow',sans-serif;outline:none}
 .hdr-ball{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00e676,#00b852);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;box-shadow:0 0 16px rgba(0,230,118,.35);cursor:pointer;user-select:none;transition:transform .15s}
 .hdr-ball:active{transform:scale(.9)}
 .hdr-meta{flex:1;min-width:0}
-.hdr-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.1rem;letter-spacing:.07em;color:#fff;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-title{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:.02em;color:#fff;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:430px){.hdr-title{font-size:.92rem}.hdr-ball{width:32px;height:32px;font-size:1rem}}
 .hdr-sub{font-family:'Oswald',sans-serif;font-size:.57rem;letter-spacing:.25em;color:#00e676;margin-top:1px;opacity:.8}
 .hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .hdr-info{text-align:right;font-size:.64rem;line-height:1.4}
+@media(max-width:480px){.hdr-info{display:none}}
 .hbtn{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);color:#fff;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
 .hbtn:hover{background:rgba(255,255,255,.16)}
 .hbtn.dim{opacity:.38}
@@ -309,7 +311,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
     <div class="hdr-row">
       <div class="hdr-ball" onclick="_li()" style="cursor:pointer;user-select:none">⚽</div>
       <div class="hdr-meta">
-        <div class="hdr-title">FIFA WORLD CUP 2026</div>
+        <div class="hdr-title">WC 2026 Sweepstake</div>
         <div class="hdr-sub">OFFICE SWEEPSTAKE</div>
       </div>
       <div class="hdr-right">
@@ -469,7 +471,7 @@ function findGFId(h,a){const hn=normTeam(h),an=normTeam(a);return Object.keys(GF
 function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.keys(BRACKET).find(id=>{const rv=res[id];return rv&&((rv.teamA===hn&&rv.teamB===an)||(rv.teamA===an&&rv.teamB===hn));});}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let state={tab:'setup',pc:12,names:Array(96).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,25,15]},paid:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},fTab:'group',muted:false};
+let state={tab:'setup',pc:12,names:Array(96).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,25,15]},paid:{},signups:{},signupOpen:false,fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -481,8 +483,6 @@ function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p
 function isAdmin(){return adminSess;}
 // requirePin kept as alias for any legacy call paths — now triggers sign-in
 function requirePin(cb){if(adminSess){if(cb)cb();return;}_si();}
-function enterAdmin(){if(adminSess){_so();}else{_si();}}
-function showLockSetup(){} // no-op — security handled by Firebase Auth rules
 
 // ── STORAGE (Firebase primary, localStorage fallback) ─────────────────────────
 const useWS = typeof window !== 'undefined' && window.storage; // Claude artifact storage
@@ -1063,57 +1063,143 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForSave(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,muted:state.muted};}
 function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,muted:state.muted};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
-function renderSetup(){
-  // Gate: if not admin, show appropriate read-only view
-  if(!adminSess){
-    if(!state.draw){
-      // No draw yet — show welcome screen, admin needs to sign in to set up
-      return`<div style="text-align:center;padding:40px 20px;max-width:420px;margin:0 auto">
-        <div style="font-size:3.5rem;margin-bottom:14px">⚽</div>
-        <div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--tx);margin-bottom:10px;letter-spacing:.04em">WC 2026 SWEEPSTAKE</div>
-        <p style="font-size:.85rem;color:var(--txd);line-height:1.7;margin-bottom:28px">The draw hasn't been run yet. If you're the organiser, sign in to get started.</p>
-        <button class="btn btn-green" onclick="_li()" style="padding:12px 30px;font-size:.84rem;margin-bottom:12px;width:100%;max-width:240px">Sign In to Set Up</button>
-        <div style="font-size:.73rem;color:var(--txm);margin-top:8px">Tap the ⚽ in the header 7 times or use this button</div>
-      </div>`;
+// ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
+function renderWelcome(){
+  const open=state.signupOpen;
+  const signups=state.signups||{};
+  const names=Object.values(signups).map(s=>s.name).filter(Boolean);
+  return`<div style="text-align:center;padding:32px 18px;max-width:440px;margin:0 auto">
+    <div style="font-size:3.5rem;margin-bottom:14px">⚽</div>
+    <div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;color:var(--tx);margin-bottom:8px;letter-spacing:.03em">${CONFIG.title.toUpperCase()}</div>
+    <p style="font-size:.86rem;color:var(--txd);line-height:1.7;margin-bottom:24px">FIFA World Cup 2026 · 11 June – 19 July<br>48 teams drawn randomly between players.</p>
+    ${open?`
+      <div class="card" style="padding:18px;margin-bottom:18px;text-align:left">
+        <div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--gr);letter-spacing:.06em;margin-bottom:4px;text-align:center">✍️ SIGN UP TO PLAY</div>
+        <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:14px">Add your name below to join the draw.</p>
+        <input id="signup-name" type="text" maxlength="28" placeholder="Your name" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.95rem;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitSignup()"/>
+        <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:11px;font-size:.84rem">JOIN THE SWEEPSTAKE</button>
+      </div>
+      ${names.length?`<div style="text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--txm);letter-spacing:.1em;margin-bottom:8px;text-align:center">${names.length} SIGNED UP SO FAR</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">${names.map(n=>`<span style="padding:5px 11px;background:var(--card);border:1px solid var(--b);border-radius:16px;font-size:.8rem;color:var(--tx);box-shadow:var(--shadow)">${n}</span>`).join('')}</div></div>`:''}
+    `:`
+      <div class="card" style="padding:24px 18px;margin-bottom:18px">
+        <div style="font-size:1.8rem;margin-bottom:8px">⏳</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:.95rem;color:var(--tx);margin-bottom:6px">THE DRAW HASN'T HAPPENED YET</div>
+        <p style="font-size:.8rem;color:var(--txm);line-height:1.6">Check back once the organiser has run the draw to see who got which teams.</p>
+      </div>
+    `}
+    <div style="margin-top:20px;font-size:.7rem;color:var(--txm)">Organiser? Tap the ⚽ above 7 times to sign in.</div>
+  </div>`;
+}
+async function submitSignup(){
+  const el=document.getElementById('signup-name');
+  if(!el)return;
+  const name=el.value.trim();
+  if(name.length<2){showToast('Please enter your name','error');return;}
+  // Signups path is publicly writable (see Firebase rules)
+  try{
+    const key='s'+Date.now()+Math.floor(Math.random()*1000);
+    if(DB){await DB.ref('wc2026/signups/'+key).set({name,at:Date.now()});}
+    else{if(!state.signups)state.signups={};state.signups[key]={name,at:Date.now()};}
+    showToast('You\'re in! 🎉','gold');
+    el.value='';
+    render();
+  }catch(e){showToast('Sign-up failed, try again','error');}
+}
+// Admin: pull signups into the player list
+function importSignups(){
+  if(!adminSess)return;
+  const signups=state.signups||{};
+  const names=Object.values(signups).map(s=>s.name).filter(Boolean);
+  if(!names.length){showToast('No sign-ups yet','error');return;}
+  // Merge into names, dedupe
+  const existing=state.names.slice(0,state.pc).map(n=>n.trim()).filter(Boolean);
+  const merged=[...new Set([...existing,...names])];
+  state.pc=Math.max(2,Math.min(96,merged.length));
+  state.names=[...merged,...Array(96).fill('')].slice(0,96);
+  saveSetup();render();
+  showToast(`${names.length} sign-ups imported`,'gold');
+}
+async function testFeed(){
+  const sEl=document.getElementById('feed-status');
+  const rEl=document.getElementById('feed-result');
+  if(!CONFIG.footballApiKey||CONFIG.footballApiKey==='PASTE_FOOTBALL_API_KEY'){
+    if(rEl)rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ No API key set. Add your football-data.org key to enable auto-results.</div>';
+    return;
+  }
+  if(rEl)rEl.innerHTML='<div style="margin-top:10px;font-size:.78rem;color:var(--txm)">⏳ Testing connection…</div>';
+  try{
+    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':CONFIG.footballApiKey}});
+    if(res.status===403||res.status===401){
+      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ API key rejected (HTTP '+res.status+'). Check the key is correct and your email is verified.</div>';
+      return;
     }
-    // Draw exists but not signed in — show locked view
-    const lb=calcLeaderboard();
-    return`<div style="text-align:center;padding:32px 16px;max-width:420px;margin:0 auto">
-      <div style="font-size:2.8rem;margin-bottom:12px">🔒</div>
-      <div style="font-family:'Oswald',sans-serif;font-size:1.1rem;color:var(--tx);font-weight:700;margin-bottom:8px;letter-spacing:.04em">READ-ONLY MODE</div>
-      <p style="font-size:.83rem;color:var(--txd);line-height:1.7;margin-bottom:24px">Everyone can view standings, fixtures, tables and the bracket. Results update automatically.</p>
-      <button class="btn btn-green" onclick="_li()" style="padding:11px 28px;font-size:.82rem;margin-bottom:24px">Sign In as Admin</button>
-      ${lb.length?`<div style="text-align:left;margin-top:4px"><div style="font-family:'Oswald',sans-serif;font-size:.67rem;color:var(--txm);letter-spacing:.12em;margin-bottom:10px;text-align:center">TOP 3</div>${lb.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--b);border-radius:9px;margin-bottom:7px;box-shadow:var(--shadow)"><span style="font-size:1.3rem">${['🥇','🥈','🥉'][i]}</span><span style="font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:600;flex:1;color:var(--tx)">${p.name}</span><span style="font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:${i===0?'var(--gold)':'var(--gr)'}">${p.total}<span style="font-size:.6rem;color:var(--txm);margin-left:2px">pts</span></span></div>`).join('')}</div>`:''}
-    </div>`;
+    if(res.status===429){
+      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ Rate limited (HTTP 429). The free tier allows 10 calls/min — wait a moment and retry.</div>';
+      return;
+    }
+    if(!res.ok){
+      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ Connection failed (HTTP '+res.status+').</div>';
+      return;
+    }
+    const data=await res.json();
+    const total=(data.matches||[]).length;
+    const finished=(data.matches||[]).filter(m=>m.status==='FINISHED').length;
+    const scheduled=(data.matches||[]).filter(m=>m.status==='SCHEDULED'||m.status==='TIMED').length;
+    // Test name matching on the fixtures we have
+    let matched=0;const bk=resolveBracket();
+    (data.matches||[]).forEach(m=>{
+      const hn=normTeam(m.homeTeam?.name||''),an=normTeam(m.awayTeam?.name||'');
+      if(findGFId(hn,an)||findKOId(hn,an,bk))matched++;
+    });
+    rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(0,128,42,.07);border:1px solid rgba(0,128,42,.3);border-radius:7px;font-size:.76rem;color:var(--gr);line-height:1.7">'+
+      '✓ <b>Feed connected</b><br>'+
+      '<span style="color:var(--txd)">Competition matches found: '+total+'<br>'+
+      'Finished: '+finished+' · Upcoming: '+scheduled+'<br>'+
+      'Matching your fixtures: '+matched+'/'+total+'</span>'+
+      (total===0?'<br><span style="color:var(--amber)">Note: WC2026 fixtures may not be loaded by the provider until closer to kick-off. The feed will start matching automatically once they are.</span>':'')+
+      '</div>';
+    if(sEl)sEl.innerHTML='Last tested: '+new Date().toLocaleTimeString('en-GB')+' · working ✓';
+  }catch(e){
+    rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ Network error: '+(e.message||'could not reach the API')+'</div>';
   }
-  // Admin is signed in — show full controls
-  if(state.draw&&!adminSess){
-    const lb=calcLeaderboard();
-    return`<div style="text-align:center;padding:32px 16px">
-      <div style="font-size:3rem;margin-bottom:12px">🔒</div>
-      <div style="font-family:'Oswald',sans-serif;font-size:1.1rem;color:var(--tx);font-weight:700;margin-bottom:8px">READ-ONLY MODE</div>
-      <p style="font-size:.85rem;color:var(--txd);line-height:1.7;margin-bottom:24px;max-width:340px;margin-left:auto;margin-right:auto">
-        The draw is locked. Everyone can view standings, fixtures, tables and the bracket.<br><br>
-        Tap the <b style="color:var(--gr)">⚽</b> in the header 7 times to sign in as admin and enter results.
-      </p>
-      <button class="btn btn-green" onclick="_li()" style="padding:11px 28px;font-size:.82rem">Sign In as Admin</button>
-      ${lb.length?`<div style="margin-top:32px;text-align:left">
-        <div style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--txm);letter-spacing:.1em;margin-bottom:10px;text-align:center">CURRENT STANDINGS</div>
-        ${lb.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--b);border-radius:9px;margin-bottom:7px;box-shadow:var(--shadow)">
-          <span style="font-size:1.3rem">${['🥇','🥈','🥉'][i]}</span>
-          <span style="font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:600;flex:1">${p.name}</span>
-          <span style="font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:${i===0?'var(--gold)':'var(--gr)'}">${p.total} pts</span>
-        </div>`).join('')}
-      </div>`:''}
-    </div>`;
-  }
+}
+function toggleSignup(){
+  if(!adminSess)return;
+  state.signupOpen=!state.signupOpen;
+  fbSave('wc2026/signupOpen',state.signupOpen);
+  render();
+  showToast(state.signupOpen?'Registration opened 🟢':'Registration closed');
+}
+function clearSignups(){
+  if(!adminSess)return;
+  showMod('Clear all sign-ups?','Removes everyone from the registration list.','CLEAR',()=>{
+    if(DB)DB.ref('wc2026/signups').remove();
+    state.signups={};render();showToast('Sign-ups cleared');
+  },true);
+}
+
+function renderSetup(){
   const names=state.names,pc=state.pc,pot=state.prize.on?pc*state.prize.buyin:0;
   const eq=48%pc===0;
-  return`<h2 class="ttl">${state.draw?'Admin Setup':'Setup'}</h2><p class="sub">${state.draw?'Manage the draw, scoring and settings. Sign out when done to return to read-only mode.':'Add players, set scoring, then run the draw.'}</p>
+  const signupCount=Object.values(state.signups||{}).length;
+  return`<h2 class="ttl">Admin</h2><p class="sub">${state.draw?'Manage results, scoring and settings. Sign out (🗝️) when done.':'Open registration so people sign themselves up, or add players manually, then run the draw.'}</p>
+  ${!state.draw?`<div class="card" style="padding:13px 14px;margin-bottom:11px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:${state.signupOpen||signupCount?'10px':'0'}">
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">✍️ SELF SIGN-UP</div><div style="font-size:.7rem;color:var(--txm);margin-top:2px">Let people add their own name via the link</div></div>
+      <button class="btn ${state.signupOpen?'btn-green':'btn-ghost'}" style="font-size:.7rem;flex-shrink:0" onclick="toggleSignup()">${state.signupOpen?'🟢 OPEN':'OPEN IT'}</button>
+    </div>
+    ${signupCount?`<div style="border-top:1px solid var(--b);padding-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:.78rem;color:var(--gr);font-weight:600">${signupCount} signed up</span><div style="display:flex;gap:6px"><button class="btn-sm" onclick="importSignups()">IMPORT TO PLAYERS</button><button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="clearSignups()">CLEAR</button></div></div><div style="display:flex;flex-wrap:wrap;gap:5px">${Object.values(state.signups||{}).map(s=>`<span style="padding:3px 9px;background:var(--cardh);border:1px solid var(--b);border-radius:14px;font-size:.76rem">${s.name}</span>`).join('')}</div></div>`:''}
+  </div>`:''}
+  <div class="card" style="padding:13px 14px;margin-bottom:11px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">${CONFIG.footballApiKey&&CONFIG.footballApiKey!=='PASTE_FOOTBALL_API_KEY'?'API key configured · tap Test to check':'⚠ No API key — results must be entered manually'}</div></div>
+      <button class="btn btn-ghost" style="font-size:.7rem;flex-shrink:0" onclick="testFeed()">TEST FEED</button>
+    </div>
+    <div id="feed-result" style="margin-top:0"></div>
+  </div>
   <div class="card" style="padding:12px 14px;margin-bottom:11px">
     <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--txd);margin-bottom:8px">NUMBER OF PLAYERS</div>
     <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
@@ -1175,6 +1261,10 @@ function renderSetup(){
 }
 
 function renderDraw(){
+  if(!state.draw){
+    // No draw yet — public welcome / join screen
+    return renderWelcome();
+  }
   const lb=calcLeaderboard();const{qual}=computeQual();
   return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">The Draw${state.draw?.manual?' <span style="font-size:.7rem;color:var(--txm);font-weight:400">(Manual)</span>':''}</h2>
@@ -1205,21 +1295,17 @@ function renderDraw(){
 }
 
 function renderFixtures(){
-  const{qual}=computeQual();
   const vis=Object.entries(GF).filter(([_,f])=>(state.fG==='ALL'||f.group===state.fG)&&(state.fMD==='ALL'||String(f.matchday)===state.fMD));
   const played=vis.filter(([id])=>state.grR[id]?.played).length;
   const feed=recentResults.slice(0,5);
-  return`<div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--b)">
-    ${[['group','⚽ Group Stage'],['tables','📊 Tables']].map(([id,l])=>`<button onclick="state.fTab='${id}';render()" style="padding:8px 13px;font-size:.72rem;background:none;border:none;border-bottom:2px solid ${state.fTab===id?'var(--gr)':'transparent'};color:${state.fTab===id?'var(--gr)':'var(--txm)'};cursor:pointer;white-space:nowrap;font-family:'Oswald',sans-serif;letter-spacing:.06em">${l}</button>`).join('')}
-  </div>
-  ${state.fTab==='group'?`
+  return`<h2 class="ttl">Fixtures</h2><p class="sub">All 72 group matches with UK kick-off times and TV channels.</p>
   ${feed.length?`<div style="margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.1em;color:var(--txm);margin-bottom:6px">RECENT RESULTS</div><div style="display:flex;flex-direction:column;gap:5px">${feed.map(r=>`<div class="feed-item"><span style="font-size:.9rem">${FLAGS[r.home]||'⚽'}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;color:${r.hg===r.ag?'var(--amber)':'var(--gr)'};padding:0 6px">${r.hg}–${r.ag}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${r.away}</span><span style="font-size:.9rem">${FLAGS[r.away]||'⚽'}</span></div>`).join('')}</div></div>`:''}
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start">
     <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">GROUP</div><div style="display:flex;gap:3px;flex-wrap:wrap">${['ALL',...Object.keys(GD)].map(g=>`<button class="fb${state.fG===g?' on':''}" onclick="state.fG='${g}';render()">${g}</button>`).join('')}</div></div>
     <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">MATCHDAY</div><div style="display:flex;gap:3px">${[['ALL','All'],['1','MD1'],['2','MD2'],['3','MD3']].map(([v,l])=>`<button class="fb${state.fMD===v?' on':''}" onclick="state.fMD='${v}';render()">${l}</button>`).join('')}</div></div>
-    <span style="font-size:.7rem;color:var(--txm);margin-left:auto;align-self:flex-end">${played}/${vis.length}</span>
+    <span style="font-size:.7rem;color:var(--txm);margin-left:auto;align-self:flex-end">${played}/${vis.length} played</span>
   </div>
-  <div class="grid">${vis.map(([id])=>renderMC(id)).join('')}</div>`:renderTablesContent(qual)}`;
+  <div class="grid">${vis.map(([id])=>renderMC(id)).join('')}</div>`;
 }
 
 function renderTablesContent(qual){
@@ -1376,11 +1462,28 @@ function setTab(t){state.tab=t;render();}
 function setPC(n){if(!adminSess)return;state.pc=Math.max(2,Math.min(96,n));saveSetup();render();}
 function togglePaid(name){if(!adminSess)return;if(!state.paid)state.paid={};state.paid[name]=!state.paid[name];fbSave('wc2026/paid',state.paid);render();}
 function render(){
-  const tabs=[{id:'setup',l:'⚙ SETUP'},{id:'draw',l:'🎲 DRAW',d:!state.draw},{id:'fixtures',l:'⚽ FIXTURES',d:!state.draw},{id:'tables',l:'📊 TABLES',d:!state.draw},{id:'knockout',l:'🏆 KNOCKOUT',d:!state.draw},{id:'standings',l:'🥇 STANDINGS',d:!state.draw}];
+  // Setup tab ONLY appears for signed-in admins — completely hidden otherwise
+  const tabs=[];
+  if(adminSess)tabs.push({id:'setup',l:'⚙ ADMIN'});
+  tabs.push(
+    {id:'draw',l:'🎲 DRAW',d:!state.draw},
+    {id:'fixtures',l:'⚽ FIXTURES',d:!state.draw},
+    {id:'tables',l:'📊 TABLES',d:!state.draw},
+    {id:'knockout',l:'🏆 KNOCKOUT',d:!state.draw},
+    {id:'standings',l:'🥇 STANDINGS',d:!state.draw}
+  );
+  // If current tab is no longer valid (e.g. signed out of setup, or no draw), redirect
+  const validTab=tabs.find(t=>t.id===state.tab&&!t.d);
+  if(!validTab){
+    if(state.draw)state.tab='standings';
+    else if(adminSess)state.tab='setup';
+    else state.tab='draw'; // will show join/welcome screen
+  }
   document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
   updateHdr();
   const c=document.getElementById('content');
-  if(state.tab==='setup'){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
+  if(state.tab==='setup'&&adminSess){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
+  else if(state.tab==='setup'){c.innerHTML=renderDraw();}
   else if(state.tab==='draw')c.innerHTML=renderDraw();
   else if(state.tab==='fixtures')c.innerHTML=renderFixtures();
   else if(state.tab==='tables')c.innerHTML=renderTables();
@@ -1461,8 +1564,10 @@ else if(DB){
       if(data.cfg.names)state.names=[...data.cfg.names,...Array(24).fill('')].slice(0,24);
       if(data.cfg.pc)state.pc=data.cfg.pc;
       state.paid=data.paid||{};
+      state.signups=data.signups||{};
+      state.signupOpen=data.signupOpen||false;
       if(data.cfg.muted!==undefined)state.muted=data.cfg.muted;
-      if(data.cfg.pin)pinHash=data.cfg.pin;
+      
     }
     if(first){
       first=false;
