@@ -145,6 +145,17 @@ main{max-width:1180px;margin:0 auto;padding:16px 12px 70px}
 .mc-team.lose .tn{color:var(--txm);text-decoration:line-through}
 .mc-team.lose .tf{opacity:.5}
 .score-disp{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.35rem;padding:0 8px;min-width:52px;text-align:center;flex-shrink:0;color:var(--gr);line-height:1}
+/* Vertical match rows — team per line */
+.mc-rows{display:flex;flex-direction:column;gap:4px}
+.mcr{display:flex;align-items:center;gap:9px;padding:5px 2px;min-height:34px}
+.mcr-flag{font-size:1.4rem;line-height:1;flex-shrink:0;width:26px;text-align:center}
+.mcr-name{flex:1;font-size:.9rem;color:var(--tx);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mcr.win .mcr-name{color:var(--gr);font-weight:700}
+.mcr.lose .mcr-name{color:var(--txm)}
+.mcr.lose .mcr-flag{opacity:.5}
+.mcr-score{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.4rem;color:var(--txd);min-width:24px;text-align:center;line-height:1}
+.mcr-score.win{color:var(--gr)}
+.mcr-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .score-disp.draw{color:var(--amber)}
 .mc-foot{display:flex;justify-content:space-between;align-items:center}
 .mc-lbl{font-size:.61rem;font-family:'Oswald',sans-serif;letter-spacing:.06em;color:var(--txm);height:16px}
@@ -310,9 +321,9 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
       </div>
     </div>
     <div id="champ-bar" style="display:none" class="champ-bar"></div>
-    <div class="prog-bar-wrap" id="prog-wrap" style="display:none">
-      <div class="prog-label" id="prog-label"></div>
-      <div class="prog-bar-track"><div class="prog-bar-fill" id="prog-fill"></div></div>
+    <div class="prog-wrap" id="prog-wrap" style="display:none">
+      <div class="prog-lbl" id="prog-label"></div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
     </div>
     <nav class="tab-nav" id="tab-nav"></nav>
   </div>
@@ -466,8 +477,8 @@ let _prevRanks={};  // name → rank before last result
 function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p.name]=i+1;});}
 
 // ── ADMIN (Firebase Auth) ─────────────────────────────────────────────────────
-// isAdmin: true before draw (initial setup), or when signed into Firebase Auth
-function isAdmin(){return !state.draw||adminSess;}
+// isAdmin: ONLY true when signed into Firebase Auth — no exceptions
+function isAdmin(){return adminSess;}
 // requirePin kept as alias for any legacy call paths — now triggers sign-in
 function requirePin(cb){if(adminSess){if(cb)cb();return;}_si();}
 function enterAdmin(){if(adminSess){_so();}else{_si();}}
@@ -487,9 +498,35 @@ async function sDel(k){
   try{if(useWS){await window.storage.delete(k,true);return;}
   localStorage.removeItem(k);}catch{}
 }
-// Firebase targeted saves (used alongside local state updates for instant UI)
-async function fbSave(path,val){if(DB)DB.ref(path).set(val);else sSave('wc26h:'+path.replace(/\//g,':'),val);}
-async function fbDel(path){if(DB)DB.ref(path).remove();else sDel('wc26h:'+path.replace(/\//g,':'));}
+// ── WRITE CHOKE POINT — every DB write goes through here ─────────────────────
+// adminSess is checked here AND Firebase Auth is verified independently.
+// Even if client-side guards are bypassed, Firebase rules block non-auth writes.
+async function fbSave(path,val){
+  if(!adminSess){showToast('Admin sign-in required','error');return false;}
+  if(DB&&!firebase.auth().currentUser){showToast('Session expired — please sign in again','error');adminSess=false;render();return false;}
+  try{
+    if(DB)await DB.ref(path).set(val);
+    else sSave('wc26h:'+path.replace(/\//g,':'),val);
+    return true;
+  }catch(e){
+    if(e.code==='PERMISSION_DENIED')showToast('Blocked — check Firebase rules','error');
+    else console.error('fbSave error:',e);
+    return false;
+  }
+}
+async function fbDel(path){
+  if(!adminSess){showToast('Admin sign-in required','error');return false;}
+  if(DB&&!firebase.auth().currentUser){showToast('Session expired — please sign in again','error');adminSess=false;render();return false;}
+  try{
+    if(DB)await DB.ref(path).remove();
+    else sDel('wc26h:'+path.replace(/\//g,':'),val);
+    return true;
+  }catch(e){
+    if(e.code==='PERMISSION_DENIED')showToast('Blocked — check Firebase rules','error');
+    else console.error('fbDel error:',e);
+    return false;
+  }
+}
 
 // ── AUTO-RESULTS ──────────────────────────────────────────────────────────────
 let pollTimer=null;
@@ -651,7 +688,7 @@ const SFX={_c:null,ctx(){if(state.muted)return null;if(!this._c){const AC=window
   goal(){const c=this.ctx();if(!c)return;[110,130,155,110,130,155].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sawtooth';o.frequency.value=f;const t=c.currentTime+i*.08;g.gain.setValueAtTime(.4,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.4);});},
   save(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.setValueAtTime(440,c.currentTime);o.frequency.exponentialRampToValueAtTime(880,c.currentTime+.1);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.28);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.32);}
 };
-function toggleMute(){state.muted=!state.muted;const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='mute-btn'+(state.muted?' muted':'');} fbSave('wc2026/cfg',stateForCfg());}
+function toggleMute(){state.muted=!state.muted;const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
 
 // ── CONFETTI ──────────────────────────────────────────────────────────────────
 function fireConfetti(){
@@ -678,8 +715,7 @@ function hideOv(){document.getElementById('ov').style.display='none';drawSkip=fa
 async function runDraw(){
   const valid=state.names.slice(0,state.pc).map(n=>n.trim()).filter(Boolean);
   if(valid.length<2){showToast('Need at least 2 players','error');return;}
-  if(!adminSess&&!DB){} // local mode allow
-  else if(!adminSess&&state.draw){showToast('Admin sign-in required','error');return;}
+  if(!adminSess){_si();return;} // always require Firebase Auth sign-in
   const go=async vn=>{
     drawSkip=false;
     // Compute draw immediately
@@ -836,7 +872,7 @@ function checkMilestones(savedId,prevResult){
     setTimeout(()=>showToast(`Group ${g} done! ${FLAGS[r[0].name]}${r[0].name} & ${FLAGS[r[1].name]}${r[1].name} qualify`,'gold'),400);
   }
 }
-function editGr(id){const r=state.grR[id];if(r)tempS[id]={hg:r.hg,ag:r.ag};editing.add(id);refreshMC(id);}
+function editGr(id){if(!adminSess){showToast('Admin sign-in required','error');return;}const r=state.grR[id];if(r)tempS[id]={hg:r.hg,ag:r.ag};editing.add(id);refreshMC(id);}
 function clearGr(id){if(!adminSess){showToast('Admin sign-in required','error');return;}delete state.grR[id];delete tempS[id];editing.delete(id);fbSave('wc2026/gr',state.grR);refreshMC(id);updateHdr();}
 function refreshMC(id){const el=document.getElementById(`mc-${id}`);if(el)el.outerHTML=renderMC(id);}
 function adjKo(id,side,d){if(!tempS[id])tempS[id]={hg:0,ag:0};tempS[id][side]=Math.max(0,(tempS[id][side]||0)+d);const el=document.getElementById(`sk${side}${id}`);if(el)el.textContent=tempS[id][side];const ps=document.getElementById(`pens-${id}`);if(ps)ps.style.display=(tempS[id].hg===tempS[id].ag)?'flex':'none';}
@@ -910,6 +946,7 @@ function renderManualPanel(){
 }
 function clearManual(){manualMap={};assignTarget=null;renderManualPanel();}
 function applyManualDraw(){
+  if(!adminSess){showToast('Admin sign-in required','error');return;}
   const names=state.names.slice(0,state.pc).filter(n=>n.trim());
   const parts=names.map(name=>({name,teams:ALL_TEAMS.filter(t=>manualMap[t.name]===name)}));
   if(parts.every(p=>p.teams.length===0)){showToast('No teams assigned yet','error');return;}
@@ -928,6 +965,7 @@ function exportDraw(){
   setTimeout(()=>{const box=document.getElementById('modal-box');const pre=document.createElement('textarea');pre.value=json;pre.style.cssText='width:100%;height:180px;font-size:.72rem;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);padding:8px;margin-bottom:10px;font-family:monospace;resize:vertical';box.insertBefore(pre,box.querySelector('.btn').parentElement);const copyBtn=document.createElement('button');copyBtn.className='btn btn-ghost';copyBtn.style.marginRight='8px';copyBtn.textContent='📋 COPY';copyBtn.onclick=()=>{navigator.clipboard.writeText(json).then(()=>showToast('Copied!','gold')).catch(()=>{pre.select();document.execCommand('copy');showToast('Copied!','gold');});};box.querySelector('.btn').parentElement.prepend(copyBtn);},50);
 }
 function showImportDraw(){
+  if(!adminSess){showToast('Admin sign-in required','error');return;}
   showMod('Restore Draw from Backup','Paste your backup code below to restore the draw.',`RESTORE`,()=>{
     const ta=document.querySelector('#modal-box textarea');
     if(!ta){showToast('No data to import','error');return;}
@@ -946,49 +984,41 @@ function renderMC(id){
   const hw=played&&r.hg>r.ag,aw=played&&r.ag>r.hg,dw=played&&r.hg===r.ag;
   const chCls=fix.ch?.startsWith('BBC')?'ch-bbc':'ch-itv';
   const admin=isAdmin();
+  // Vertical row per team — full-width names, score control on the right
+  const teamRow=(name,isWin,isLose,side)=>`
+    <div class="mcr${isWin?' win':isLose?' lose':''}">
+      <span class="mcr-flag">${FLAGS[name]||'⚽'}</span>
+      <span class="mcr-name">${name}</span>
+      ${played
+        ?`<span class="mcr-score${isWin?' win':''}">${side==='hg'?r.hg:r.ag}</span>`
+        :admin
+          ?`<span class="mcr-ctrl"><button class="adj" onclick="adj('${id}','${side}',-1)">−</button><span class="sval" id="s${side}${id}">${side==='hg'?hg:ag}</span><button class="adj" onclick="adj('${id}','${side}',1)">+</button></span>`
+          :''}
+    </div>`;
   return`<div class="mc${played?' played':live?' live-now':''}" id="mc-${id}">
   <div class="mc-meta">
     <span style="display:flex;align-items:center;gap:4px">
-      ${live?'<span class="live-dot"></span><span style="color:var(--amber);font-weight:600">LIVE</span>':fix.dt+' · '+fix.tm+' BST'}
+      ${live?'<span class="live-dot"></span><span style="color:var(--amber);font-weight:600">LIVE NOW</span>':'<span>'+fix.dt+' · '+fix.tm+' BST</span>'}
     </span>
     <div style="display:flex;align-items:center;gap:5px">
       ${fix.ch?`<span class="${chCls}">${fix.ch}</span>`:''}
-      <span>Grp ${fix.group} · MD${fix.matchday}</span>
+      <span>${fix.group}·MD${fix.matchday}</span>
     </div>
   </div>
-  <div class="mc-teams">
-    <div class="mc-team home${hw?' win':aw&&played?' lose':''}">
-      <span class="tn">${fix.home}</span>
-      <span class="tf">${FLAGS[fix.home]||'⚽'}</span>
-    </div>
-    ${played
-      ?`<div class="score-disp${dw?' draw':''}">${r.hg} – ${r.ag}</div>`
-      :admin
-        ?`<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-            <button class="adj" onclick="adj('${id}','hg',-1)">−</button>
-            <span class="sval" id="shg${id}">${hg}</span>
-            <button class="adj" onclick="adj('${id}','hg',1)">+</button>
-            <span style="color:var(--txm);font-size:.9rem;padding:0 2px">–</span>
-            <button class="adj" onclick="adj('${id}','ag',-1)">−</button>
-            <span class="sval" id="sag${id}">${ag}</span>
-            <button class="adj" onclick="adj('${id}','ag',1)">+</button>
-          </div>`
-        :`<div class="score-disp" style="color:var(--txm);font-size:.8rem;opacity:.6">vs</div>`
-    }
-    <div class="mc-team${aw&&played?' win':hw&&played?' lose':''}">
-      <span class="tf">${FLAGS[fix.away]||'⚽'}</span>
-      <span class="tn">${fix.away}</span>
-    </div>
+  <div class="mc-rows">
+    ${teamRow(fix.home,hw,aw&&played,'hg')}
+    ${teamRow(fix.away,aw,hw&&played,'ag')}
   </div>
-  <div class="mc-foot">
-    <span class="mc-lbl${hw?' win':dw?' draw':aw?' win':''}">${hw?'✓ '+fix.home.split(' ').slice(0,2).join(' ')+' WIN':aw?'✓ '+fix.away.split(' ').slice(0,2).join(' ')+' WIN':dw?'DRAW':live?'<span class="live-dot"></span>In progress':''}</span>
+  ${(played||live||admin)?`<div class="mc-foot">
+    <span class="mc-lbl${hw||aw?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':live?'In progress':admin?'Enter result':''}</span>
     <div style="display:flex;gap:5px">
       ${played&&admin?`<button class="btn-sm" onclick="editGr('${id}')">EDIT</button><button class="btn-sm" style="border-color:rgba(192,32,32,.3);color:var(--red)" onclick="clearGr('${id}')">✕</button>`:''}
-      ${!played&&admin?`<button class="btn btn-green" style="padding:5px 14px;font-size:.68rem">SAVE</button>`.replace('<button','<button onclick="saveGr(''+id+'')"'):''}
+      ${!played&&admin?`<button class="btn btn-green" style="padding:5px 16px;font-size:.68rem" onclick="saveGr('${id}')">SAVE</button>`:''}
     </div>
-  </div>
+  </div>`:''}
 </div>`;
 }
+
 function qBadge(qv){const c=QCOL[qv]||'#607080';return`<span class="q-badge" style="background:${c}18;border:1px solid ${c}40;color:${c}">${QLBL[qv]||'TBD'}</span>`;}
 
 // ── UPDATE HEADER ─────────────────────────────────────────────────────────────
@@ -1012,10 +1042,32 @@ function updateHdr(){
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
 function stateForSave(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,muted:state.muted};}
 function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,muted:state.muted};}
-function saveSetup(){clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
+function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 function renderSetup(){
-  // If draw exists and not signed in, show read-only locked view
+  // Gate: if not admin, show appropriate read-only view
+  if(!adminSess){
+    if(!state.draw){
+      // No draw yet — show welcome screen, admin needs to sign in to set up
+      return`<div style="text-align:center;padding:40px 20px;max-width:420px;margin:0 auto">
+        <div style="font-size:3.5rem;margin-bottom:14px">⚽</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--tx);margin-bottom:10px;letter-spacing:.04em">WC 2026 SWEEPSTAKE</div>
+        <p style="font-size:.85rem;color:var(--txd);line-height:1.7;margin-bottom:28px">The draw hasn't been run yet. If you're the organiser, sign in to get started.</p>
+        <button class="btn btn-green" onclick="_li()" style="padding:12px 30px;font-size:.84rem;margin-bottom:12px;width:100%;max-width:240px">Sign In to Set Up</button>
+        <div style="font-size:.73rem;color:var(--txm);margin-top:8px">Tap the ⚽ in the header 7 times or use this button</div>
+      </div>`;
+    }
+    // Draw exists but not signed in — show locked view
+    const lb=calcLeaderboard();
+    return`<div style="text-align:center;padding:32px 16px;max-width:420px;margin:0 auto">
+      <div style="font-size:2.8rem;margin-bottom:12px">🔒</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:1.1rem;color:var(--tx);font-weight:700;margin-bottom:8px;letter-spacing:.04em">READ-ONLY MODE</div>
+      <p style="font-size:.83rem;color:var(--txd);line-height:1.7;margin-bottom:24px">Everyone can view standings, fixtures, tables and the bracket. Results update automatically.</p>
+      <button class="btn btn-green" onclick="_li()" style="padding:11px 28px;font-size:.82rem;margin-bottom:24px">Sign In as Admin</button>
+      ${lb.length?`<div style="text-align:left;margin-top:4px"><div style="font-family:'Oswald',sans-serif;font-size:.67rem;color:var(--txm);letter-spacing:.12em;margin-bottom:10px;text-align:center">TOP 3</div>${lb.slice(0,3).map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);border:1px solid var(--b);border-radius:9px;margin-bottom:7px;box-shadow:var(--shadow)"><span style="font-size:1.3rem">${['🥇','🥈','🥉'][i]}</span><span style="font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:600;flex:1;color:var(--tx)">${p.name}</span><span style="font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:${i===0?'var(--gold)':'var(--gr)'}">${p.total}<span style="font-size:.6rem;color:var(--txm);margin-left:2px">pts</span></span></div>`).join('')}</div>`:''}
+    </div>`;
+  }
+  // Admin is signed in — show full controls
   if(state.draw&&!adminSess){
     const lb=calcLeaderboard();
     return`<div style="text-align:center;padding:32px 16px">
@@ -1271,7 +1323,7 @@ function renderStandings(){
         <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${isF?'var(--gold)':p.total>0?'var(--gr)':'var(--txm)'}">${p.total}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">POINTS</div></div>
         <span style="color:var(--txm);font-size:.68rem;flex-shrink:0">${open?'▲':'▼'}</span>
       </div>
-      ${!open?`<div class="tp">${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div class="pill" style="background:${QCOL[q]}10;border:1px solid ${QCOL[q]}28;opacity:${out?.6:1}"><span style="font-size:.85rem;filter:${out?'grayscale(.8)':'none'}">${b.flag}</span><span style="color:${out?'var(--txm)':'var(--tx)'};${out?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${b.name}</span>${b.pts>0?`<span style="font-size:.63rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700">+${b.pts}</span>`:''}</div>`;}).join('')}</div>`:''}
+      ${!open?`<div class="pill-wrap">${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div class="pill" style="background:${QCOL[q]}10;border:1px solid ${QCOL[q]}28;opacity:${out?.6:1}"><span style="font-size:.85rem;filter:${out?'grayscale(.8)':'none'}">${b.flag}</span><span style="color:${out?'var(--txm)':'var(--tx)'};${out?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${b.name}</span>${b.pts>0?`<span style="font-size:.63rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700">+${b.pts}</span>`:''}</div>`;}).join('')}</div>`:''}
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="display:flex;gap:9px;padding:8px 9px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
           <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
@@ -1292,7 +1344,7 @@ function renderStandings(){
 
 // ── MAIN RENDER ───────────────────────────────────────────────────────────────
 function setTab(t){state.tab=t;render();}
-function setPC(n){state.pc=Math.max(2,Math.min(24,n));saveSetup();render();}
+function setPC(n){if(!adminSess)return;state.pc=Math.max(2,Math.min(24,n));saveSetup();render();}
 function render(){
   const tabs=[{id:'setup',l:'⚙ SETUP'},{id:'draw',l:'🎲 DRAW',d:!state.draw},{id:'fixtures',l:'⚽ FIXTURES',d:!state.draw},{id:'tables',l:'📊 TABLES',d:!state.draw},{id:'knockout',l:'🏆 KNOCKOUT',d:!state.draw},{id:'standings',l:'🥇 STANDINGS',d:!state.draw}];
   document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
@@ -1315,7 +1367,7 @@ function render(){
 // ── MISC ─────────────────────────────────────────────────────────────────────
 async function doReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}await fbDel('wc2026/draw');await fbDel('wc2026/gr');await fbDel('wc2026/ko');state.draw=null;state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};pendingImports=[];state.tab='setup';render();showToast('Everything reset');}
 function protectedRunDraw(){requirePin(runDraw);}
-function protectedReset(){requirePin(()=>showMod('Reset everything?','Clears draw, all results, starts over.','YES RESET',doReset,true));}
+function protectedReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Reset everything?','This will permanently delete the draw and all results.','YES RESET',doReset,true);}
 async function copyDraw(){const lb=calcLeaderboard();const lines=[`🏆 ${CONFIG.title}`,'Drawn: '+new Date(state.draw.drawnAt).toLocaleString('en-GB'),''];lb.forEach((p,i)=>{lines.push(`${MEDAL[i]||(i+1)+'.'} ${p.name} — ${p.total} pts`);p.breakdown.forEach(t=>lines.push(`   ${t.flag} ${t.name} (Grp ${t.group})`));lines.push('');});try{await navigator.clipboard.writeText(lines.join('\n'));showToast('Copied!','gold');}catch{showToast('Copy failed','error');}}
 function adjKo(id,side,d){if(!tempS[id])tempS[id]={hg:0,ag:0};tempS[id][side]=Math.max(0,(tempS[id][side]||0)+d);const el=document.getElementById(`sk${side}${id}`);if(el)el.textContent=tempS[id][side];const ps=document.getElementById(`pens-${id}`);if(ps)ps.style.display=(tempS[id].hg===tempS[id].ag)?'flex':'none';}
 
