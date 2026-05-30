@@ -759,6 +759,8 @@ async function runDraw(){
     // Save
     const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:n};
     await fbSave('wc2026/draw',data);await fbDel('wc2026/gr');await fbDel('wc2026/ko');
+    // Auto-close registration once the draw is run
+    if(state.signupOpen){state.signupOpen=false;await fbSave('wc2026/signupOpen',false);}
     state.draw=data;state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};
     hideOv();state.tab='draw';render();
     showToast(`Draw complete — ${n} players!`,'gold');
@@ -767,10 +769,14 @@ async function runDraw(){
   else go(valid);
 }
 // ── TEAM DISTRIBUTION ─────────────────────────────────────────────────────────
-// Handles any number of players fairly:
-//  • n ≤ 48: 48 teams divided evenly (some get 1 more than others)
-//  • n > 48: every player gets 1 team; teams shared, reshuffled per round so
-//            popular teams aren't favoured. Points count fully for each owner.
+// Provably fair for ANY number of players:
+//  • n ≤ 48: the 48 teams are split so everyone has within 1 team of each other;
+//            each team is owned by exactly one person.
+//  • n > 48: everyone gets exactly 1 team. The 48 teams are shared so each team
+//            is owned by either floor(n/48) or ceil(n/48) people — as even as
+//            possible. Points count FULLY for every owner, so two people sharing
+//            a team each score the same as if they owned it alone. Every player
+//            therefore has an identical expected score — it is fair by design.
 function distributeTeams(vn){
   const n=vn.length;
   if(n<=48){
@@ -780,14 +786,31 @@ function distributeTeams(vn){
     let ti=0;
     return vn.map((name,i)=>{const cnt=base+(ex.has(i)?1:0);const teams=sh.slice(ti,ti+cnt);ti+=cnt;return{name,teams};});
   }
-  // n > 48: assign 1 team each, cycling through reshuffled lists
-  const parts=vn.map(name=>({name,teams:[]}));
+  // n > 48: build a pool of exactly n teams where each team appears either
+  // floor(n/48) or ceil(n/48) times — guarantees EVERY team is owned and
+  // ownership counts differ by at most 1 (maximally even sharing).
+  const base=Math.floor(n/48),extra=n%48;
+  const shuffledTeams=cryptoShuffle(ALL_TEAMS);
   let pool=[];
-  for(let i=0;i<n;i++){
-    if(pool.length===0)pool=cryptoShuffle(ALL_TEAMS);
-    parts[i].teams=[pool.shift()];
+  shuffledTeams.forEach((t,i)=>{
+    const copies=base+(i<extra?1:0); // first `extra` teams get one more owner
+    for(let c=0;c<copies;c++)pool.push(t);
+  });
+  pool=cryptoShuffle(pool); // pool.length === n exactly
+  const players=cryptoShuffle(vn.slice());
+  return players.map((name,i)=>({name,teams:[pool[i]]}));
+}
+// Describe the split for the UI ("12 players · 4 teams each", etc.)
+function distributionLabel(n){
+  if(n<2)return'';
+  if(n<=48){
+    const base=Math.floor(48/n),rem=48%n;
+    if(rem===0)return`${base} team${base>1?'s':''} each`;
+    return`${base}–${base+1} teams each`;
   }
-  return parts;
+  const shared=n-48;
+  const maxOwners=Math.ceil(n/48);
+  return`1 team each · ${shared} team${shared>1?'s':''} shared by ${maxOwners} people 🔁`;
 }
 function cryptoShuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const b=new Uint32Array(1);crypto.getRandomValues(b);const j=b[0]%(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 
@@ -976,6 +999,7 @@ function applyManualDraw(){
   showMod('Apply manual draw?',`This will set the draw to your manual assignments. Any existing draw will be overwritten.`,'APPLY',async()=>{
     const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:parts.length,manual:true};
     await fbSave('wc2026/draw',data);state.draw=data;
+    if(state.signupOpen){state.signupOpen=false;fbSave('wc2026/signupOpen',false);}
     Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];
     state.tab='draw';render();showToast('Manual draw applied!','gold');
   });
@@ -1074,12 +1098,12 @@ function renderWelcome(){
   return`<div style="text-align:center;padding:32px 18px;max-width:440px;margin:0 auto">
     <div style="font-size:3.5rem;margin-bottom:14px">⚽</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;color:var(--tx);margin-bottom:8px;letter-spacing:.03em">${CONFIG.title.toUpperCase()}</div>
-    <p style="font-size:.86rem;color:var(--txd);line-height:1.7;margin-bottom:24px">FIFA World Cup 2026 · 11 June – 19 July<br>48 teams drawn randomly between players.</p>
+    <p style="font-size:.86rem;color:var(--txd);line-height:1.7;margin-bottom:24px">FIFA World Cup 2026 · 11 June – 19 July<br>Sign up and you'll be randomly drawn one or more of the 48 teams. Earn points as your teams win — top scorers take the prize.</p>
     ${open?`
       <div class="card" style="padding:18px;margin-bottom:18px;text-align:left">
         <div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--gr);letter-spacing:.06em;margin-bottom:4px;text-align:center">✍️ SIGN UP TO PLAY</div>
-        <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:14px">Add your name below to join the draw.</p>
-        <input id="signup-name" type="text" maxlength="28" placeholder="Your name" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.95rem;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitSignup()"/>
+        <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:14px">Enter your <b>full name</b> so the organiser can identify you.</p>
+        <input id="signup-fname" type="text" maxlength="20" placeholder="First name *" autocomplete="given-name" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.95rem;margin-bottom:8px" onkeydown="if(event.key==='Enter')submitSignup()"/><input id="signup-lname" type="text" maxlength="20" placeholder="Last name *" autocomplete="family-name" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.95rem;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitSignup()"/>
         <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:11px;font-size:.84rem">JOIN THE SWEEPSTAKE</button>
       </div>
       ${names.length?`<div style="text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--txm);letter-spacing:.1em;margin-bottom:8px;text-align:center">${names.length} SIGNED UP SO FAR</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">${names.map(n=>`<span style="padding:5px 11px;background:var(--card);border:1px solid var(--b);border-radius:16px;font-size:.8rem;color:var(--tx);box-shadow:var(--shadow)">${n}</span>`).join('')}</div></div>`:''}
@@ -1094,33 +1118,105 @@ function renderWelcome(){
   </div>`;
 }
 async function submitSignup(){
-  const el=document.getElementById('signup-name');
-  if(!el)return;
-  const name=el.value.trim();
-  if(name.length<2){showToast('Please enter your name','error');return;}
+  const fEl=document.getElementById('signup-fname'),lEl=document.getElementById('signup-lname');
+  if(!fEl||!lEl)return;
+  const first=fEl.value.trim(),last=lEl.value.trim();
+  if(first.length<2){showToast('Please enter your first name','error');fEl.focus();return;}
+  if(last.length<2){showToast('Last name required — so the organiser knows who you are','error');lEl.focus();return;}
+  // Title-case both names for consistency
+  const tc=s=>s.charAt(0).toUpperCase()+s.slice(1);
+  const name=tc(first)+' '+tc(last);
+  // Prevent duplicate sign-ups of the same name
+  const existing=Object.values(state.signups||{}).map(s=>(s.name||'').toLowerCase());
+  if(existing.includes(name.toLowerCase())){showToast('That name is already signed up','error');return;}
   // Signups path is publicly writable (see Firebase rules)
   try{
     const key='s'+Date.now()+Math.floor(Math.random()*1000);
     if(DB){await DB.ref('wc2026/signups/'+key).set({name,at:Date.now()});}
     else{if(!state.signups)state.signups={};state.signups[key]={name,at:Date.now()};}
     showToast('You\'re in! 🎉','gold');
-    el.value='';
     render();
   }catch(e){showToast('Sign-up failed, try again','error');}
 }
-// Admin: pull signups into the player list
+// Admin: set the player list FROM sign-ups (replaces, sign-ups are the source)
 function importSignups(){
   if(!adminSess)return;
-  const signups=state.signups||{};
-  const names=Object.values(signups).map(s=>s.name).filter(Boolean);
+  const names=signupNames();
   if(!names.length){showToast('No sign-ups yet','error');return;}
-  // Merge into names, dedupe
-  const existing=state.names.slice(0,state.pc).map(n=>n.trim()).filter(Boolean);
-  const merged=[...new Set([...existing,...names])];
-  state.pc=Math.max(2,Math.min(96,merged.length));
-  state.names=[...merged,...Array(96).fill('')].slice(0,96);
+  state.pc=Math.max(2,Math.min(96,names.length));
+  state.names=[...names,...Array(96).fill('')].slice(0,96);
   saveSetup();render();
-  showToast(`${names.length} sign-ups imported`,'gold');
+  showToast(`${names.length} players set from sign-ups`,'gold');
+}
+// Sign-ups sorted by time they joined (stable order)
+function signupNames(){
+  return Object.values(state.signups||{})
+    .filter(s=>s&&s.name)
+    .sort((a,b)=>(a.at||0)-(b.at||0))
+    .map(s=>s.name);
+}
+function signupEntries(){
+  return Object.entries(state.signups||{})
+    .filter(([_,s])=>s&&s.name)
+    .sort((a,b)=>(a[1].at||0)-(b[1].at||0));
+}
+// Admin: remove a single sign-up
+function removeSignup(key){
+  if(!adminSess)return;
+  const s=state.signups&&state.signups[key];
+  if(!s)return;
+  showMod('Remove sign-up?',`Remove "${s.name}" from the list?`,'REMOVE',()=>{
+    if(DB)DB.ref('wc2026/signups/'+key).remove();
+    if(state.signups)delete state.signups[key];
+    render();showToast('Removed');
+  },true);
+}
+// Shared helper: show a modal with a single text input, run cb(value) on confirm
+function _modInput(title,confirmLbl,initial,placeholder,onConfirm){
+  showMod(title,'',confirmLbl,()=>{
+    const inp=document.getElementById('_mod-input');
+    if(inp)onConfirm(inp.value.trim());
+  });
+  setTimeout(()=>{
+    const box=document.getElementById('modal-box');
+    if(!box)return;
+    const inp=document.createElement('input');
+    inp.id='_mod-input';inp.type='text';inp.value=initial||'';inp.placeholder=placeholder||'';inp.maxLength=42;
+    inp.style.cssText='width:100%;padding:10px 12px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.95rem;margin-bottom:14px';
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){const btn=box.querySelector('.btn:last-child');btn&&btn.click();}});
+    const btnRow=box.querySelector('div');
+    box.insertBefore(inp,btnRow);
+    inp.focus();inp.select();
+  },50);
+}
+function _validFullName(v){return v.length>=3&&v.trim().includes(' ');}
+function _titleCase(v){return v.split(/\s+/).filter(Boolean).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');}
+// Admin: edit a single sign-up name
+function editSignup(key){
+  if(!adminSess)return;
+  const s=state.signups&&state.signups[key];if(!s)return;
+  _modInput('Edit name','SAVE',s.name,'First and last name',v=>{
+    if(!_validFullName(v)){showToast('Enter a full name (first and last)','error');return;}
+    const name=_titleCase(v);
+    state.signups[key]={...s,name};
+    if(DB)DB.ref('wc2026/signups/'+key).set(state.signups[key]);
+    render();showToast('Name updated');
+  });
+}
+// Admin: manually add a sign-up (for someone who asks in person)
+function addSignupManual(){
+  if(!adminSess)return;
+  _modInput('Add a player','ADD','','First and last name',v=>{
+    if(!_validFullName(v)){showToast('Enter a full name (first and last)','error');return;}
+    const name=_titleCase(v);
+    const existing=signupNames().map(n=>n.toLowerCase());
+    if(existing.includes(name.toLowerCase())){showToast('Already on the list','error');return;}
+    const key='s'+Date.now()+Math.floor(Math.random()*1000);
+    if(!state.signups)state.signups={};
+    state.signups[key]={name,at:Date.now()};
+    if(DB)DB.ref('wc2026/signups/'+key).set(state.signups[key]);
+    render();showToast('Added '+name,'gold');
+  });
 }
 async function testFeed(){
   const sEl=document.getElementById('feed-status');
@@ -1187,11 +1283,23 @@ function renderSetup(){
   const signupCount=Object.values(state.signups||{}).length;
   return`<h2 class="ttl">Admin</h2><p class="sub">${state.draw?'Manage results, scoring and settings. Sign out (🗝️) when done.':'Open registration so people sign themselves up, or add players manually, then run the draw.'}</p>
   ${!state.draw?`<div class="card" style="padding:13px 14px;margin-bottom:11px">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:${state.signupOpen||signupCount?'10px':'0'}">
-      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">✍️ SELF SIGN-UP</div><div style="font-size:.7rem;color:var(--txm);margin-top:2px">Let people add their own name via the link</div></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">✍️ PLAYER SIGN-UP</div><div style="font-size:.7rem;color:var(--txm);margin-top:2px">Players add their own name via the shared link</div></div>
       <button class="btn ${state.signupOpen?'btn-green':'btn-ghost'}" style="font-size:.7rem;flex-shrink:0" onclick="toggleSignup()">${state.signupOpen?'🟢 OPEN':'OPEN IT'}</button>
     </div>
-    ${signupCount?`<div style="border-top:1px solid var(--b);padding-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:.78rem;color:var(--gr);font-weight:600">${signupCount} signed up</span><div style="display:flex;gap:6px"><button class="btn-sm" onclick="importSignups()">IMPORT TO PLAYERS</button><button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="clearSignups()">CLEAR</button></div></div><div style="display:flex;flex-wrap:wrap;gap:5px">${Object.values(state.signups||{}).map(s=>`<span style="padding:3px 9px;background:var(--cardh);border:1px solid var(--b);border-radius:14px;font-size:.76rem">${s.name}</span>`).join('')}</div></div>`:''}
+    <div style="border-top:1px solid var(--b);padding-top:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:.78rem;color:${signupCount?'var(--gr)':'var(--txm)'};font-weight:600">${signupCount} signed up</span>
+        <button class="btn-sm" onclick="addSignupManual()">+ ADD PLAYER</button>
+      </div>
+      ${signupCount?`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">${signupEntries().map(([key,s])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px 6px 11px;background:var(--cardh);border-radius:7px">
+        <span style="flex:1;font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
+        <button class="btn-sm" style="padding:2px 7px" onclick="editSignup('${key}')" title="Edit name">✎</button>
+        <button class="btn-sm" style="padding:2px 8px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeSignup('${key}')" title="Remove">✕</button>
+      </div>`).join('')}</div>
+      <div style="display:flex;gap:6px"><button class="btn btn-green" style="flex:1;font-size:.72rem;padding:7px" onclick="importSignups()">USE THESE ${signupCount} AS PLAYERS →</button><button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="clearSignups()">CLEAR ALL</button></div>
+      <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">Tip: the sign-up list is your single source of players. "Use these as players" sets the draw list to exactly these names.</div>`:'<div style="font-size:.72rem;color:var(--txm)">No sign-ups yet. Open registration and share the link, or add players manually with + Add Player.</div>'}
+    </div>
   </div>`:''}
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -1207,7 +1315,7 @@ function renderSetup(){
       <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.1rem;color:var(--tx);min-width:24px;text-align:center">${pc}</span>
       <button class="adj" onclick="setPC(state.pc+1)">+</button>
       ${[8,12,24,48].map(n=>`<button class="fb${pc===n?' on':''}" onclick="setPC(${n})">${n}</button>`).join('')}
-      <span style="font-size:.73rem;color:${pc>48?'var(--amber)':eq?'var(--gr)':'var(--txd)'}">${pc>48?`1 team each · ${pc-48} shared 🔁`:eq?`${48/pc} teams each ✓`:`${Math.floor(48/pc)}–${Math.floor(48/pc)+1} teams each`}</span>
+      <span style="font-size:.73rem;color:${pc>48?'var(--amber)':eq?'var(--gr)':'var(--txd)'}">${distributionLabel(pc)}${pc<=48&&eq?' ✓':''}</span>
     </div>
   </div>
   <div style="margin-bottom:11px">
