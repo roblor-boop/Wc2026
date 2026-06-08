@@ -300,6 +300,16 @@ html.dark .dc.gld{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--ca
 .ov-reveal-team .ov-rt-name{font-family:'Oswald',sans-serif;font-size:1.18rem;font-weight:700;color:#fff}
 .ov-reveal-team .ov-rt-grp{font-size:.6rem;color:rgba(255,255,255,.4);font-family:'Oswald',sans-serif;letter-spacing:.12em}
 @keyframes ovPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.13);opacity:1}100%{transform:scale(1)}}
+.ov-land{display:inline-block;animation:ovLand .6s cubic-bezier(.18,1.5,.4,1)}
+@keyframes ovLand{0%{transform:scale(.35);opacity:0}55%{transform:scale(1.22)}74%{transform:scale(.94)}100%{transform:scale(1);opacity:1}}
+.ov-reveal-team.ov-land{box-shadow:0 0 34px rgba(0,230,118,.45),inset 0 0 0 1px rgba(0,230,118,.55)}
+#ov-flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 44%,rgba(0,230,118,.42),transparent 58%)}
+#ov-flash.go{animation:ovFlash .55s ease-out}
+@keyframes ovFlash{0%{opacity:0;transform:scale(.7)}22%{opacity:1}100%{opacity:0;transform:scale(1.35)}}
+.ov-cardland{animation:ovLand .6s cubic-bezier(.18,1.5,.4,1)!important;box-shadow:0 0 40px rgba(0,230,118,.42),inset 0 0 0 1px rgba(0,230,118,.4)}
+.ov-extra{margin-top:14px;min-height:1px}
+.ov-extra-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:460px;margin:0 auto}
+.ov-extra-team{font-family:'Oswald',sans-serif;font-size:.95rem;color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:7px 14px;display:inline-block}
 /* ── MISC COMPONENTS ─────────────────────────────────── */
 .q-badge{font-size:.58rem;padding:1px 5px;border-radius:3px;font-family:'Oswald',sans-serif;font-weight:600;border:1px solid transparent;flex-shrink:0}
 .fb{padding:3px 8px;border-radius:5px;background:transparent;border:1px solid var(--b);color:var(--txm);font-family:'Oswald',sans-serif;font-size:.65rem;cursor:pointer;transition:all .15s}
@@ -363,6 +373,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 <canvas id="confetti"></canvas>
 <div id="ov">
   <div class="ov-bg"></div>
+  <div id="ov-flash"></div>
   <div class="ov-inner" id="ov-inner"></div>
   <button id="ov-skip" onclick="skipDraw()">SKIP →</button>
 </div>
@@ -1011,6 +1022,7 @@ async function skipableDelay(ms){
 }
 function skipDraw(){drawSkip=true;}
 function setOv(html){document.getElementById('ov-inner').innerHTML=html;}
+function flashOv(){const f=document.getElementById('ov-flash');if(f){f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}}
 function showOv(){document.getElementById('ov').style.display='flex';}
 function hideOv(){document.getElementById('ov').style.display='none';drawSkip=false;}
 
@@ -1061,11 +1073,12 @@ function protectedRunDraw_legacy(){}
 let _cerPlaying=false;
 // Spin one element's innerHTML through random teasers, decelerating (slot-machine feel).
 async function spinEl(elId,teaserFn,ms){
+  // Slot-machine: blurs fast, then a long dramatic slow-down before it lands.
   let t=0;
   while(t<ms&&!drawSkip){
     const el=document.getElementById(elId);if(el)el.innerHTML=teaserFn();
-    const prog=t/ms;const d=55+Math.round(prog*prog*215); // ease-out: fast → slow
-    try{SFX.tick();}catch(e){}
+    const prog=Math.min(1,t/ms);
+    const d=46+Math.round(prog*prog*prog*474); // 46ms → ~520ms: stays fast, then really slows
     await delay(d);t+=d;
   }
 }
@@ -1093,13 +1106,13 @@ async function playCeremony(parts,n){
   }
   // Pacing scales with player count so it stays a proper event without dragging
   const tier=n<=16?0:n<=32?1:2;
-  const nameHold=[1050,780,520][tier], spinMs=[1100,820,600][tier], landHold=[1450,1000,650][tier];
+  const nameHold=[1200,900,600][tier], spinMs=[1550,1100,720][tier], landHold=[2900,2100,1300][tier];
   const revealByTeam=state.drawByTeam||n>48;
 
   if(!drawSkip&&revealByTeam){
     // ── BY TEAM: each of the 48 teams, spin to reveal who got it ──
     const ownersByTeam={};parts.forEach(p=>p.teams.forEach(t=>{(ownersByTeam[t.name]=ownersByTeam[t.name]||[]).push(p.name);}));
-    const tSpin=n>120?560:720, tHold=n>120?700:880;
+    const tSpin=n>120?640:880, tHold=n>120?950:1450;
     const tCard=(t,ownerInner)=>`<div class="ov-phase-team"><div class="ov-counter">TEAM ${ALL_TEAMS.indexOf(t)+1} OF 48</div><div class="ov-team-card"><div class="ov-flag-big">${t.flag}</div><div class="ov-cname">${t.name}</div><div class="ov-cgroup">GROUP ${t.group}</div></div><div class="ov-for" style="margin-top:14px">GOES TO…</div><div class="ov-owner" id="ov-owner">${ownerInner}</div></div>`;
     for(const team of ALL_TEAMS){
       if(drawSkip)break;
@@ -1108,24 +1121,35 @@ async function playCeremony(parts,n){
       await spinEl('ov-owner',()=>`<span class="ov-spin-name">${esc(RN())}</span>`,tSpin);
       if(drawSkip)break;
       const el=document.getElementById('ov-owner');
-      if(el)el.innerHTML=`<span class="ov-pop" style="color:#fff">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.5">No owner</span>'}</span>`;
-      try{SFX.land();}catch(e){}
+      if(el)el.innerHTML=`<span class="ov-land" style="color:#fff">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.5">No owner</span>'}</span>`;
+      flashOv();try{SFX.land();}catch(e){}
       await skipableDelay(tHold);
     }
   } else if(!drawSkip){
-    // ── BY PLAYER: build anticipation on the name, then ONE spin lands all their teams ──
+    // ── BY PLAYER: spotlight the name, ONE roulette that LANDS IN PLACE, then a long pause to read ──
     for(const[idx,p] of parts.entries()){
       if(drawSkip)break;
-      const cnt=p.teams.length;
-      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${esc(p.name).toUpperCase()}</div><div class="ov-sub">DRAWING ${cnt} TEAM${cnt>1?'S':''}…</div></div>`);
+      const cnt=p.teams.length;const t1=p.teams[0];
+      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${esc(p.name).toUpperCase()}</div><div class="ov-sub">${cnt>1?'drawing '+cnt+' teams…':'spinning for their team…'}</div></div>`);
       try{SFX.ding();}catch(e){}
       await skipableDelay(nameHold);
       if(drawSkip)break;
-      setOv(`<div class="ov-phase-team"><div class="ov-for">${esc(p.name)}</div><div class="ov-team-card"><div class="ov-flag-big" id="ov-spinflag">${F().flag}</div><div class="ov-cname" style="opacity:.4">· · ·</div></div></div>`);
+      // Roulette: one big flag spinning in a single card
+      setOv(`<div class="ov-phase-team"><div class="ov-for" id="ov-for">${esc(p.name)}</div><div class="ov-team-card" id="ov-card"><div class="ov-flag-big" id="ov-spinflag">${F().flag}</div><div class="ov-cname" style="opacity:.35">· · ·</div></div><div class="ov-extra" id="ov-extra"></div></div>`);
       await spinEl('ov-spinflag',()=>F().flag,spinMs);
       if(drawSkip)break;
-      setOv(`<div class="ov-phase-team"><div class="ov-for">${esc(p.name)} GETS</div><div class="ov-reveal-teams${cnt>2?' multi':''}">${p.teams.map(t=>`<div class="ov-reveal-team ov-pop"><span class="ov-rt-flag">${t.flag}</span><span class="ov-rt-name">${t.name}</span><span class="ov-rt-grp">GRP ${t.group}</span></div>`).join('')}</div></div>`);
-      try{SFX.land();}catch(e){}
+      // The wheel STOPS — the same card fills in with the real team
+      const card=document.getElementById('ov-card');
+      if(card){card.classList.add('ov-cardland');card.innerHTML=`<div class="ov-flag-big">${t1.flag}</div><div class="ov-cname">${t1.name}</div><div class="ov-cgroup">GROUP ${t1.group}</div>`;}
+      const forEl=document.getElementById('ov-for');if(forEl)forEl.innerHTML=`🎉 ${esc(p.name)} ${cnt>1?'GOT '+cnt+' TEAMS':'GOT'}`;
+      flashOv();try{SFX.land();}catch(e){}
+      // Any further teams pop in just below
+      if(cnt>1){
+        await skipableDelay(750);if(drawSkip)break;
+        const ex=document.getElementById('ov-extra');
+        if(ex)ex.innerHTML=`<div class="ov-extra-row">${p.teams.slice(1).map((t,ti)=>`<span class="ov-extra-team ov-pop" style="animation-delay:${ti*.12}s">${t.flag} ${t.name} <span style="opacity:.55">${t.group}</span></span>`).join('')}</div>`;
+      }
+      // Generous pause to appreciate & read who's been drawn
       await skipableDelay(landHold);
     }
   }
@@ -1222,17 +1246,20 @@ function confirmMod(){if(modCb)modCb();closeMod();}
 // ── LIVE MATCH DETECTION ─────────────────────────────────────────────────────
 // Friendly relative date: "Today", "Tomorrow", or "Sat 13 Jun"
 function relDate(dt){
+  // ALWAYS "Thu 11 Jun" — one consistent format on every screen.
   try{
     const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
     const[day,mon]=dt.split(' ');
     const d=new Date(2026,months[mon],parseInt(day));
-    const now=new Date();const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-    const diff=Math.round((d-today)/86400000);
-    if(diff===0)return'Today';
-    if(diff===1)return'Tomorrow';
-    if(diff===-1)return'Yesterday';
     return d.toLocaleDateString('en-GB',{weekday:'short'})+' '+dt;
   }catch{return dt;}
+}
+function isTodayDt(dt){
+  try{
+    const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const[day,mon]=dt.split(' ');const d=new Date(2026,months[mon],parseInt(day));const n=new Date();
+    return n.getFullYear()===2026&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
+  }catch{return false;}
 }
 function isLiveNow(id){
   // Returns true if this fixture is likely in progress based on BST time
@@ -2105,7 +2132,7 @@ function renderFixtures(){
       const ids=byDate[dt];
       const done=ids.filter(id=>state.grR[id]?.played).length;
       const rel=relDate(dt);
-      const isToday=rel==='Today';
+      const isToday=isTodayDt(dt);
       return`<div style="margin-bottom:16px">
         <div style="position:sticky;top:54px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
           <span style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.04em;color:${isToday?'var(--gr)':'var(--tx)'}">${rel}${isToday?' ●':''}</span>
