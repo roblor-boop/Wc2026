@@ -406,6 +406,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   </div>
 </div>
 <main>
+  <div id="ticker-slot"></div>
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
@@ -881,6 +882,18 @@ function tickerBarHTML(){
   const row=items.map(t=>`<span style="padding:0 2px">${esc(t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`)}</span>`).join(sep)+sep;
   const dur=Math.max(22,Math.round(items.join(' ').length*0.22));
   return`<div class="ticker"><div class="ticker-track" style="--tk-dur:${dur}s">${row}${row}</div></div>`;
+}
+let _tkSig=null;
+// The ticker lives in the page shell so it appears on EVERY tab. We only rebuild it when its
+// content actually changes — otherwise it keeps scrolling smoothly across tab switches (no restart).
+function updateTicker(){
+  const slot=document.getElementById('ticker-slot');if(!slot)return;
+  const on=state.ticker&&state.ticker.on;
+  const items=on?tickerItems():[];
+  const sig=(on&&items.length)?items.join('|'):'';   // countdown is a token here, so seconds ticking won't trigger a rebuild
+  if(sig===_tkSig)return;
+  _tkSig=sig;
+  slot.innerHTML=sig?tickerBarHTML():'';
 }
 function addTickerMsg(){
   const el=document.getElementById('ticker-input');if(!el)return;
@@ -2306,7 +2319,7 @@ function renderStandings(){
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
-  return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}${mePickerHTML(true)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+  return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${mePickerHTML(true)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
@@ -2490,6 +2503,7 @@ function render(){
   else if(state.tab==='tables')c.innerHTML=renderTables();
   else if(state.tab==='knockout')c.innerHTML=renderKO();
   else if(state.tab==='standings')c.innerHTML=renderStandings();
+  updateTicker();
   document.getElementById('mute-btn').textContent=state.muted?'🔇':'🔊';
   document.getElementById('mute-btn').className='hbtn'+(state.muted?' dim':'');
   // Show sign-out button only when signed in — invisible to regular users
