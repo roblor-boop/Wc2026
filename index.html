@@ -569,7 +569,8 @@ function findGFId(h,a){const hn=normTeam(h),an=normTeam(a);return Object.keys(GF
 function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.keys(BRACKET).find(id=>{const rv=res[id];return rv&&((rv.teamA===hn&&rv.teamB===an)||(rv.teamA===an&&rv.teamB===hn));});}
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let state={tab:'setup',pc:12,names:Array(96).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+const MAX_PLAYERS=200;
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -628,15 +629,16 @@ async function fbDel(path){
 
 // ── AUTO-RESULTS ──────────────────────────────────────────────────────────────
 let pollTimer=null;
+function apiKey(){const k=(state.footballApiKey||'').trim();return k||CONFIG.footballApiKey;}
 async function pollResults(){
-  if(!CONFIG.footballApiKey||CONFIG.footballApiKey==='PASTE_FOOTBALL_API_KEY')return;
+  if(!apiKey()||apiKey()==='PASTE_FOOTBALL_API_KEY')return;
   if(!state.draw)return; // no draw yet, nothing to update
   try{
-    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{headers:{'X-Auth-Token':CONFIG.footballApiKey}});
+    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{headers:{'X-Auth-Token':apiKey()}});
     if(!res.ok)return;const data=await res.json();
     // Also attempt live in-play scores (may require a paid tier; fails silently if not)
     if(adminSess){try{
-      const lr=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=IN_PLAY,PAUSED',{headers:{'X-Auth-Token':CONFIG.footballApiKey}});
+      const lr=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=IN_PLAY,PAUSED',{headers:{'X-Auth-Token':apiKey()}});
       if(lr.ok){const ld=await lr.json();let changed=false;
         (ld.matches||[]).forEach(m=>{
           const hg=m.score?.fullTime?.home??m.score?.regularTime?.home;
@@ -869,8 +871,9 @@ async function sha256(s){
 }
 function showGate(){const g=document.getElementById('gate');if(g){g.style.display='flex';setTimeout(()=>{const i=document.getElementById('gate-input');if(i)i.focus();},120);}}
 function hideGate(){const g=document.getElementById('gate');if(g)g.style.display='none';}
+function gateActive(){return !!_accessHash && (!state.gateSignupOnly || !!state.signupOpen);}
 function checkGate(){
-  if(_accessHash&&localStorage.getItem('wc26gate')!==_accessHash)showGate();
+  if(gateActive()&&localStorage.getItem('wc26gate')!==_accessHash)showGate();
   else hideGate();
 }
 async function submitGate(){
@@ -890,6 +893,14 @@ function setAccessCode(){
     localStorage.setItem('wc26gate',h); // organiser won't be locked out
     fbSave('wc2026/accessHash',h);
     render();showToast('Access code set — viewers will need it 🔒','gold');
+  });
+}
+function setApiKey(){
+  if(!adminSess)return;
+  _modInput('football-data.org API key','SAVE',state.footballApiKey||'','Paste key — blank uses built-in',v=>{
+    state.footballApiKey=(v||'').trim();
+    saveSetup();render();
+    showToast(state.footballApiKey?'Custom API key saved 🔑':'Reverted to built-in key','gold');
   });
 }
 function removeAccessCode(){
@@ -963,9 +974,29 @@ const SFX={_c:null,ctx(){if(state.muted)return null;if(!this._c){const AC=window
   ding(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.value=1047;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.4,c.currentTime+0.02);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.7);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.75);},
   fanfare(){const c=this.ctx();if(!c)return;[262,330,392,523,659,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type=i<3?'square':'triangle';o.frequency.value=f;const t=c.currentTime+i*.11;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.04);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.5);});},
   goal(){const c=this.ctx();if(!c)return;[110,130,155,110,130,155].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sawtooth';o.frequency.value=f;const t=c.currentTime+i*.08;g.gain.setValueAtTime(.4,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.4);});},
-  save(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.setValueAtTime(440,c.currentTime);o.frequency.exponentialRampToValueAtTime(880,c.currentTime+.1);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.28);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.32);}
+  save(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.setValueAtTime(440,c.currentTime);o.frequency.exponentialRampToValueAtTime(880,c.currentTime+.1);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.28);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.32);},
+  _amb:null,
+  ambStart(){
+    this.ambStop();
+    const c=this.ctx();if(!c)return;
+    const master=c.createGain();master.gain.setValueAtTime(0,c.currentTime);master.gain.linearRampToValueAtTime(0.16,c.currentTime+1.2);master.connect(c.destination);
+    // warm low drone (two detuned oscillators)
+    const o1=c.createOscillator(),o2=c.createOscillator(),dg=c.createGain();
+    o1.type='sawtooth';o2.type='sawtooth';o1.frequency.value=55;o2.frequency.value=55.4;dg.gain.value=0.25;
+    const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
+    o1.connect(dg);o2.connect(dg);dg.connect(lp);lp.connect(master);o1.start();o2.start();
+    // soft anticipation pulse (kick-ish) every ~520ms
+    const pulse=setInterval(()=>{if(state.muted){return;}const t=c.currentTime;const po=c.createOscillator(),pg=c.createGain();po.type='sine';po.frequency.setValueAtTime(110,t);po.frequency.exponentialRampToValueAtTime(48,t+.16);pg.gain.setValueAtTime(0.34,t);pg.gain.exponentialRampToValueAtTime(0.001,t+.26);po.connect(pg);pg.connect(master);po.start(t);po.stop(t+.3);},520);
+    this._amb={master,osc:[o1,o2],pulse,ctx:c};
+  },
+  ambStop(){
+    if(!this._amb)return;const a=this._amb;this._amb=null;
+    try{clearInterval(a.pulse);}catch(e){}
+    try{const t=a.ctx.currentTime;a.master.gain.cancelScheduledValues(t);a.master.gain.setValueAtTime(a.master.gain.value||0.12,t);a.master.gain.linearRampToValueAtTime(0,t+0.5);}catch(e){}
+    try{setTimeout(()=>{a.osc.forEach(o=>{try{o.stop();}catch(e){}});try{a.master.disconnect();}catch(e){}},600);}catch(e){a.osc.forEach(o=>{try{o.stop();}catch(e){}});}
+  }
 };
-function toggleMute(){state.muted=!state.muted;const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
+function toggleMute(){state.muted=!state.muted;if(state.muted){try{SFX.ambStop();}catch(e){}}const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
 
 // ── CONFETTI ──────────────────────────────────────────────────────────────────
 function fireConfetti(){
@@ -989,31 +1020,47 @@ function setOv(html){document.getElementById('ov-inner').innerHTML=html;}
 function showOv(){document.getElementById('ov').style.display='flex';}
 function hideOv(){document.getElementById('ov').style.display='none';drawSkip=false;}
 
-async function runDraw(){
-  const valid=state.names.slice(0,state.pc).map(n=>n.trim()).filter(Boolean);
-  if(valid.length<2){showToast('Need at least 2 players','error');return;}
-  if(!adminSess){_si();return;} // always require Firebase Auth sign-in
-  const go=async vn=>{
-    const n=vn.length;
-    const parts=distributeTeams(vn);
-    // Clear previous results + close registration
-    state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};
-    if(state.signupOpen){state.signupOpen=false;await fbSave('wc2026/signupOpen',false);}
-    await fbDel('wc2026/gr');await fbDel('wc2026/ko');
-    // Write the draw WITH a ceremony timestamp — every browser on the page
-    // detects this and plays the SAME reveal live (see maybePlayCeremony).
-    const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:n,ceremonyAt:Date.now()};
-    await fbSave('wc2026/draw',data);
-    if(!DB){ // local mode has no live listener — play it directly here
-      state.draw=data;try{localStorage.setItem('wc26cer',String(data.ceremonyAt));}catch{}
-      await playCeremony(parts,n);
-    }
-    // Firebase mode: the realtime listener fires for everyone (admin included)
-    // and triggers the ceremony, so the draw plays live on all open browsers.
-  };
-  if(valid.length!==state.pc){showMod('Empty slots',`${state.pc} slots, ${valid.length} named. Continue with ${valid.length}?`,'CONTINUE',()=>go(valid));}
-  else go(valid);
+async function doDraw(vn){
+  const n=vn.length;
+  const parts=distributeTeams(vn);
+  // Clear previous results + close registration
+  state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};
+  if(state.signupOpen){state.signupOpen=false;await fbSave('wc2026/signupOpen',false);}
+  await fbDel('wc2026/gr');await fbDel('wc2026/ko');
+  // Write the draw WITH a ceremony timestamp — every browser on the page
+  // detects this and plays the SAME reveal live (see maybePlayCeremony).
+  const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:n,ceremonyAt:Date.now()};
+  await fbSave('wc2026/draw',data);
+  if(!DB){ // local mode has no live listener — play it directly here
+    state.draw=data;try{localStorage.setItem('wc26cer',String(data.ceremonyAt));}catch{}
+    await playCeremony(parts,n);
+  }
+  // Firebase mode: the realtime listener fires for everyone (admin included)
+  // and triggers the ceremony, so the draw plays live on all open browsers.
 }
+// Pool comes from self-sign-ups automatically if any exist; otherwise the manual list.
+function drawPool(){
+  const signN=signupNames();
+  return signN.length?{names:signN,fromSignups:true}:{names:state.names.slice(0,state.pc).map(n=>n.trim()).filter(Boolean),fromSignups:false};
+}
+async function runDraw(){
+  if(!adminSess){_si();return;} // always require Firebase Auth sign-in
+  const {names:valid,fromSignups}=drawPool();
+  if(valid.length<2){showToast('Need at least 2 players','error');return;}
+  if(!fromSignups&&valid.length!==state.pc){showMod('Empty slots',`${state.pc} slots, ${valid.length} named. Continue with ${valid.length}?`,'CONTINUE',()=>doDraw(valid));}
+  else doDraw(valid);
+}
+// Auto-draw: if enabled and the scheduled time has passed, run it once (admin browser only).
+let _autoDrawFired=false;
+function checkAutoDraw(){
+  if(_autoDrawFired||!state.autoDraw||!state.drawTime||state.draw||!adminSess)return;
+  const t=Date.parse(state.drawTime);if(isNaN(t)||Date.now()<t)return;
+  const {names:pool}=drawPool();if(pool.length<2)return;
+  _autoDrawFired=true;
+  showToast('⏰ The scheduled time has arrived — running the draw now!','gold');
+  doDraw(pool);
+}
+function protectedRunDraw_legacy(){}
 
 // Plays the draw reveal animation from a GIVEN set of participants (so the exact
 // same ceremony can run on every viewer's browser, driven by the synced result).
@@ -1022,7 +1069,10 @@ async function playCeremony(parts,n){
   if(_cerPlaying)return;
   _cerPlaying=true;
   drawSkip=false;
+  try{SFX.ambStart();}catch(e){}
   const base=Math.floor(48/n),rem=48%n,shared=n>48;
+  // Reveals scale with player count so big sweepstakes don't drag (still skippable)
+  const namePause=n>60?320:n>24?560:1200, teamPause=n>60?240:n>24?420:850, fast=n>24;
   // Phase 1 – Shuffle
   showOv();drawCycleInterval=setInterval(()=>{
     const t=ALL_TEAMS[Math.floor(Date.now()/70)%ALL_TEAMS.length];
@@ -1031,25 +1081,41 @@ async function playCeremony(parts,n){
   try{SFX.drumroll();}catch{}
   await skipableDelay(2300);
   clearInterval(drawCycleInterval);
-  // Phase 2 – Sequential reveals
-  if(!drawSkip){
+  // Phase 2 – Sequential reveals.  By TEAM when there are more players than
+  // teams (or the organiser opts in) — caps the reveal at 48 steps however many sign up.
+  const revealByTeam=state.drawByTeam||n>48;
+  if(!drawSkip&&revealByTeam){
+    const ownersByTeam={};
+    parts.forEach(p=>p.teams.forEach(t=>{(ownersByTeam[t.name]=ownersByTeam[t.name]||[]).push(p.name);}));
+    const tp2=n>120?600:780;
+    for(const[idx,team] of ALL_TEAMS.entries()){
+      if(drawSkip)break;
+      const own=ownersByTeam[team.name]||[];
+      setOv(`<div class="ov-phase-team"><div class="ov-counter">TEAM ${idx+1} OF 48</div><div class="ov-team-card"><div class="ov-flag-big">${team.flag}</div><div class="ov-cname">${team.name}</div><div class="ov-cgroup">GROUP ${team.group}</div></div><div style="margin-top:13px;font-family:'Oswald',sans-serif;font-size:.62rem;letter-spacing:.14em;color:rgba(255,255,255,.55)">${own.length?'GOES TO':''}</div><div style="margin-top:5px;font-family:'Oswald',sans-serif;font-size:${own.length>3?'.94rem':'1.12rem'};font-weight:600;color:#fff;line-height:1.5;max-width:440px;text-align:center">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.55;font-weight:400">No owner</span>'}</div></div>`);
+      try{SFX.ding();}catch{}
+      await skipableDelay(tp2);
+    }
+  } else if(!drawSkip){
     for(const[idx,p] of parts.entries()){
       if(drawSkip)break;
       setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${p.name.toUpperCase()}</div><div class="ov-sub">IS UP…</div></div>`);
       try{SFX.ding();}catch{}
-      await skipableDelay(1200);
+      await skipableDelay(namePause);
       for(const[ti,team] of p.teams.entries()){
         if(drawSkip)break;
         setOv(`<div class="ov-phase-team"><div class="ov-for">For: ${p.name}</div><div class="ov-team-card"><div class="ov-flag-big">${team.flag}</div><div class="ov-cname">${team.name}</div><div class="ov-cgroup">GROUP ${team.group}</div><div class="ov-tctr">Team ${ti+1} of ${p.teams.length}</div></div></div>`);
         try{SFX.ding();}catch{}
-        await skipableDelay(850);
+        await skipableDelay(teamPause);
       }
       if(drawSkip)break;
-      setOv(`<div class="ov-phase-summary"><div class="ov-sname">✓ ${p.name}</div><div class="ov-summary-grid">${p.teams.map(t=>`<div class="ov-summary-team"><span style="font-size:1.2rem">${t.flag}</span>${t.name}</div>`).join('')}</div></div>`);
-      await skipableDelay(1000);
+      if(!fast){
+        setOv(`<div class="ov-phase-summary"><div class="ov-sname">✓ ${p.name}</div><div class="ov-summary-grid">${p.teams.map(t=>`<div class="ov-summary-team"><span style="font-size:1.2rem">${t.flag}</span>${t.name}</div>`).join('')}</div></div>`);
+        await skipableDelay(1000);
+      }
     }
   }
   // Phase 3 – Complete
+  try{SFX.ambStop();}catch(e){}
   setOv(`<div class="ov-phase-complete"><div style="font-size:2.8rem;margin-bottom:8px">🏆</div><div class="ov-done">DRAW COMPLETE!</div><div class="ov-done-sub" style="margin-top:6px">${n} PLAYERS · ${shared?'1 TEAM EACH (some shared)':base+(rem?'–'+(base+1):'')+' TEAMS EACH'}</div></div>`);
   try{SFX.fanfare();}catch{}
   fireConfetti();
@@ -1059,6 +1125,12 @@ async function playCeremony(parts,n){
   state.tab='draw';render();
 }
 
+// Replays the EXACT same draw reveal (no re-draw — teams are unchanged).
+function replayCeremony(){
+  if(!state.draw||!state.draw.participants||!state.draw.participants.length){showToast('No draw to replay yet','error');return;}
+  if(_cerPlaying)return;
+  playCeremony(state.draw.participants,state.draw.participantCount||state.draw.participants.length);
+}
 // Called from the realtime listener: if a fresh draw just arrived, play the
 // reveal live on this browser (once). Old draws / refreshes are skipped.
 function maybePlayCeremony(){
@@ -1489,7 +1561,7 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,drawTime:state.drawTime||'',muted:state.muted};}
+function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',muted:state.muted};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 // ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
@@ -1503,6 +1575,7 @@ function renderWelcome(){
     <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June – 19 July<br>Sign up and you'll be randomly drawn one or more of the 48 teams. Earn points as your teams win — climb the table for glory. Free to enter.</p>
     ${countdownHTML()}
     ${open?`
+      ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back here to see which teams you've been given — then watch your points climb.</div></div>`:'';})()}
       <div class="card" style="padding:20px 18px;margin-bottom:18px;text-align:left;border:1px solid var(--pill-grbr);box-shadow:var(--shadow-lg)">
         <div style="font-family:'Oswald',sans-serif;font-size:.86rem;color:var(--gr);letter-spacing:.05em;margin-bottom:4px;text-align:center">✍️ SIGN UP TO PLAY</div>
         <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:16px">Enter your <b>full name</b> so the organiser can identify you.</p>
@@ -1510,7 +1583,7 @@ function renderWelcome(){
         ${state.predict.on?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🔮 BONUS: who will WIN the World Cup?</div><select id="signup-pred" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">No prediction</option>${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${t.name}">${t.flag} ${t.name}</option>`).join('')}</select><div style="font-size:.68rem;color:var(--txm);margin-top:4px">Nail it and you get +${state.predict.bonus} bonus points. Locked once you join.</div></div>`:''}
         <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:13px;font-size:.86rem">JOIN THE SWEEPSTAKE</button>
       </div>
-      ${names.length?`<div style="text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--txm);letter-spacing:.1em;margin-bottom:8px;text-align:center">${names.length} SIGNED UP SO FAR</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">${names.map(n=>`<span style="padding:5px 12px;background:var(--card);border:1px solid var(--b);border-radius:16px;font-size:.8rem;color:var(--tx);box-shadow:var(--shadow)">${n}</span>`).join('')}</div></div>`:''}
+      ${names.length?`<div style="text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--txm);letter-spacing:.1em;margin-bottom:8px;text-align:center">${names.length} SIGNED UP SO FAR</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:170px;overflow-y:auto;padding:2px">${names.map(n=>`<span style="padding:5px 12px;background:var(--card);border:1px solid var(--b);border-radius:16px;font-size:.8rem;color:var(--tx);box-shadow:var(--shadow)">${esc(n)}</span>`).join('')}</div></div>`:''}
     `:`
       <div class="card" style="padding:26px 18px;margin-bottom:18px;box-shadow:var(--shadow-lg)">
         <div style="font-size:2rem;margin-bottom:8px">⏳</div>
@@ -1542,7 +1615,8 @@ async function submitSignup(){
     const rec={name,at:Date.now()};if(prediction)rec.prediction=prediction;
     if(DB){await DB.ref('wc2026/signups/'+key).set(rec);}
     else{if(!state.signups)state.signups={};state.signups[key]=rec;}
-    showToast('You\'re in! 🎉','gold');
+    try{localStorage.setItem('wc26me',name);}catch(e){}
+    showToast("You're in, "+name.split(' ')[0]+"! 🎉",'gold');
     render();
   }catch(e){showToast('Sign-up failed, try again','error');}
 }
@@ -1551,8 +1625,8 @@ function importSignups(){
   if(!adminSess)return;
   const names=signupNames();
   if(!names.length){showToast('No sign-ups yet','error');return;}
-  state.pc=Math.max(2,Math.min(96,names.length));
-  state.names=[...names,...Array(96).fill('')].slice(0,96);
+  state.pc=Math.max(2,Math.min(MAX_PLAYERS,names.length));
+  state.names=[...names,...Array(MAX_PLAYERS).fill('')].slice(0,MAX_PLAYERS);
   saveSetup();render();
   showToast(`${names.length} players set from sign-ups`,'gold');
 }
@@ -1629,13 +1703,13 @@ function addSignupManual(){
 async function testFeed(){
   const sEl=document.getElementById('feed-status');
   const rEl=document.getElementById('feed-result');
-  if(!CONFIG.footballApiKey||CONFIG.footballApiKey==='PASTE_FOOTBALL_API_KEY'){
+  if(!apiKey()||apiKey()==='PASTE_FOOTBALL_API_KEY'){
     if(rEl)rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ No API key set. Add your football-data.org key to enable auto-results.</div>';
     return;
   }
   if(rEl)rEl.innerHTML='<div style="margin-top:10px;font-size:.78rem;color:var(--txm)">⏳ Testing connection…</div>';
   try{
-    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':CONFIG.footballApiKey}});
+    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':apiKey()}});
     if(res.status===403||res.status===401){
       rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ API key rejected (HTTP '+res.status+'). Check the key is correct and your email is verified.</div>';
       return;
@@ -1700,28 +1774,30 @@ function renderSetup(){
         <span style="font-size:.78rem;color:${signupCount?'var(--gr)':'var(--txm)'};font-weight:600">${signupCount} signed up</span>
         <button class="btn-sm" onclick="addSignupManual()">+ ADD PLAYER</button>
       </div>
-      ${signupCount?`<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">${signupEntries().map(([key,s])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px 6px 11px;background:var(--cardh);border-radius:7px">
-        <span style="flex:1;font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.name}</span>
+      ${signupCount?(()=>{const q=(state.signupQ||'').toLowerCase();const all=signupEntries();const shown=q?all.filter(([_,s])=>(s.name||'').toLowerCase().includes(q)):all;return `${signupCount>12?`<input type="text" value="${esc(state.signupQ||'')}" oninput="state.signupQ=this.value;render()" placeholder="Filter ${signupCount} names…" style="width:100%;padding:7px 10px;margin-bottom:8px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.8rem"/>`:''}<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;max-height:300px;overflow-y:auto">${shown.length?shown.map(([key,s])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px 6px 11px;background:var(--cardh);border-radius:7px">
+        <span style="flex:1;font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${s.prediction?` <span style="font-size:.62rem;color:var(--txm)">🔮 ${esc(s.prediction)}</span>`:''}</span>
         <button class="btn-sm" style="padding:2px 7px" onclick="editSignup('${key}')" title="Edit name">✎</button>
         <button class="btn-sm" style="padding:2px 8px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeSignup('${key}')" title="Remove">✕</button>
-      </div>`).join('')}</div>
-      <div style="display:flex;gap:6px"><button class="btn btn-green" style="flex:1;font-size:.72rem;padding:7px" onclick="importSignups()">USE THESE ${signupCount} AS PLAYERS →</button><button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="clearSignups()">CLEAR ALL</button></div>
-      <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">Tip: the sign-up list is your single source of players. "Use these as players" sets the draw list to exactly these names.</div>`:'<div style="font-size:.72rem;color:var(--txm)">No sign-ups yet. Open registration and share the link, or add players manually with + Add Player.</div>'}
+      </div>`).join(''):`<div style="font-size:.74rem;color:var(--txm);padding:6px">No names match "${esc(state.signupQ||'')}"</div>`}</div>
+      <div style="display:flex;gap:6px"><button class="btn-sm" style="flex:1" onclick="clearSignups()">CLEAR ALL SIGN-UPS</button></div>
+      <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">These sign-ups are <b>automatically</b> your draw pool — just run the draw. Spot a joke name? Remove it with ✕.</div>`;})():'<div style="font-size:.72rem;color:var(--txm)">No sign-ups yet. Open registration and share the link, or add players manually with + Add Player.</div>'}
     </div>
   </div>`:''}
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">🔒 VIEWER ACCESS CODE</div><div style="font-size:.7rem;color:${_accessHash?'var(--gr)':'var(--txm)'};margin-top:2px">${_accessHash?'Code set — only people with it can view':'No code — anyone with the link can view'}</div></div>
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">🔒 VIEWER ACCESS CODE</div><div style="font-size:.7rem;color:${_accessHash?'var(--gr)':'var(--txm)'};margin-top:2px">${_accessHash?(state.gateSignupOnly?'Code set — needed to view while sign-up is open':'Code set — needed to view at all times'):'No code — anyone with the link can view'}</div></div>
       <button class="btn btn-ghost" style="font-size:.7rem;flex-shrink:0" onclick="setAccessCode()">${_accessHash?'CHANGE':'SET CODE'}</button>
     </div>
-    ${_accessHash?`<button class="btn-sm" style="margin-top:9px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeAccessCode()">REMOVE CODE</button>`:''}
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:11px;cursor:pointer"><input type="checkbox" ${state.gateSignupOnly?'checked':''} onchange="state.gateSignupOnly=this.checked;saveSetup();checkGate();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Only require the code while sign-up is open — it lifts automatically once you close sign-up${_accessHash&&state.gateSignupOnly&&!state.signupOpen?' <b style="color:var(--gr)">(lifted now)</b>':''}, so everyone can watch the draw &amp; standings.</span></label>
+    ${_accessHash?`<button class="btn-sm" style="margin-top:10px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeAccessCode()">REMOVE CODE</button>`:''}
   </div>
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">${CONFIG.footballApiKey&&CONFIG.footballApiKey!=='PASTE_FOOTBALL_API_KEY'?'API key configured · tap Test to check':'⚠ No API key — results must be entered manually'}</div></div>
-      <button class="btn btn-ghost" style="font-size:.7rem;flex-shrink:0" onclick="testFeed()">TEST FEED</button>
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">${apiKey()&&apiKey()!=='PASTE_FOOTBALL_API_KEY'?(state.footballApiKey?'Custom key set · tap Test to check':'Built-in key · tap Test to check'):'⚠ No API key — enter results manually'}</div></div>
+      <div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="setApiKey()">${state.footballApiKey?'CHANGE KEY':'SET KEY'}</button><button class="btn btn-ghost" style="font-size:.7rem" onclick="testFeed()">TEST</button></div>
     </div>
     <div id="feed-result" style="margin-top:0"></div>
+    <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">If the feed fails it just retries quietly every few minutes — and you can always enter or edit any score by hand on the Fixtures &amp; Knockout tabs. Manual entries are never overwritten.</div>
   </div>
   ${(()=>{
     const filled=names.slice(0,pc).map(n=>(n||'').trim());
@@ -1731,6 +1807,7 @@ function renderSetup(){
     const lower=filled.map(n=>n.toLowerCase());
     const dupes=new Set(lower.filter((n,i)=>n&&lower.indexOf(n)!==i));
     return`<div class="card" style="padding:13px 14px;margin-bottom:11px">
+    ${Object.values(state.signups||{}).filter(s=>s&&s.name).length?`<div style="padding:7px 10px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:7px;font-size:.71rem;color:var(--gr);margin-bottom:10px;line-height:1.45">✍️ You have sign-ups — <b>the draw will use those</b>. This manual list is only used if there are no sign-ups.</div>`:''}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">👥 PLAYERS <span style="color:var(--txm);font-weight:400">· ${namedCount} named${emptyCount?` · ${emptyCount} empty`:''}</span></div>
       <span style="font-size:.7rem;color:${pc>48?'var(--amber)':eq?'var(--gr)':'var(--txd)'}">${distributionLabel(pc)}</span>
@@ -1749,7 +1826,7 @@ function renderSetup(){
     </div>
   </div>`;})()}
   <!-- Prize + Scoring collapsibles -->
-  ${['charity','scoring','ticker'].map(key=>{
+  ${['charity','scoring','predict','ticker'].map(key=>{
     const open=state.sOpen[key];
     const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:(state.paid?Object.values(state.paid).filter(Boolean).length:0);
     const collected=paidCount*state.prize.buyin;
@@ -1767,11 +1844,13 @@ function renderSetup(){
         </div>
       `:'<div style="font-size:.74rem;color:var(--txm);margin-top:6px">Turn on to show a charity total and free-entry messaging.</div>'}`
     :key==='scoring'?
-    `<div style="padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid var(--b)"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd)">🔮 PREDICT THE CHAMPION</span></label>${state.predict.on?`<div style="margin-top:7px;display:flex;align-items:center;gap:7px"><span style="font-size:.76rem;color:var(--txd)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:56px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.83rem;text-align:center"/><span style="font-size:.7rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:5px">Adds a "who'll win the World Cup?" pick to the sign-up form. Award the bonus to anyone who nailed it.</div>`:''}</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:9px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
+    `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like — the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
     <button class="btn-sm" style="margin-top:9px" onclick="state.scoring={...DEF_SCR};saveSetup();render()">RESET TO DEFAULT</button>`
+    :key==='predict'?
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points — and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick — the dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
     :
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion &amp; wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet — the automatic ones still show.</div>`}`:''}`;
-    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='ticker'?'📢 TICKER & MESSAGES':'';
+    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='predict'?'🔮 PREDICT THE CHAMPION':key==='ticker'?'📢 TICKER & MESSAGES':'';
     return`<div class="card" style="margin-bottom:10px;overflow:hidden"><button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen['${key}']=!state.sOpen['${key}'];render()"><span>${title}</span><span style="color:var(--txm)">${open?'▲':'▼'}</span></button>${open?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">${inner}</div>`:''}</div>`;
   }).join('')}
   <!-- Manual Assignment -->
@@ -1793,17 +1872,16 @@ function renderSetup(){
     </div>`:''}
   </div>
   ${!state.draw?(()=>{
-    const filled=names.slice(0,pc).map(n=>(n||'').trim());
-    const named=filled.filter(Boolean).length;
-    const empty=pc-named;
-    const lower=filled.filter(Boolean).map(n=>n.toLowerCase());
+    const _pool=drawPool();const poolN=_pool.names;const usingSignups=_pool.fromSignups;
+    const empty=usingSignups?0:(pc-poolN.length);
+    const lower=poolN.map(n=>n.toLowerCase());
     const hasDupes=lower.some((n,i)=>lower.indexOf(n)!==i);
-    const ready=empty===0&&!hasDupes&&pc>=2;
+    const ready=poolN.length>=2&&!hasDupes&&empty===0;
     const row=(ok,txt,warn)=>`<div style="display:flex;align-items:center;gap:8px;font-size:.78rem;padding:3px 0"><span style="color:${ok?'var(--gr)':'var(--amber)'};font-weight:700">${ok?'✓':'⚠'}</span><span style="color:${ok?'var(--txd)':'var(--amber)'}">${ok?txt:warn}</span></div>`;
     return`<div class="card" style="padding:13px 14px;margin-bottom:11px;border-color:${ready?'rgba(0,128,42,.3)':'var(--b)'}">
       <div style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.08em;color:var(--txd);margin-bottom:8px">DRAW READINESS</div>
-      ${row(pc>=2,`${pc} players`,'Need at least 2 players')}
-      ${row(empty===0,'All players named',`${empty} empty slot${empty>1?'s':''} — fill or remove them`)}
+      ${row(poolN.length>=2,`${poolN.length} player${poolN.length===1?'':'s'}${usingSignups?' · from sign-ups':''}`,'Need at least 2 players')}
+      ${usingSignups?'':row(empty===0,'All players named',`${empty} empty slot${empty>1?'s':''} — fill or remove them`)}
       ${row(!hasDupes,'No duplicate names','Duplicate names found — fix above')}
       ${row(true, state.charity.on?`Free entry${state.charity.name?' · for '+state.charity.name:' · for charity'}`:'Glory only','')}
       <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--b);font-size:.74rem;color:${ready?'var(--gr)':'var(--amber)'};font-weight:600">${ready?'✓ Ready to draw':'Resolve the warnings above before drawing'}</div>
@@ -1811,6 +1889,11 @@ function renderSetup(){
         <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:5px">⏳ DRAW COUNTDOWN <span style="font-weight:400;letter-spacing:0">· optional</span></div>
         <div style="font-size:.72rem;color:var(--txm);margin-bottom:7px">Set when the draw will happen — everyone sees a live countdown to it.</div>
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><input type="datetime-local" value="${state.drawTime||''}" onchange="state.drawTime=this.value;saveSetup();render()" style="padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.8rem"/>${state.drawTime?`<button class="btn-sm" onclick="state.drawTime='';saveSetup();render()">Clear</button>`:''}</div>
+        ${state.drawTime?`<label style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;cursor:pointer"><input type="checkbox" ${state.autoDraw?'checked':''} onchange="state.autoDraw=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">⚡ Run the draw <b>automatically</b> at this time — no tap needed. Just keep this admin tab open near then (phone is fine). The draw is always random.</span></label>`:''}
+      </div>
+      <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--b)">
+        <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">🎬 DRAW REVEAL STYLE</div>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" ${state.drawByTeam?'checked':''} onchange="state.drawByTeam=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Reveal <b>team-by-team</b> (each team, then who got it) instead of player-by-player. Much quicker for big sign-ups — and used automatically whenever there are more players than teams.</span></label>
       </div>
     </div>`;
   })():''}
@@ -1823,20 +1906,22 @@ function renderSetup(){
 
 function rulesHTML(){
   const S=state.scoring;
-  const row=(label,val)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b);border-bottom-width:.5px"><span style="font-size:.83rem;color:var(--tx)">${label}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem;color:var(--gr);flex-shrink:0;margin-left:12px">+${val}</span></div>`;
-  const grp=[['group_win','Win a group match'],['group_draw','Draw a group match'],['qualify_top2','Team finishes top 2 (qualifies)'],['qualify_3rd','Qualifies as a best 3rd place']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
-  const ko=[['win_r32','Win a Round-of-32 match'],['win_r16','Win a Round-of-16 match'],['win_qf','Win a quarter-final'],['win_sf','Win a semi-final'],['win_final','Win the Final (champions)']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
+  const pill=v=>`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:#fff;background:linear-gradient(135deg,#00c853,#00a838);border-radius:20px;padding:3px 11px;flex-shrink:0;margin-left:10px;min-width:30px;text-align:center;box-shadow:0 1px 4px rgba(0,128,42,.3)">+${v}</span>`;
+  const row=(label,val,last)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${last?'':'border-bottom:.5px solid var(--b)'}"><span style="font-size:.82rem;color:var(--tx)">${label}</span>${pill(val)}</div>`;
+  const grp=[['group_win','Win a group match'],['group_draw','Draw a group match'],['qualify_top2','Finish top 2 (qualify)'],['qualify_3rd','Qualify as a best 3rd']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
+  const ko=[['win_r32','Win a Round of 32 tie'],['win_r16','Win a Round of 16 tie'],['win_qf','Win a quarter-final'],['win_sf','Win a semi-final'],['win_final','Win the Final 🏆']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
   const teamsEach=state.draw?Math.floor(48/Math.max(1,state.draw.participantCount)):0;
-  return `<div class="card" style="padding:17px 16px">
-    <div style="font-family:'Oswald',sans-serif;font-size:1.15rem;font-weight:700;color:var(--tx);letter-spacing:.01em;margin-bottom:4px">How it works</div>
-    <p style="font-size:.82rem;color:var(--txm);line-height:1.55;margin-bottom:16px">You're randomly drawn ${teamsEach>1?`<b style="color:var(--tx)">${teamsEach} of the 48 teams</b>`:'one or more of the 48 teams'} — pure luck. They earn you points as they win, added up <b style="color:var(--tx)">automatically</b>. Most points at the end wins.</p>
-    <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:2px">GROUP STAGE</div>
-    ${grp.map(([k,l])=>row(l,S[k])).join('')}
-    <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin:16px 0 2px">KNOCKOUTS · win the match</div>
-    ${ko.map(([k,l])=>row(l,S[k])).join('')}
-    ${S.goal_bonus>0?`<div style="margin-top:12px;font-size:.8rem;color:var(--txm)">Plus <b style="color:var(--gr)">+${S.goal_bonus}</b> for every goal your teams score.</div>`:''}
-    <div style="margin-top:16px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by most knockout wins, then total goals your teams scored.`:`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends wins — for the glory (and a winner's certificate). Level on points? It's settled by most knockout wins, then total goals your teams scored — so there's always a clear winner.`}</div>
+  const panel=(title,emoji,rows)=>`<div style="background:var(--cardh);border:1px solid var(--b);border-radius:11px;padding:11px 14px"><div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:4px">${emoji} ${title}</div>${rows.map(([k,l],i)=>row(l,S[k],i===rows.length-1)).join('')}</div>`;
+  return `<div class="card" style="padding:18px 17px">
+    <div style="font-family:'Oswald',sans-serif;font-size:1.18rem;font-weight:700;color:var(--tx);letter-spacing:.01em;margin-bottom:4px">How it works</div>
+    <p style="font-size:.82rem;color:var(--txm);line-height:1.55;margin-bottom:15px">You're randomly drawn ${teamsEach>1?`<b style="color:var(--tx)">${teamsEach} of the 48 teams</b>`:'one or more of the 48 teams'} — pure luck. They earn you points as they win, totalled up <b style="color:var(--tx)">automatically</b>. Most points at the end wins.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:10px">
+      ${panel('GROUP STAGE','⚽',grp)}
+      ${panel('KNOCKOUTS · win the tie','🥊',ko)}
+    </div>
+    ${S.goal_bonus>0?`<div style="margin-top:11px;font-size:.8rem;color:var(--txm)">Plus <b style="color:var(--gr)">+${S.goal_bonus}</b> for every goal your teams score.</div>`:''}
+    <div style="margin-top:14px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends wins — for the glory (and a winner's certificate). Level on points? It's settled by the champion prediction, then most knockout wins, then goals — so there's always a clear winner.`}</div>
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional £${state.charity.suggested||10} donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — entirely up to you, and it has no effect on the draw or who wins.</div>
@@ -1922,16 +2007,22 @@ function renderDraw(){
     return renderWelcome();
   }
   const lb=calcLeaderboard();const{qual}=computeQual();
+  const anyPlayed=Object.values(state.grR).some(r=>r&&r.played)||Object.values(state.koR).some(m=>m&&m.played);
   return`${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">The Draw${state.draw?.manual?' <span style="font-size:.7rem;color:var(--txm);font-weight:400">(Manual)</span>':''}</h2>
     <div style="font-size:.7rem;color:var(--txm)">${new Date(state.draw.drawnAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">
+      ${!anyPlayed?`<button class="btn btn-ghost" onclick="replayCeremony()" style="font-size:.7rem" title="Replay the draw reveal — teams stay the same">🎬 REPLAY</button>`:''}
       <button class="btn btn-ghost" onclick="copyDraw()" style="font-size:.7rem">📋 COPY</button>
       <button class="btn btn-ghost" onclick="shareURL()" style="font-size:.7rem">🔗 SHARE</button>
       ${isAdmin()?`<button class="btn btn-ghost" onclick="exportDraw()" style="font-size:.7rem">💾 BACKUP</button><button class="btn btn-ghost" onclick="setTab('setup')" style="font-size:.7rem">✏ EDIT</button>`:''}
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px">
+  <div style="display:flex;gap:6px;margin-bottom:13px">
+    <button onclick="state.drawView='player';render()" style="flex:1;padding:7px;border-radius:8px;border:1px solid ${state.drawView!=='team'?'var(--gr)':'var(--b)'};background:${state.drawView!=='team'?'var(--pill-gr)':'transparent'};color:${state.drawView!=='team'?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer">👤 BY PLAYER</button>
+    <button onclick="state.drawView='team';render()" style="flex:1;padding:7px;border-radius:8px;border:1px solid ${state.drawView==='team'?'var(--gr)':'var(--b)'};background:${state.drawView==='team'?'var(--pill-gr)':'transparent'};color:${state.drawView==='team'?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer">⚽ BY TEAM</button>
+  </div>
+  ${state.drawView==='team'?drawByTeamHTML():`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:11px">
   ${lb.map((p,idx)=>{
     const isF=idx===0&&p.total>0;
     return`<div class="dc${isF?' gold':''}" style="animation-delay:${idx*.04}s">
@@ -1947,9 +2038,27 @@ function renderDraw(){
         ${qBadge(q)}
       </div>`;}).join('')}
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div>`}`;
 }
 
+function drawByTeamHTML(){
+  const owners={};
+  (state.draw.participants||[]).forEach(p=>p.teams.forEach(t=>{(owners[t.name]=owners[t.name]||[]).push(p.name);}));
+  return Object.entries(GD).map(([g,ts])=>`
+    <div style="margin-bottom:15px">
+      <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:7px">GROUP ${g}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px">
+      ${ts.map(t=>{const own=owners[t.n]||[];return `<div class="card" style="padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:8px;${own.length?'margin-bottom:7px':''}">
+          <span style="font-size:1.15rem">${t.f}</span>
+          <span style="font-family:'Oswald',sans-serif;font-size:.88rem;font-weight:600;color:var(--tx);flex:1">${t.n}</span>
+          <span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif">${own.length} owner${own.length===1?'':'s'}</span>
+        </div>
+        ${own.length?`<div style="display:flex;flex-wrap:wrap;gap:4px">${own.map(n=>`<span style="font-size:.74rem;background:var(--cardh);border:1px solid var(--b);border-radius:12px;padding:2px 10px;color:var(--tx)">${esc(n)}</span>`).join('')}</div>`:'<div style="font-size:.72rem;color:var(--txm)">No owner</div>'}
+      </div>`;}).join('')}
+      </div>
+    </div>`).join('');
+}
 function renderFixtures(){
   const vis=Object.entries(GF).filter(([_,f])=>(state.fG==='ALL'||f.group===state.fG)&&(state.fMD==='ALL'||String(f.matchday)===state.fMD));
   const played=vis.filter(([id])=>state.grR[id]?.played).length;
@@ -2099,7 +2208,7 @@ function renderStandings(){
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
-  return`${tickerBarHTML()}${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+  return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div></div>`:''}
   </div>
@@ -2157,11 +2266,11 @@ function renderStandings(){
 
 // ── MAIN RENDER ───────────────────────────────────────────────────────────────
 function setTab(t){state.tab=t;render();}
-function setPC(n){if(!adminSess)return;state.pc=Math.max(2,Math.min(96,n));saveSetup();render();}
+function setPC(n){if(!adminSess)return;state.pc=Math.max(2,Math.min(MAX_PLAYERS,n));saveSetup();render();}
 // ── PARTICIPANT MANAGEMENT ────────────────────────────────────────────────────
 function addParticipant(){
   if(!adminSess)return;
-  if(state.pc>=96){showToast('Maximum 96 players','error');return;}
+  if(state.pc>=MAX_PLAYERS){showToast('Maximum '+MAX_PLAYERS+' players','error');return;}
   state.pc++;
   saveSetup();render();
   // Focus the new (last) input
@@ -2219,7 +2328,7 @@ function cdTarget(){
 }
 function cdText(){const t=cdTarget();if(!t)return'';const ms=t.time-Date.now();if(ms<=0)return t.done||'';const d=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;let o='';if(d)o+=d+'d ';o+=String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';return o;}
 function countdownHTML(){const t=cdTarget();if(!t)return'';const txt=cdText();if(!txt)return'';return`<div class="cd-wrap" style="margin-bottom:14px;padding:12px 14px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:12px;text-align:center;box-shadow:var(--shadow)"><div style="font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.16em;color:var(--gr);text-transform:uppercase">${t.label}</div><div id="countdown" style="font-family:'Oswald',sans-serif;font-size:1.55rem;font-weight:700;color:var(--tx);letter-spacing:.02em;margin-top:3px">${txt}</div></div>`;}
-function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{const el=document.getElementById('countdown');if(!el)return;const txt=cdText();if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}},1000);}
+function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{try{checkAutoDraw();}catch(e){}const el=document.getElementById('countdown');if(!el)return;const txt=cdText();if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}},1000);}
 function esc(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function thermometerHTML(){
   if(!state.charity.on||!state.charity.goal||state.charity.goal<=0)return'';
@@ -2270,6 +2379,7 @@ function render(){
   if(lw){lw.innerHTML=isAdmin()?`<button class="hbtn" onclick="_so()" title="Sign out" style="font-size:.7rem;opacity:.75">🗝️</button>`:'';}
   updateResultsBanner();
   startCountdown();
+  checkGate();
 }
 
 // ── MISC ─────────────────────────────────────────────────────────────────────
@@ -2342,8 +2452,12 @@ else if(DB){
       if(data.cfg.podium)state.podium={...{on:false,prizes:['','','']},...data.cfg.podium};
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
+      state.gateSignupOnly=data.cfg.gateSignupOnly!==false;
+      state.footballApiKey=data.cfg.footballApiKey||'';
+      state.autoDraw=!!data.cfg.autoDraw;
+      state.drawByTeam=!!data.cfg.drawByTeam;
       state.drawTime=data.cfg.drawTime||'';
-      if(data.cfg.names)state.names=[...data.cfg.names,...Array(24).fill('')].slice(0,24);
+      if(data.cfg.names)state.names=[...data.cfg.names,...Array(MAX_PLAYERS).fill('')].slice(0,MAX_PLAYERS);
       if(data.cfg.pc)state.pc=data.cfg.pc;
       state.paid=data.paid||{};
       state.signups=data.signups||{};
