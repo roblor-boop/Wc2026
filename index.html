@@ -807,39 +807,69 @@ function shareStandings(){
 
 // ── TICKER ────────────────────────────────────────────────────────────────────
 // Builds the live mix of automatic fun facts + admin custom messages.
+const TK_CD='\uE000';  // placeholder swapped for a live-updating countdown span inside the ticker
+function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 function tickerItems(){
-  const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>'📢 '+String(m).trim());
+  const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
   const a=[];
   if(state.draw){
     const lb=calcLeaderboard();
-    const champ=(state.koR['m104']&&state.koR['m104'].played)?state.koR['m104'].winner:null;
+    const champ=(state.koR["m104"]&&state.koR["m104"].played)?state.koR["m104"].winner:null;
     const started=lb.some(p=>p.total>0);
-    // Live group scores (the exciting real-time bit)
-    liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push(`🔴 LIVE: ${(FLAGS[f.home]||'')} ${f.home} ${s.hg||0}–${s.ag||0} ${f.away} ${(FLAGS[f.away]||'')}`.replace(/ +/g,' ').trim());});
-    if(champ){a.push(`🏆 ${(FLAGS[champ]||'')} ${champ} are World Champions — ${lb[0].name} takes the crown!`.replace(/ +/g,' ').trim());}
-    else if(started){
-      a.push(`🥇 ${lb[0].name} leads with ${lb[0].total} pts`);
-      if(lb.length>1){const gap=lb[0].total-lb[1].total;if(gap===0)a.push(`🤝 ${lb[0].name} & ${lb[1].name} are level at the top!`);else if(gap<=5)a.push(`🔥 Only ${gap} pt${gap>1?'s':''} between 1st and 2nd!`);}
-      if(lb.length>3){const last=lb[lb.length-1];a.push(`🥄 ${last.name} is propping up the table on ${last.total}`);}
-    }
-    // Tournament stats
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
-    let goals=0;Object.values(state.grR).forEach(r=>{if(r&&r.played)goals+=(r.hg||0)+(r.ag||0);});Object.values(state.koR).forEach(m=>{if(m&&m.played)goals+=(m.hg||0)+(m.ag||0);});
+    let goals=0,bigWin=null;
+    const scan=(home,away,hg,ag)=>{goals+=(hg||0)+(ag||0);const mar=Math.abs((hg||0)-(ag||0));if(mar>=2&&(!bigWin||mar>bigWin.mar))bigWin=(hg>=ag)?{w:home,l:away,ws:hg,ls:ag,mar}:{w:away,l:home,ws:ag,ls:hg,mar};};
+    Object.entries(state.grR).forEach(([id,r])=>{if(r&&r.played){const f=GF[id];if(f)scan(f.home,f.away,r.hg,r.ag);}});
+    Object.values(state.koR).forEach(m=>{if(m&&m.played&&m.home&&m.away)scan(m.home,m.away,m.hg,m.ag);});
+    const seed=(gp+kp)*7+(lb[0]?Math.round(lb[0].total):0)*3+goals+lb.length;
+    const pick=arr=>arr[((seed%arr.length)+arr.length)%arr.length];
+    const me=getMyName(),myLc=(me||"").toLowerCase();
+    const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
+    // Live group scores (the exciting real-time bit)
+    liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}–${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
+    if(champ){
+      a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are WORLD CHAMPIONS — ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
+      if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?` · 🥉 ${lb[2].name} bronze`:""}`);
+      const callers=lb.filter(p=>p.pred&&p.pred.team===champ);
+      if(callers.length)a.push(`🔮 ${pick(["Called it!","Crystal-ball award —","Take a bow —"])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the off`);
+    } else if(started){
+      const L=lb[0],margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace — ${L.total} pts`]));
+      if(lb.length>1){
+        if(margin===0)a.push(`🤝 ${L.name} & ${lb[1].name} dead level at the top!`);
+        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top!`,`📸 Photo finish — ${lb[1].name} just ${margin} behind`]));
+        const within=lb.filter(p=>L.total-p.total<=5).length;
+        if(within>=3&&margin>0)a.push(`😮 ${within} players within 5 pts of top — anyone's race!`);
+      }
+      const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
+      if(form){const o=form.owners;a.push((`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts — ${o.length>2?o.length+" owners happy":"nice for "+o.join(" & ")}`).replace(/ +/g," ").trim());}
+      const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the FINAL"};
+      let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
+      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`💥 ${(FLAGS[w]||"")} ${w} into ${rn[latest]}${o.length?` — ${o.length>2?o.length+" owners buzzing":o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
+      if(bigWin&&bigWin.mar>=3)a.push((`😱 Biggest win so far — ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l}`).replace(/ +/g," ").trim());
+      if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} holding up the table on ${last.total} — only way is up!`,`🥄 Someone's gotta prop it up — ${last.name} on ${last.total} (still time!)`,`🐢 ${last.name} taking the scenic route, ${last.total} pts`]));}
+      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`]));}
+      if(me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
+        if(r===1)a.push(`👀 You're TOP, ${me}! 😎 Don't look back…`);
+        else if(r<=3)a.push(`🙌 You're ${ordinal(r)}, ${me} — ${gapTop} off the lead, medal in sight`);
+        else if(i===lb.length-1&&lb.length>3)a.push(`💪 You're last, ${me}… your comeback starts here`);
+        else a.push(`📈 You're ${ordinal(r)}, ${me} — ${gapTop} pts off top, all to play for`);}}
+    }
     if(gp+kp>0)a.push(`📊 ${gp+kp} matches played · ${goals} goals so far`);
-    // Prediction popularity
-    if(state.predict.on){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[1]} ${top[1]>1?'people are backing':'person is backing'} ${top[0]} to win it all`);}
-    if(!started&&!champ){const t=cdText();if(t)a.push('⏳ '+t);}
+    if(!started&&!champ)a.push(pick(["🎲 Teams drawn at random — pure luck, no skill (sorry)","👀 Who landed the holders? Check the draw tab","🍀 Good luck everyone — it's all in the draw now"]));
+    if(state.predict.on&&!champ){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[0]} is the office favourite to win it (${top[1]} backer${top[1]>1?"s":""})`);}
+    if(!started&&!champ&&cdText())a.push("⏳ "+TK_CD);
   } else {
-    const t=cdText();if(t)a.push('⏳ '+t);
-    const n=Object.keys(state.signups||{}).length;if(n)a.push(`✍️ ${n} ${n>1?'players':'player'} signed up so far`);
+    if(cdText())a.push("⏳ "+TK_CD);
+    const n=Object.keys(state.signups||{}).length;
+    if(n)a.push(`✍️ ${n} ${n>1?"players":"player"} signed up${n>1?" so far":""}`);
+    a.push(["🎲 Random draw — everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill required, just luck"][n%3]);
   }
-  // Charity (any time)
   if(state.charity.on){
-    if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
-    else a.push(`❤ Free to enter${state.charity.name?' · raising money for '+state.charity.name:''}`);
-    if(donateShow('ticker'))a.push(`❤ Tap the Donate button to chip in${state.charity.name?' for '+state.charity.name:''} — every bit helps!`);
+    if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
+    else a.push(`❤ Free to enter${state.charity.name?" · raising money for "+state.charity.name:""}`);
+    if(donateShow("ticker"))a.push(`❤ Tap Donate to chip in${state.charity.name?" for "+state.charity.name:""} — every bit helps!`);
   }
-  // Weave custom messages between the automatic ones
   const out=[];const mx=Math.max(a.length,custom.length);
   for(let i=0;i<mx;i++){if(i<a.length)out.push(a[i]);if(i<custom.length)out.push(custom[i]);}
   return out;
@@ -848,7 +878,7 @@ function tickerBarHTML(){
   if(!state.ticker||!state.ticker.on)return'';
   const items=tickerItems();if(!items.length)return'';
   const sep='<span style="color:var(--gr);margin:0 15px;opacity:.5">◆</span>';
-  const row=items.map(t=>`<span style="padding:0 2px">${esc(t)}</span>`).join(sep)+sep;
+  const row=items.map(t=>`<span style="padding:0 2px">${esc(t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`)}</span>`).join(sep)+sep;
   const dur=Math.max(22,Math.round(items.join(' ').length*0.22));
   return`<div class="ticker"><div class="ticker-track" style="--tk-dur:${dur}s">${row}${row}</div></div>`;
 }
@@ -956,6 +986,25 @@ function setMyName(name){
   if(getMyName()===name)localStorage.removeItem('wc26me'); // tapping again un-pins
   else localStorage.setItem('wc26me',name);
   render();
+}
+// Set/clear "who am I" on THIS device (works on any browser — no account needed). Stored locally.
+function chooseMe(name){try{if(name)localStorage.setItem('wc26me',name);else localStorage.removeItem('wc26me');}catch(e){}render();}
+// A prominent "pick your name" control so anyone following on any device can personalise their view.
+function mePickerHTML(showWhenSet){
+  const names=(state.draw?state.draw.participants.map(p=>p.name):signupNames()).slice().sort((a,b)=>a.localeCompare(b));
+  if(!names.length)return '';
+  const me=getMyName();
+  const isSet=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());
+  if(isSet){
+    if(!showWhenSet)return '';
+    return `<div class="card" style="padding:9px 13px;margin-bottom:12px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--pill-grbr);background:var(--pill-gr)">`
+      +`<span style="font-size:.78rem;color:var(--gr)">👤 Personalised for <b>${esc(me)}</b> — your row's highlighted and the shout-outs are yours</span>`
+      +`<button onclick="chooseMe('')" style="background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-size:.64rem;font-family:'Oswald',sans-serif;letter-spacing:.06em;padding:4px 11px;cursor:pointer">NOT ME</button></div>`;
+  }
+  const opts=['<option value="">— choose your name —</option>'].concat(names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`)).join('');
+  return `<div class="card" style="padding:11px 13px;margin-bottom:12px;border:1px dashed var(--b);text-align:left">`
+    +`<div style="font-size:.78rem;color:var(--tx);margin-bottom:7px">👤 Following along? Pick your name to personalise this device${state.draw?" — we'll highlight your row and cheer you on in the ticker":''}.</div>`
+    +`<select onchange="chooseMe(this.value)" style="width:100%;padding:9px 11px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.85rem;font-family:inherit;cursor:pointer">${opts}</select></div>`;
 }
 
 // ── LOGO INTERACTION ─────────────────────────────────────────────────────────
@@ -1614,6 +1663,7 @@ function renderWelcome(){
     <div style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;background:linear-gradient(135deg,var(--tx),var(--gr));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.01em;line-height:1.05;margin-bottom:10px">${CONFIG.title.toUpperCase()}</div>
     <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June – 19 July<br>Sign up and you'll be randomly drawn one or more of the 48 teams. Earn points as your teams win — climb the table for glory. Free to enter.</p>
     ${countdownHTML()}
+    ${mePickerHTML(false)}
     ${open?`
       ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back here to see which teams you've been given — then watch your points climb.</div></div>`:'';})()}
       <div class="card" style="padding:20px 18px;margin-bottom:18px;text-align:left;border:1px solid var(--pill-grbr);box-shadow:var(--shadow-lg)">
@@ -2256,7 +2306,7 @@ function renderStandings(){
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
-  return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+  return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}${mePickerHTML(true)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
@@ -2376,7 +2426,13 @@ function cdTarget(){
 }
 function cdText(){const t=cdTarget();if(!t)return'';const ms=t.time-Date.now();if(ms<=0)return t.done||'';const d=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;let o='';if(d)o+=d+'d ';o+=String(h).padStart(2,'0')+'h '+String(m).padStart(2,'0')+'m '+String(s).padStart(2,'0')+'s';return o;}
 function countdownHTML(){const t=cdTarget();if(!t)return'';const txt=cdText();if(!txt)return'';return`<div class="cd-wrap" style="margin-bottom:14px;padding:12px 14px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:12px;text-align:center;box-shadow:var(--shadow)"><div style="font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.16em;color:var(--gr);text-transform:uppercase">${t.label}</div><div id="countdown" style="font-family:'Oswald',sans-serif;font-size:1.55rem;font-weight:700;color:var(--tx);letter-spacing:.02em;margin-top:3px">${txt}</div></div>`;}
-function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{try{checkAutoDraw();}catch(e){}const el=document.getElementById('countdown');if(!el)return;const txt=cdText();if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}},1000);}
+function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{
+    try{checkAutoDraw();}catch(e){}
+    const txt=cdText();
+    if(txt){const ts=document.querySelectorAll('.tk-cd');if(ts.length)ts.forEach(el=>{el.textContent=txt;});}  // live ticker countdown
+    const el=document.getElementById('countdown');if(!el)return;
+    if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}
+  },1000);}
 function esc(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function safeUrl(u){u=(u||'').trim();if(!u)return'';if(/^\s*javascript:/i.test(u))return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u;}
 function donateLink(){return state.charity&&state.charity.on?safeUrl(state.charity.link):'';}
