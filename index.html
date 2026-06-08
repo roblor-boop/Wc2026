@@ -570,7 +570,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=200;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:''},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -815,6 +815,7 @@ function tickerItems(){
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
     else a.push(`❤ Free to enter${state.charity.name?' · raising money for '+state.charity.name:''}`);
+    if(donateLink())a.push(`❤ Tap the Donate button to chip in${state.charity.name?' for '+state.charity.name:''} — every bit helps!`);
   }
   // Weave custom messages between the automatic ones
   const out=[];const mx=Math.max(a.length,custom.length);
@@ -1837,6 +1838,7 @@ function renderSetup(){
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:11px"><span style="font-size:.78rem;color:var(--txd);min-width:118px">Suggested donation</span><span style="color:var(--txm)">£</span><input type="number" min="0" max="1000" value="${state.charity.suggested}" oninput="state.charity.suggested=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:60px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional</span></div>
         <div style="border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">❤ TOTAL RAISED SO FAR</div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="color:var(--txm)">£</span><input type="number" min="0" step="any" value="${state.charity.total}" oninput="state.charity.total=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:100px;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem"/><span style="font-size:.72rem;color:var(--txm)">running total — shown to all</span></div>
         <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="font-size:.76rem;color:var(--txd);min-width:118px">Fundraising goal</span><span style="color:var(--txm)">£</span><input type="number" min="0" value="${state.charity.goal||0}" oninput="state.charity.goal=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:80px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional — shows a progress bar</span></div>
+        <div style="margin-top:11px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">💷 Donation link <span style="color:var(--txm)">— JustGiving, Enthuse, etc.</span></div><input type="url" inputmode="url" value="${(state.charity.link||'').replace(/"/g,'&quot;')}" placeholder="e.g. justgiving.com/your-page" oninput="state.charity.link=this.value;saveSetup();render()" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><div style="font-size:.68rem;color:var(--txm);margin-top:4px;line-height:1.5">${donateLink()?'✓ A ❤ Donate button now shows to everyone — on the welcome screen, standings and fund bar.':'Add a link and a ❤ Donate button appears everywhere players can see it.'}</div></div>
         </div>
         <div style="border-top:1px solid var(--b);padding-top:11px;margin-top:11px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${state.podium.on?'checked':''} onchange="state.podium.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd)">🏆 TOP-3 PRIZES (non-cash)</span></label>
@@ -1925,6 +1927,7 @@ function rulesHTML(){
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional £${state.charity.suggested||10} donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — entirely up to you, and it has no effect on the draw or who wins.</div>
+      ${donateLink()?`<div style="margin-top:11px;text-align:center">${donateBtnHTML({big:true,label:state.charity.name?('Donate to '+state.charity.name):'Donate now'})}</div>`:''}
     </div>`:''}
     ${state.predict.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>🔮 Predict the champion:</b> when you sign up, pick who you think will win the World Cup. Call it right and you bag <b style="color:var(--gr)">+${state.predict.bonus}</b> bonus points.</div>
@@ -2210,7 +2213,7 @@ function renderStandings(){
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
   return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
-    ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div></div>`:''}
+    ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateLink()?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateLink()?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
   ${lb.length>10?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find your name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}
   ${todayMatchesHTML()}
@@ -2330,6 +2333,10 @@ function cdText(){const t=cdTarget();if(!t)return'';const ms=t.time-Date.now();i
 function countdownHTML(){const t=cdTarget();if(!t)return'';const txt=cdText();if(!txt)return'';return`<div class="cd-wrap" style="margin-bottom:14px;padding:12px 14px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:12px;text-align:center;box-shadow:var(--shadow)"><div style="font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.16em;color:var(--gr);text-transform:uppercase">${t.label}</div><div id="countdown" style="font-family:'Oswald',sans-serif;font-size:1.55rem;font-weight:700;color:var(--tx);letter-spacing:.02em;margin-top:3px">${txt}</div></div>`;}
 function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{try{checkAutoDraw();}catch(e){}const el=document.getElementById('countdown');if(!el)return;const txt=cdText();if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}},1000);}
 function esc(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function safeUrl(u){u=(u||'').trim();if(!u)return'';if(/^\s*javascript:/i.test(u))return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u;}
+function donateLink(){return state.charity&&state.charity.on?safeUrl(state.charity.link):'';}
+function donateBtnHTML(o){o=o||{};const url=donateLink();if(!url)return'';const big=o.big;const label=o.label||'Donate';
+  return `<a href="${url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;${big?'padding:12px 22px;font-size:.95rem;':'padding:7px 15px;font-size:.78rem;'}background:linear-gradient(135deg,#e0245e,#b81d4e);color:#fff;border-radius:${big?'11px':'8px'};font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;text-decoration:none;box-shadow:0 3px 10px rgba(224,36,94,.32);border:none">❤ ${esc(label)}</a>`;}
 function thermometerHTML(){
   if(!state.charity.on||!state.charity.goal||state.charity.goal<=0)return'';
   const tot=state.charity.total||0,goal=state.charity.goal;
@@ -2337,7 +2344,7 @@ function thermometerHTML(){
   return `<div class="card" style="padding:13px 15px;margin-bottom:14px;box-shadow:var(--shadow)">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px"><span style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.06em;color:var(--tx)">❤ ${esc(state.charity.name)||'CHARITY'} FUND</span><span style="font-size:.76rem;color:var(--txm)"><b style="color:var(--gold);font-family:'Oswald',sans-serif;font-size:.95rem">£${tot.toLocaleString()}</b> of £${goal.toLocaleString()}</span></div>
     <div style="height:12px;background:var(--cardh);border-radius:7px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#00a838,#00e676);border-radius:7px;transition:width .6s ease"></div></div>
-    <div style="font-size:.68rem;color:var(--txm);margin-top:5px;text-align:right">${pct}% of the way there${pct>=100?' — goal smashed! 🎉':''}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px"><span style="font-size:.68rem;color:var(--txm)">${pct}% of the way there${pct>=100?' — goal smashed! 🎉':''}</span>${donateBtnHTML({label:'Donate'})}</div>
   </div>`;
 }
 
@@ -2448,7 +2455,7 @@ else if(DB){
     if(data.cfg){
       if(data.cfg.scoring)state.scoring={...DEF_SCR,...data.cfg.scoring};
       if(data.cfg.prize)state.prize={...{on:false,buyin:5,pay:[60,30,10]},...data.cfg.prize};
-      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0},...data.cfg.charity};
+      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:''},...data.cfg.charity};
       if(data.cfg.podium)state.podium={...{on:false,prizes:['','','']},...data.cfg.podium};
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
