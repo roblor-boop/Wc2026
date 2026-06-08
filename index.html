@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>Carlyle London Sweepstake</title>
+<title>Carlyle London Office Sweepstake</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Firebase SDK for real-time sync -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -289,6 +289,17 @@ html.dark .dc.gld{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--ca
 .ov-dots span:nth-child(1){animation:bounce 1s ease infinite}
 .ov-dots span:nth-child(2){animation:bounce 1s ease infinite .15s}
 .ov-dots span:nth-child(3){animation:bounce 1s ease infinite .3s}
+.ov-count-num{font-family:'Oswald',sans-serif;font-size:6rem;font-weight:700;color:#00e676;line-height:1;text-shadow:0 0 55px rgba(0,230,118,.6)}
+.ov-owner{font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;color:#fff;min-height:36px;margin-top:4px;max-width:450px;text-align:center;line-height:1.4}
+.ov-spin-name{opacity:.5;color:#fff}
+.ov-pop{display:inline-block;animation:ovPop .45s cubic-bezier(.2,1.35,.4,1)}
+.ov-reveal-teams{display:flex;flex-wrap:wrap;gap:11px;justify-content:center;max-width:470px}
+.ov-reveal-teams.multi .ov-reveal-team{padding:13px 16px}
+.ov-reveal-team{display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:18px 24px}
+.ov-reveal-team .ov-rt-flag{font-size:3.1rem;line-height:1;filter:drop-shadow(0 0 14px rgba(255,255,255,.25))}
+.ov-reveal-team .ov-rt-name{font-family:'Oswald',sans-serif;font-size:1.18rem;font-weight:700;color:#fff}
+.ov-reveal-team .ov-rt-grp{font-size:.6rem;color:rgba(255,255,255,.4);font-family:'Oswald',sans-serif;letter-spacing:.12em}
+@keyframes ovPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.13);opacity:1}100%{transform:scale(1)}}
 /* ── MISC COMPONENTS ─────────────────────────────────── */
 .q-badge{font-size:.58rem;padding:1px 5px;border-radius:3px;font-family:'Oswald',sans-serif;font-weight:600;border:1px solid transparent;flex-shrink:0}
 .fb{padding:3px 8px;border-radius:5px;background:transparent;border:1px solid var(--b);color:var(--txm);font-family:'Oswald',sans-serif;font-size:.65rem;cursor:pointer;transition:all .15s}
@@ -343,7 +354,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 <!-- Access gate -->
 <div id="gate" style="position:fixed;inset:0;background:linear-gradient(160deg,#0b1530,#04081a);z-index:998;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center">
   <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#00e676,#00a838);display:flex;align-items:center;justify-content:center;font-size:2.1rem;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,168,56,.35)">🔒</div>
-  <div style="font-family:'Oswald',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:.02em;margin-bottom:6px">Carlyle London Sweepstake</div>
+  <div style="font-family:'Oswald',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;letter-spacing:.02em;margin-bottom:6px">Carlyle London Office Sweepstake</div>
   <div style="font-size:.82rem;color:rgba(255,255,255,.55);margin-bottom:22px;max-width:290px;line-height:1.5">Enter the access code to continue. Ask the organiser if you don't have it.</div>
   <input id="gate-input" type="password" autocomplete="off" placeholder="Access code" style="width:100%;max-width:280px;padding:13px 15px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:1rem;text-align:center;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitGate()"/>
   <button onclick="submitGate()" style="width:100%;max-width:280px;padding:13px;background:linear-gradient(135deg,#00e676,#00a838);border:none;border-radius:10px;color:#04081a;font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.05em;cursor:pointer">ENTER</button>
@@ -364,7 +375,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
     <div class="hdr-row">
       <div class="hdr-ball" onclick="_li()" style="cursor:pointer;user-select:none">⚽</div>
       <div class="hdr-meta">
-        <div class="hdr-title">Carlyle London Sweepstake</div>
+        <div class="hdr-title">Carlyle London Office Sweepstake</div>
         <div class="hdr-sub">UNOFFICIAL · WORLD CUP 2026</div>
       </div>
       <div class="hdr-right">
@@ -553,7 +564,7 @@ const CONFIG = {
   },
   footballApiKey: "1ec655d13a1847efb4a43b39951e3bb8",
   teamsWebhook:   "",                         // optional — Teams notifications
-  title:          "Carlyle London Sweepstake"
+  title:          "Carlyle London Office Sweepstake"
 };
 // ════════════════════════════════════════════════════════════════════
 
@@ -570,7 +581,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=200;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:''},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -815,7 +826,7 @@ function tickerItems(){
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
     else a.push(`❤ Free to enter${state.charity.name?' · raising money for '+state.charity.name:''}`);
-    if(donateLink())a.push(`❤ Tap the Donate button to chip in${state.charity.name?' for '+state.charity.name:''} — every bit helps!`);
+    if(donateShow('ticker'))a.push(`❤ Tap the Donate button to chip in${state.charity.name?' for '+state.charity.name:''} — every bit helps!`);
   }
   // Weave custom messages between the automatic ones
   const out=[];const mx=Math.max(a.length,custom.length);
@@ -976,28 +987,10 @@ const SFX={_c:null,ctx(){if(state.muted)return null;if(!this._c){const AC=window
   fanfare(){const c=this.ctx();if(!c)return;[262,330,392,523,659,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type=i<3?'square':'triangle';o.frequency.value=f;const t=c.currentTime+i*.11;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.22,t+.04);g.gain.exponentialRampToValueAtTime(.001,t+.45);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.5);});},
   goal(){const c=this.ctx();if(!c)return;[110,130,155,110,130,155].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sawtooth';o.frequency.value=f;const t=c.currentTime+i*.08;g.gain.setValueAtTime(.4,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.4);});},
   save(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.setValueAtTime(440,c.currentTime);o.frequency.exponentialRampToValueAtTime(880,c.currentTime+.1);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.28);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.32);},
-  _amb:null,
-  ambStart(){
-    this.ambStop();
-    const c=this.ctx();if(!c)return;
-    const master=c.createGain();master.gain.setValueAtTime(0,c.currentTime);master.gain.linearRampToValueAtTime(0.16,c.currentTime+1.2);master.connect(c.destination);
-    // warm low drone (two detuned oscillators)
-    const o1=c.createOscillator(),o2=c.createOscillator(),dg=c.createGain();
-    o1.type='sawtooth';o2.type='sawtooth';o1.frequency.value=55;o2.frequency.value=55.4;dg.gain.value=0.25;
-    const lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=320;
-    o1.connect(dg);o2.connect(dg);dg.connect(lp);lp.connect(master);o1.start();o2.start();
-    // soft anticipation pulse (kick-ish) every ~520ms
-    const pulse=setInterval(()=>{if(state.muted){return;}const t=c.currentTime;const po=c.createOscillator(),pg=c.createGain();po.type='sine';po.frequency.setValueAtTime(110,t);po.frequency.exponentialRampToValueAtTime(48,t+.16);pg.gain.setValueAtTime(0.34,t);pg.gain.exponentialRampToValueAtTime(0.001,t+.26);po.connect(pg);pg.connect(master);po.start(t);po.stop(t+.3);},520);
-    this._amb={master,osc:[o1,o2],pulse,ctx:c};
-  },
-  ambStop(){
-    if(!this._amb)return;const a=this._amb;this._amb=null;
-    try{clearInterval(a.pulse);}catch(e){}
-    try{const t=a.ctx.currentTime;a.master.gain.cancelScheduledValues(t);a.master.gain.setValueAtTime(a.master.gain.value||0.12,t);a.master.gain.linearRampToValueAtTime(0,t+0.5);}catch(e){}
-    try{setTimeout(()=>{a.osc.forEach(o=>{try{o.stop();}catch(e){}});try{a.master.disconnect();}catch(e){}},600);}catch(e){a.osc.forEach(o=>{try{o.stop();}catch(e){}});}
-  }
+  tick(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='square';o.frequency.value=1150;g.gain.setValueAtTime(.10,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.05);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.06);},
+  land(){const c=this.ctx();if(!c)return;[523,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.value=f;const t=c.currentTime+i*.06;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.34,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.45);});}
 };
-function toggleMute(){state.muted=!state.muted;if(state.muted){try{SFX.ambStop();}catch(e){}}const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
+function toggleMute(){state.muted=!state.muted;const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
 
 // ── CONFETTI ──────────────────────────────────────────────────────────────────
 function fireConfetti(){
@@ -1066,61 +1059,81 @@ function protectedRunDraw_legacy(){}
 // Plays the draw reveal animation from a GIVEN set of participants (so the exact
 // same ceremony can run on every viewer's browser, driven by the synced result).
 let _cerPlaying=false;
+// Spin one element's innerHTML through random teasers, decelerating (slot-machine feel).
+async function spinEl(elId,teaserFn,ms){
+  let t=0;
+  while(t<ms&&!drawSkip){
+    const el=document.getElementById(elId);if(el)el.innerHTML=teaserFn();
+    const prog=t/ms;const d=55+Math.round(prog*prog*215); // ease-out: fast → slow
+    try{SFX.tick();}catch(e){}
+    await delay(d);t+=d;
+  }
+}
 async function playCeremony(parts,n){
   if(_cerPlaying)return;
   _cerPlaying=true;
   drawSkip=false;
-  try{SFX.ambStart();}catch(e){}
   const base=Math.floor(48/n),rem=48%n,shared=n>48;
-  // Reveals scale with player count so big sweepstakes don't drag (still skippable)
-  const namePause=n>60?320:n>24?560:1200, teamPause=n>60?240:n>24?420:850, fast=n>24;
-  // Phase 1 – Shuffle
-  showOv();drawCycleInterval=setInterval(()=>{
-    const t=ALL_TEAMS[Math.floor(Date.now()/70)%ALL_TEAMS.length];
-    setOv(`<div class="ov-phase-shuffle"><div class="ov-label">SHUFFLING 48 TEAMS</div><div class="ov-flag" style="font-size:5rem;animation:flagSpin .13s ease infinite;margin:10px 0;filter:drop-shadow(0 0 16px rgba(255,255,255,.3))">${t.flag}</div><div class="ov-name-big">${t.name}</div><div class="ov-dots"><span></span><span></span><span></span></div></div>`);
-  },70);
-  try{SFX.drumroll();}catch{}
-  await skipableDelay(2300);
+  const F=()=>ALL_TEAMS[Math.floor(Math.random()*ALL_TEAMS.length)];      // random team teaser
+  const nm=parts.map(p=>p.name);
+  const RN=()=>nm[Math.floor(Math.random()*nm.length)];                    // random name teaser
+  showOv();
+  // ── INTRO: flags swirl (drumroll) then a 3·2·1 countdown for the final beat of suspense ──
+  drawCycleInterval=setInterval(()=>{const t=F();setOv(`<div class="ov-phase-shuffle"><div class="ov-label">THE DRAW</div><div class="ov-flag">${t.flag}</div><div class="ov-name-big">${t.name}</div><div class="ov-dots"><span></span><span></span><span></span></div></div>`);},80);
+  try{SFX.drumroll();}catch(e){}
+  await skipableDelay(2100);
   clearInterval(drawCycleInterval);
-  // Phase 2 – Sequential reveals.  By TEAM when there are more players than
-  // teams (or the organiser opts in) — caps the reveal at 48 steps however many sign up.
-  const revealByTeam=state.drawByTeam||n>48;
-  if(!drawSkip&&revealByTeam){
-    const ownersByTeam={};
-    parts.forEach(p=>p.teams.forEach(t=>{(ownersByTeam[t.name]=ownersByTeam[t.name]||[]).push(p.name);}));
-    const tp2=n>120?600:780;
-    for(const[idx,team] of ALL_TEAMS.entries()){
+  if(!drawSkip){
+    for(const num of ['3','2','1']){
       if(drawSkip)break;
-      const own=ownersByTeam[team.name]||[];
-      setOv(`<div class="ov-phase-team"><div class="ov-counter">TEAM ${idx+1} OF 48</div><div class="ov-team-card"><div class="ov-flag-big">${team.flag}</div><div class="ov-cname">${team.name}</div><div class="ov-cgroup">GROUP ${team.group}</div></div><div style="margin-top:13px;font-family:'Oswald',sans-serif;font-size:.62rem;letter-spacing:.14em;color:rgba(255,255,255,.55)">${own.length?'GOES TO':''}</div><div style="margin-top:5px;font-family:'Oswald',sans-serif;font-size:${own.length>3?'.94rem':'1.12rem'};font-weight:600;color:#fff;line-height:1.5;max-width:440px;text-align:center">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.55;font-weight:400">No owner</span>'}</div></div>`);
-      try{SFX.ding();}catch{}
-      await skipableDelay(tp2);
-    }
-  } else if(!drawSkip){
-    for(const[idx,p] of parts.entries()){
-      if(drawSkip)break;
-      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${p.name.toUpperCase()}</div><div class="ov-sub">IS UP…</div></div>`);
-      try{SFX.ding();}catch{}
-      await skipableDelay(namePause);
-      for(const[ti,team] of p.teams.entries()){
-        if(drawSkip)break;
-        setOv(`<div class="ov-phase-team"><div class="ov-for">For: ${p.name}</div><div class="ov-team-card"><div class="ov-flag-big">${team.flag}</div><div class="ov-cname">${team.name}</div><div class="ov-cgroup">GROUP ${team.group}</div><div class="ov-tctr">Team ${ti+1} of ${p.teams.length}</div></div></div>`);
-        try{SFX.ding();}catch{}
-        await skipableDelay(teamPause);
-      }
-      if(drawSkip)break;
-      if(!fast){
-        setOv(`<div class="ov-phase-summary"><div class="ov-sname">✓ ${p.name}</div><div class="ov-summary-grid">${p.teams.map(t=>`<div class="ov-summary-team"><span style="font-size:1.2rem">${t.flag}</span>${t.name}</div>`).join('')}</div></div>`);
-        await skipableDelay(1000);
-      }
+      setOv(`<div class="ov-phase-name"><div class="ov-count-num ov-pop">${num}</div></div>`);
+      try{SFX.tick();}catch(e){}
+      await skipableDelay(620);
     }
   }
-  // Phase 3 – Complete
-  try{SFX.ambStop();}catch(e){}
+  // Pacing scales with player count so it stays a proper event without dragging
+  const tier=n<=16?0:n<=32?1:2;
+  const nameHold=[1050,780,520][tier], spinMs=[1100,820,600][tier], landHold=[1450,1000,650][tier];
+  const revealByTeam=state.drawByTeam||n>48;
+
+  if(!drawSkip&&revealByTeam){
+    // ── BY TEAM: each of the 48 teams, spin to reveal who got it ──
+    const ownersByTeam={};parts.forEach(p=>p.teams.forEach(t=>{(ownersByTeam[t.name]=ownersByTeam[t.name]||[]).push(p.name);}));
+    const tSpin=n>120?560:720, tHold=n>120?700:880;
+    const tCard=(t,ownerInner)=>`<div class="ov-phase-team"><div class="ov-counter">TEAM ${ALL_TEAMS.indexOf(t)+1} OF 48</div><div class="ov-team-card"><div class="ov-flag-big">${t.flag}</div><div class="ov-cname">${t.name}</div><div class="ov-cgroup">GROUP ${t.group}</div></div><div class="ov-for" style="margin-top:14px">GOES TO…</div><div class="ov-owner" id="ov-owner">${ownerInner}</div></div>`;
+    for(const team of ALL_TEAMS){
+      if(drawSkip)break;
+      const own=ownersByTeam[team.name]||[];
+      setOv(tCard(team,`<span class="ov-spin-name">${esc(RN())}</span>`));
+      await spinEl('ov-owner',()=>`<span class="ov-spin-name">${esc(RN())}</span>`,tSpin);
+      if(drawSkip)break;
+      const el=document.getElementById('ov-owner');
+      if(el)el.innerHTML=`<span class="ov-pop" style="color:#fff">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.5">No owner</span>'}</span>`;
+      try{SFX.land();}catch(e){}
+      await skipableDelay(tHold);
+    }
+  } else if(!drawSkip){
+    // ── BY PLAYER: build anticipation on the name, then ONE spin lands all their teams ──
+    for(const[idx,p] of parts.entries()){
+      if(drawSkip)break;
+      const cnt=p.teams.length;
+      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${esc(p.name).toUpperCase()}</div><div class="ov-sub">DRAWING ${cnt} TEAM${cnt>1?'S':''}…</div></div>`);
+      try{SFX.ding();}catch(e){}
+      await skipableDelay(nameHold);
+      if(drawSkip)break;
+      setOv(`<div class="ov-phase-team"><div class="ov-for">${esc(p.name)}</div><div class="ov-team-card"><div class="ov-flag-big" id="ov-spinflag">${F().flag}</div><div class="ov-cname" style="opacity:.4">· · ·</div></div></div>`);
+      await spinEl('ov-spinflag',()=>F().flag,spinMs);
+      if(drawSkip)break;
+      setOv(`<div class="ov-phase-team"><div class="ov-for">${esc(p.name)} GETS</div><div class="ov-reveal-teams${cnt>2?' multi':''}">${p.teams.map(t=>`<div class="ov-reveal-team ov-pop"><span class="ov-rt-flag">${t.flag}</span><span class="ov-rt-name">${t.name}</span><span class="ov-rt-grp">GRP ${t.group}</span></div>`).join('')}</div></div>`);
+      try{SFX.land();}catch(e){}
+      await skipableDelay(landHold);
+    }
+  }
+  // ── FINALE ──
   setOv(`<div class="ov-phase-complete"><div style="font-size:2.8rem;margin-bottom:8px">🏆</div><div class="ov-done">DRAW COMPLETE!</div><div class="ov-done-sub" style="margin-top:6px">${n} PLAYERS · ${shared?'1 TEAM EACH (some shared)':base+(rem?'–'+(base+1):'')+' TEAMS EACH'}</div></div>`);
-  try{SFX.fanfare();}catch{}
+  try{SFX.fanfare();}catch(e){}
   fireConfetti();
-  await delay(1800);
+  await delay(1900);
   hideOv();
   _cerPlaying=false;
   state.tab='draw';render();
@@ -1218,8 +1231,7 @@ function relDate(dt){
     if(diff===0)return'Today';
     if(diff===1)return'Tomorrow';
     if(diff===-1)return'Yesterday';
-    if(diff>1&&diff<=6)return d.toLocaleDateString('en-GB',{weekday:'short'})+' '+dt;
-    return dt;
+    return d.toLocaleDateString('en-GB',{weekday:'short'})+' '+dt;
   }catch{return dt;}
 }
 function isLiveNow(id){
@@ -1592,7 +1604,7 @@ function renderWelcome(){
         <p style="font-size:.8rem;color:var(--txm);line-height:1.6">Check back once the organiser has run the draw to see who got which teams.</p>
       </div>
     `}
-    <div style="margin-top:20px;text-align:left">${rulesHTML()}</div>
+    <div style="margin-top:20px;text-align:left">${rulesHTML(true)}</div>
     <div style="margin-top:22px;font-size:.7rem;color:var(--txm)">Organiser? Tap the ⚽ above 7 times to sign in.</div>
   </div>`;
 }
@@ -1839,6 +1851,12 @@ function renderSetup(){
         <div style="border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">❤ TOTAL RAISED SO FAR</div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="color:var(--txm)">£</span><input type="number" min="0" step="any" value="${state.charity.total}" oninput="state.charity.total=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:100px;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem"/><span style="font-size:.72rem;color:var(--txm)">running total — shown to all</span></div>
         <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="font-size:.76rem;color:var(--txd);min-width:118px">Fundraising goal</span><span style="color:var(--txm)">£</span><input type="number" min="0" value="${state.charity.goal||0}" oninput="state.charity.goal=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:80px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional — shows a progress bar</span></div>
         <div style="margin-top:11px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">💷 Donation link <span style="color:var(--txm)">— JustGiving, Enthuse, etc.</span></div><input type="url" inputmode="url" value="${(state.charity.link||'').replace(/"/g,'&quot;')}" placeholder="e.g. justgiving.com/your-page" oninput="state.charity.link=this.value;saveSetup();render()" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><div style="font-size:.68rem;color:var(--txm);margin-top:4px;line-height:1.5">${donateLink()?'✓ A ❤ Donate button now shows to everyone — on the welcome screen, standings and fund bar.':'Add a link and a ❤ Donate button appears everywhere players can see it.'}</div></div>
+        <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px">
+          <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:3px">📣 CHARITY EMPHASIS</div>
+          <div style="font-size:.7rem;color:var(--txm);margin-bottom:7px">How prominent the ❤ Donate prompts are. Fun always comes first.</div>
+          <div style="display:flex;gap:6px">${['subtle','balanced','full'].map(lvl=>`<button onclick="state.charity.emphasis='${lvl}';saveSetup();render()" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid ${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--b)'};background:${((state.charity.emphasis||'balanced')===lvl)?'var(--pill-gr)':'transparent'};color:${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.03em;cursor:pointer;text-transform:capitalize">${lvl}</button>`).join('')}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({subtle:'Quietest — just a Donate button on the fund bar. The total still shows.',balanced:'Recommended — Donate on the welcome screen and fund bar, with a gentle ticker nudge. Fun stays front and centre.',full:'Maximum — Donate buttons on every screen and more frequent nudges. Good for a final push near your goal.'})[state.charity.emphasis||'balanced']}</div>
+        </div>
         </div>
         <div style="border-top:1px solid var(--b);padding-top:11px;margin-top:11px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${state.podium.on?'checked':''} onchange="state.podium.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd)">🏆 TOP-3 PRIZES (non-cash)</span></label>
@@ -1906,7 +1924,7 @@ function renderSetup(){
   </div>`;
 }
 
-function rulesHTML(){
+function rulesHTML(onWelcome){
   const S=state.scoring;
   const pill=v=>`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:#fff;background:linear-gradient(135deg,#00c853,#00a838);border-radius:20px;padding:3px 11px;flex-shrink:0;margin-left:10px;min-width:30px;text-align:center;box-shadow:0 1px 4px rgba(0,128,42,.3)">+${v}</span>`;
   const row=(label,val,last)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${last?'':'border-bottom:.5px solid var(--b)'}"><span style="font-size:.82rem;color:var(--tx)">${label}</span>${pill(val)}</div>`;
@@ -1927,7 +1945,7 @@ function rulesHTML(){
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional £${state.charity.suggested||10} donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — entirely up to you, and it has no effect on the draw or who wins.</div>
-      ${donateLink()?`<div style="margin-top:11px;text-align:center">${donateBtnHTML({big:true,label:state.charity.name?('Donate to '+state.charity.name):'Donate now'})}</div>`:''}
+      ${onWelcome&&donateShow('welcome')?`<div style="margin-top:11px;text-align:center">${donateBtnHTML({big:true,label:state.charity.name?('Donate to '+state.charity.name):'Donate now'})}</div>`:''}
     </div>`:''}
     ${state.predict.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>🔮 Predict the champion:</b> when you sign up, pick who you think will win the World Cup. Call it right and you bag <b style="color:var(--gr)">+${state.predict.bonus}</b> bonus points.</div>
@@ -2183,7 +2201,7 @@ function renderKOCard(mId,tA,tB){
   const canEnter=!played&&tA&&tB;
   const descA=tA||(bc.sA?slotDesc(bc.sA):'TBD');const descB=tB||(bc.sB?slotDesc(bc.sB):'TBD');
   const sch=KO_SCHED[mId];
-  const schLine=sch?`<span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.03em">${sch.dt}${sch.tm&&sch.tm!=='TBC'?' · '+sch.tm+' BST':''}${sch.ve&&sch.ve!=='TBC'?' · '+sch.ve:''}</span>`:'';
+  const schLine=sch?`<span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.03em">${relDate(sch.dt)}${sch.tm&&sch.tm!=='TBC'?' · '+sch.tm+' BST':''}${sch.ve&&sch.ve!=='TBC'?' · '+sch.ve:''}</span>`:'';
   return`<div style="background:var(--card);border:1px solid ${played?rc+'55':'var(--b)'};border-radius:9px;padding:10px 12px;margin-bottom:0;box-shadow:var(--shadow)" id="komc-${mId}">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span style="font-family:'Oswald',sans-serif;font-size:.63rem;color:${rc};letter-spacing:.07em">${bc.l}</span>${dw&&played?`<span style="font-size:.6rem;padding:1px 5px;background:rgba(192,112,0,.15);border:1px solid rgba(192,112,0,.4);border-radius:3px;color:var(--amber);font-family:'Oswald',sans-serif;font-weight:600">PENS</span>`:''}</div>
     ${schLine?`<div style="margin-bottom:6px">${schLine}</div>`:''}
@@ -2213,7 +2231,7 @@ function renderStandings(){
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
   return`<div style="max-width:800px;margin:0 auto">${tickerBarHTML()}${countdownHTML()}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
-    ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateLink()?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateLink()?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
+    ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
   ${lb.length>10?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find your name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}
   ${todayMatchesHTML()}
@@ -2337,6 +2355,16 @@ function safeUrl(u){u=(u||'').trim();if(!u)return'';if(/^\s*javascript:/i.test(u
 function donateLink(){return state.charity&&state.charity.on?safeUrl(state.charity.link):'';}
 function donateBtnHTML(o){o=o||{};const url=donateLink();if(!url)return'';const big=o.big;const label=o.label||'Donate';
   return `<a href="${url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;${big?'padding:12px 22px;font-size:.95rem;':'padding:7px 15px;font-size:.78rem;'}background:linear-gradient(135deg,#e0245e,#b81d4e);color:#fff;border-radius:${big?'11px':'8px'};font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;text-decoration:none;box-shadow:0 3px 10px rgba(224,36,94,.32);border:none">❤ ${esc(label)}</a>`;}
+function donateShow(place){
+  if(!donateLink())return false;
+  const e=(state.charity&&state.charity.emphasis)||'balanced';
+  const hasGoal=(state.charity.goal||0)>0;
+  if(place==='fund')return true;                         // thermometer only renders when goal>0 anyway
+  if(place==='welcome')return e!=='subtle';
+  if(place==='ticker')return e!=='subtle';
+  if(place==='standings'){ if(e==='full')return true; if(e==='subtle')return false; return !hasGoal; }
+  return false;
+}
 function thermometerHTML(){
   if(!state.charity.on||!state.charity.goal||state.charity.goal<=0)return'';
   const tot=state.charity.total||0,goal=state.charity.goal;
@@ -2344,7 +2372,7 @@ function thermometerHTML(){
   return `<div class="card" style="padding:13px 15px;margin-bottom:14px;box-shadow:var(--shadow)">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px"><span style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.06em;color:var(--tx)">❤ ${esc(state.charity.name)||'CHARITY'} FUND</span><span style="font-size:.76rem;color:var(--txm)"><b style="color:var(--gold);font-family:'Oswald',sans-serif;font-size:.95rem">£${tot.toLocaleString()}</b> of £${goal.toLocaleString()}</span></div>
     <div style="height:12px;background:var(--cardh);border-radius:7px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#00a838,#00e676);border-radius:7px;transition:width .6s ease"></div></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px"><span style="font-size:.68rem;color:var(--txm)">${pct}% of the way there${pct>=100?' — goal smashed! 🎉':''}</span>${donateBtnHTML({label:'Donate'})}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px"><span style="font-size:.68rem;color:var(--txm)">${pct}% of the way there${pct>=100?' — goal smashed! 🎉':''}</span>${donateShow('fund')?donateBtnHTML({label:'Donate'}):''}</div>
   </div>`;
 }
 
@@ -2455,7 +2483,7 @@ else if(DB){
     if(data.cfg){
       if(data.cfg.scoring)state.scoring={...DEF_SCR,...data.cfg.scoring};
       if(data.cfg.prize)state.prize={...{on:false,buyin:5,pay:[60,30,10]},...data.cfg.prize};
-      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:''},...data.cfg.charity};
+      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},...data.cfg.charity};
       if(data.cfg.podium)state.podium={...{on:false,prizes:['','','']},...data.cfg.podium};
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};

@@ -1,7 +1,7 @@
 {
-  "name": "WC 2026 Sweepstake",
-  "short_name": "WC2026",
-  "description": "Office World Cup 2026 Sweepstake",
+  "name": "Carlyle London Office Sweepstake",
+  "short_name": "Office Sweepstake",
+  "description": "Unofficial Carlyle London World Cup 2026 Sweepstake",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#06091a",
