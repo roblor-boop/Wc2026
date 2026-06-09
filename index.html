@@ -387,7 +387,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
       <div class="hdr-ball" onclick="_li()" style="cursor:pointer;user-select:none">⚽</div>
       <div class="hdr-meta">
         <div class="hdr-title">Carlyle London Office Sweepstake</div>
-        <div class="hdr-sub">UNOFFICIAL · WORLD CUP 2026</div>
+        <div class="hdr-sub">WORLD CUP 2026 · 11 JUN – 19 JUL</div>
       </div>
       <div class="hdr-right">
         <div class="hdr-info" id="hdr-info"></div>
@@ -410,6 +410,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun — not affiliated with or endorsed by The Carlyle Group.</footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -586,7 +587,7 @@ let DB = null;
 if (FB_OK) { try { firebase.initializeApp(CONFIG.firebase); DB = firebase.database(); } catch(e) { console.warn('Firebase init error:', e); } }
 
 // football-data.org team name normalisation (their names → ours)
-const NMAP={'Czech Republic':'Czechia','Ivory Coast':"Côte d'Ivoire","Cote d'Ivoire":"Côte d'Ivoire",'Bosnia and Herzegovina':'Bosnia & Herz.','Bosnia & Herzegovina':'Bosnia & Herz.','Korea Republic':'South Korea','Republic of Korea':'South Korea','Cape Verde':'Cabo Verde','Congo DR':'DR Congo','Congo, DR':'DR Congo','Democratic Republic of Congo':'DR Congo','United States':'USA','Curacao':'Curaçao','United States of America':'USA'};
+const NMAP={'Czech Republic':'Czechia','Ivory Coast':"Côte d'Ivoire","Cote d'Ivoire":"Côte d'Ivoire",'Bosnia and Herzegovina':'Bosnia & Herz.','Bosnia & Herzegovina':'Bosnia & Herz.','Korea Republic':'South Korea','Republic of Korea':'South Korea','Cape Verde':'Cabo Verde','Congo DR':'DR Congo','Congo, DR':'DR Congo','Democratic Republic of Congo':'DR Congo','United States':'USA','Curacao':'Curaçao','United States of America':'USA','Türkiye':'Turkey','Turkiye':'Turkey','IR Iran':'Iran','Korea DPR':'North Korea'};
 function normTeam(n){return NMAP[n]||n;}
 function findGFId(h,a){const hn=normTeam(h),an=normTeam(a);return Object.keys(GF).find(id=>(GF[id].home===hn&&GF[id].away===an)||(GF[id].home===an&&GF[id].away===hn));}
 function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.keys(BRACKET).find(id=>{const rv=res[id];return rv&&((rv.teamA===hn&&rv.teamB===an)||(rv.teamA===an&&rv.teamB===hn));});}
@@ -599,6 +600,16 @@ let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
 let _prevRanks={};  // name → rank before last result
 function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p.name]=i+1;});}
+let _baseRanks=null;  // persisted "start of today" ranks → movement (▲/▼) survives a page reload
+function _todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function refreshRankBaseline(){
+  let store={};try{store=JSON.parse(localStorage.getItem('wc26ranks')||'{}');}catch(e){}
+  const today=_todayKey();
+  if(store.date===today&&store.ranks){_baseRanks=store.ranks;return;}
+  const cur={};calcLeaderboard().forEach((p,i)=>{cur[p.name]=i+1;});  // first view of the day = today's baseline
+  _baseRanks=cur;
+  try{localStorage.setItem('wc26ranks',JSON.stringify({date:today,ranks:cur}));}catch(e){}
+}
 
 // ── ADMIN (Firebase Auth) ─────────────────────────────────────────────────────
 // isAdmin: ONLY true when signed into Firebase Auth — no exceptions
@@ -654,6 +665,7 @@ async function fbDel(path){
 let pollTimer=null;
 function apiKey(){const k=(state.footballApiKey||'').trim();return k||CONFIG.footballApiKey;}
 async function pollResults(){
+  if(!adminSess)return; // ONLY the organiser's signed-in browser polls the API. football-data's free limit is 10 calls/min PER KEY (shared by everyone), so we never let every viewer call it — viewers get results via Firebase sync instead.
   if(!apiKey()||apiKey()==='PASTE_FOOTBALL_API_KEY')return;
   if(!state.draw)return; // no draw yet, nothing to update
   try{
@@ -809,6 +821,7 @@ function shareStandings(){
 // ── TICKER ────────────────────────────────────────────────────────────────────
 // Builds the live mix of automatic fun facts + admin custom messages.
 const TK_CD='\uE000';  // placeholder swapped for a live-updating countdown span inside the ticker
+const DN='\uE001';  // placeholder → a real tappable Donate link in the ticker
 function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
@@ -868,8 +881,8 @@ function tickerItems(){
   }
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
-    else a.push(`❤ Free to enter${state.charity.name?" · raising money for "+state.charity.name:""}`);
-    if(donateShow("ticker"))a.push(`❤ Tap Donate to chip in${state.charity.name?" for "+state.charity.name:""} — every bit helps!`);
+    else a.push(`❤ Free to enter${state.charity.name?" · in aid of "+state.charity.name:" · played for charity"}`);
+    if(donateLink()&&donateShow("ticker"))a.push(DN);  // rendered as a clickable “Donate to <charity>” link
   }
   const out=[];const mx=Math.max(a.length,custom.length);
   for(let i=0;i<mx;i++){if(i<a.length)out.push(a[i]);if(i<custom.length)out.push(custom[i]);}
@@ -879,7 +892,7 @@ function tickerBarHTML(){
   if(!state.ticker||!state.ticker.on)return'';
   const items=tickerItems();if(!items.length)return'';
   const sep='<span style="color:var(--gr);margin:0 15px;opacity:.5">◆</span>';
-  const row=items.map(t=>`<span style="padding:0 2px">${esc(t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`)}</span>`).join(sep)+sep;
+  const row=items.map(t=>t===DN?`<span style="padding:0 2px">${donateTickerLink()}</span>`:`<span style="padding:0 2px">${esc(t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`)}</span>`).join(sep)+sep;
   const dur=Math.max(22,Math.round(items.join(' ').length*0.22));
   return`<div class="ticker"><div class="ticker-track" style="--tk-dur:${dur}s">${row}${row}</div></div>`;
 }
@@ -890,7 +903,7 @@ function updateTicker(){
   const slot=document.getElementById('ticker-slot');if(!slot)return;
   const on=state.ticker&&state.ticker.on;
   const items=on?tickerItems():[];
-  const sig=(on&&items.length)?items.join('|'):'';   // countdown is a token here, so seconds ticking won't trigger a rebuild
+  const sig=(on&&items.length)?items.join('|')+'|'+(donateLink()||''):'';   // countdown is a token here, so seconds ticking won't trigger a rebuild
   if(sig===_tkSig)return;
   _tkSig=sig;
   slot.innerHTML=sig?tickerBarHTML():'';
@@ -918,8 +931,9 @@ function todayMatchesHTML(){
   const todayFix=Object.entries(GF).filter(([_,f])=>f.dt===str);if(!todayFix.length)return'';
   const rel=state.draw.participants.map(p=>({...p,mx:todayFix.filter(([_,f])=>p.teams.some(t=>t.name===f.home||t.name===f.away))})).filter(p=>p.mx.length);
   if(!rel.length)return'';
-  return`<div class="card" style="padding:12px 14px;margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--gr);letter-spacing:.1em;margin-bottom:10px">⚽ TODAY'S MATCHES FOR YOUR TEAMS</div>
-  ${rel.map(p=>`<div style="margin-bottom:9px"><div style="font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--tx);margin-bottom:5px">${p.name}</div>${p.mx.map(([_,f])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--cardh);border-radius:6px;margin-bottom:3px;font-size:.77rem"><span>${FLAGS[f.home]||'⚽'}</span><span>${f.home}</span><span style="font-family:'Oswald',sans-serif;color:var(--txm)">vs</span><span>${FLAGS[f.away]||'⚽'}</span><span>${f.away}</span><span style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--gr)">${f.tm} BST</span></div>`).join('')}</div>`).join('')}
+  const _me=getMyName(),_mlc=_me.toLowerCase();const _mine=_me?rel.filter(p=>p.name.toLowerCase()===_mlc):[];const _list=_mine.length?_mine:rel;
+  return`<div class="card" style="padding:12px 14px;margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--gr);letter-spacing:.1em;margin-bottom:10px">${_mine.length?"⚽ YOUR TEAMS IN ACTION TODAY":"⚽ TODAY'S MATCHES"}</div>
+  ${_list.map(p=>`<div style="margin-bottom:9px"><div style="font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--tx);margin-bottom:5px">${p.name}</div>${p.mx.map(([_,f])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--cardh);border-radius:6px;margin-bottom:3px;font-size:.77rem"><span>${FLAGS[f.home]||'⚽'}</span><span>${f.home}</span><span style="font-family:'Oswald',sans-serif;color:var(--txm)">vs</span><span>${FLAGS[f.away]||'⚽'}</span><span>${f.away}</span><span style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--gr)">${f.tm} BST</span></div>`).join('')}</div>`).join('')}
   </div>`;
 }
 
@@ -1002,6 +1016,29 @@ function setMyName(name){
 }
 // Set/clear "who am I" on THIS device (works on any browser — no account needed). Stored locally.
 function chooseMe(name){try{if(name)localStorage.setItem('wc26me',name);else localStorage.removeItem('wc26me');}catch(e){}render();}
+// At-a-glance "where am I" card for whoever has picked their name (shown on standings).
+function myPositionHTML(){
+  if(!state.draw)return'';
+  const me=getMyName();if(!me)return'';
+  const lb=calcLeaderboard();const myLc=me.toLowerCase();
+  const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i<0)return'';
+  const p=lb[i],rank=i+1,n=lb.length,L=lb[0];
+  const started=lb.some(x=>x.total>0);
+  const gapLead=Math.round((L.total-p.total)*10)/10;
+  const ahead=i<n-1?Math.round((p.total-lb[i+1].total)*10)/10:0;
+  const base=(_baseRanks||{})[p.name];let mv='';
+  if(started&&base&&base!==rank){const d=base-rank;mv=d>0?` <span style="color:var(--gr);font-weight:700">▲${d} today</span>`:` <span style="color:#e0245e;font-weight:700">▼${Math.abs(d)} today</span>`;}
+  let status;
+  if(!started)status=`You're all set — ${p.teams.length} team${p.teams.length>1?'s':''} drawn. Tournament starts soon!`;
+  else if(rank===1)status=n>1?`Top of the table — ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
+  else status=`${gapLead} pt${gapLead!==1?'s':''} behind the leader${i<n-1?` · ${ahead} clear of ${ordinal(rank+1)}`:''}`;
+  const rc=rank===1&&started?'var(--gold)':'var(--gr)';
+  return `<div class="card" style="padding:13px 15px;margin-bottom:13px;display:flex;align-items:center;gap:14px;border:1px solid var(--pill-grbr);background:linear-gradient(135deg,var(--pill-gr),transparent);box-shadow:var(--shadow)">`
+    +`<div style="text-align:center;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.7rem;line-height:1;color:${rc}">${started?'#'+rank:'—'}</div><div style="font-size:.5rem;color:var(--txm);letter-spacing:.1em;font-family:'Oswald',sans-serif">OF ${n}</div></div>`
+    +`<div style="flex:1;min-width:0"><div style="font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;color:var(--tx)">👤 ${esc(me)}${mv}</div><div style="font-size:.74rem;color:var(--txd);margin-top:2px;line-height:1.4">${status}</div></div>`
+    +`<div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.5rem;line-height:1;color:${started?rc:'var(--txm)'}">${p.total}</div><div style="font-size:.5rem;color:var(--txm);letter-spacing:.08em;font-family:'Oswald',sans-serif">POINTS</div></div>`
+    +`<button onclick="chooseMe('')" title="Not me" style="background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txm);font-size:.6rem;font-family:'Oswald',sans-serif;padding:4px 9px;cursor:pointer;flex-shrink:0;align-self:flex-start">✕</button></div>`;
+}
 // A prominent "pick your name" control so anyone following on any device can personalise their view.
 function mePickerHTML(showWhenSet){
   const names=(state.draw?state.draw.participants.map(p=>p.name):signupNames()).slice().sort((a,b)=>a.localeCompare(b));
@@ -1695,7 +1732,6 @@ function renderWelcome(){
       </div>
     `}
     <div style="margin-top:20px;text-align:left">${rulesHTML(true)}</div>
-    <div style="margin-top:22px;font-size:.7rem;color:var(--txm)">Organiser? Tap the ⚽ above 7 times to sign in.</div>
   </div>`;
 }
 async function submitSignup(){
@@ -1803,6 +1839,68 @@ function addSignupManual(){
     render();showToast('Added '+name,'gold');
   });
 }
+async function runDiagnostics(){
+  const box=document.getElementById('diag-results');
+  if(!box)return;
+  const ICON={ok:'<span style="color:var(--gr);font-weight:800">\u2713</span>',warn:'<span style="color:var(--amber);font-weight:800">\u26a0</span>',fail:'<span style="color:var(--red);font-weight:800">\u2717</span>',run:'<span style="color:var(--txm)">\u23f3</span>'};
+  const rows=[];
+  function draw(){box.innerHTML='<div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">'+rows.map(r=>'<div style="display:flex;gap:9px;align-items:flex-start;font-size:.78rem;padding:8px 10px;background:var(--inp);border:1px solid var(--b);border-radius:7px"><span style="flex-shrink:0;width:15px;text-align:center">'+ICON[r.s]+'</span><span style="flex:1"><b style="color:var(--tx);font-weight:600">'+r.label+'</b>'+(r.detail?'<br><span style="color:var(--txm);font-size:.72rem;line-height:1.5">'+r.detail+'</span>':'')+'</span></div>').join('')+'</div>';}
+  function add(label){rows.push({label:label,s:'run',detail:'Checking\u2026'});draw();return rows.length-1;}
+  function set(i,s,detail){rows[i].s=s;if(detail!==undefined)rows[i].detail=detail;draw();}
+  draw();
+
+  let i=add('Firebase connection');
+  if(typeof firebase==='undefined'||!DB) set(i,'fail','Firebase isn\'t loaded or configured \u2014 the app is on local storage only. Check the firebase config block.');
+  else set(i,'ok','Loaded and initialised.');
+
+  i=add('Admin sign-in');
+  try{const u=(typeof firebase!=='undefined'&&firebase.auth)?firebase.auth().currentUser:null;if(u)set(i,'ok','Signed in as '+(u.email||'admin')+'.');else set(i,'warn','Not signed in. You should be (this is the admin page) \u2014 try signing in again.');}catch(e){set(i,'warn','Could not read sign-in state.');}
+
+  i=add('Database \u2014 read');
+  if(DB){try{await DB.ref('wc2026/cfg').once('value');set(i,'ok','Reading fine.');}catch(e){set(i,'fail','Read failed: '+((e&&e.message)||e));}}else set(i,'fail','No database connection.');
+
+  i=add('Database \u2014 write');
+  if(DB){try{await DB.ref('_diag').set({t:Date.now()});await DB.ref('_diag').remove();set(i,'ok','Write + delete fine \u2014 your rules accept your edits.');}catch(e){set(i,'fail','Write blocked: '+((e&&e.message)||e)+'. Check you\'re signed in and the database rules are published.');}}else set(i,'fail','No database connection.');
+
+  i=add('Live results feed (football-data.org)');
+  const key=apiKey();
+  if(!key||key==='PASTE_FOOTBALL_API_KEY'){set(i,'warn','No API key set in the app. Fine if the Cloudflare Worker handles results (below) \u2014 otherwise enter scores by hand.');}
+  else{try{
+    const r=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':key}});
+    if(r.status===401||r.status===403)set(i,'fail','API key rejected (HTTP '+r.status+'). Check the key and that your football-data.org email is verified.');
+    else if(r.status===429)set(i,'warn','Rate limited (HTTP 429) \u2014 too many calls this minute. Wait and retry.');
+    else if(!r.ok)set(i,'fail','Connection failed (HTTP '+r.status+').');
+    else{const d=await r.json();const tot=(d.matches||[]).length;let bk={};try{bk=resolveBracket();}catch(e){}let matched=0;(d.matches||[]).forEach(m=>{const hn=normTeam((m.homeTeam&&m.homeTeam.name)||''),an=normTeam((m.awayTeam&&m.awayTeam.name)||'');if(findGFId(hn,an)||findKOId(hn,an,bk))matched++;});
+      if(tot===0)set(i,'warn','Connected \u2014 but the provider has no World Cup fixtures loaded yet. Normal before the tournament; they appear closer to kick-off.');
+      else set(i,'ok','Connected \u00b7 '+tot+' fixtures \u00b7 '+matched+'/'+tot+' match your teams'+(matched<tot?'. Any unmatched you can enter by hand.':'.'));}
+  }catch(e){set(i,'fail','Couldn\'t reach football-data.org: '+((e&&e.message)||'network error')+'.');}}
+
+  i=add('Background poller (Cloudflare Worker)');
+  if(DB){try{const snap=await DB.ref('_worker').once('value');const hb=snap.val();
+    if(!hb||!hb.lastRun)set(i,'warn','Not detected. To update results with nobody online, deploy the Worker in the poller folder. (Just deployed it? Give it ~3 minutes to run once, then re-check.)');
+    else{const ageMin=Math.round((Date.now()-hb.lastRun)/60000);
+      if(hb.ok===false)set(i,'fail','Last ran '+ageMin+' min ago but reported an error. Check the Worker logs in the Cloudflare dashboard.');
+      else if(ageMin<=6)set(i,'ok','Running \u2014 last ran '+(ageMin<1?'less than a minute':ageMin+' min')+' ago.');
+      else set(i,'warn','Last ran '+ageMin+' min ago (it should run every 3). It may be stopped or erroring \u2014 check the Cloudflare dashboard.');}
+  }catch(e){set(i,'warn','Couldn\'t read the Worker heartbeat.');}}else set(i,'warn','No database to read the heartbeat from.');
+
+  i=add('Donation link');
+  if(!state.charity||!state.charity.on)set(i,'ok','Charity is off \u2014 no link needed.');
+  else{const url=donateLink();
+    if(!url)set(i,'warn','Charity is on but no donation link is set (Charity section above), so the Donate button won\'t appear.');
+    else{try{new URL(url);set(i,'ok','Set \u2014 tap to confirm it opens the right page: '+url);}catch(e){set(i,'warn','The donation link doesn\'t look like a valid web address: '+url);}}}
+
+  i=add('Viewer access code');
+  if(DB){try{const snap=await DB.ref('wc2026/accessHash').once('value');set(i,snap.val()?'ok':'warn',snap.val()?'A code is set \u2014 viewers need it to open the site.':'No code set \u2014 anyone with the link can view (fine if that\'s what you intend).');}catch(e){set(i,'warn','Could not check.');}}else set(i,'warn','No database connection.');
+
+  const nFail=rows.filter(r=>r.s==='fail').length,nWarn=rows.filter(r=>r.s==='warn').length;
+  draw();
+  const sum=document.createElement('div');
+  sum.style.cssText='margin-top:10px;padding:10px 12px;border-radius:7px;font-size:.8rem;font-weight:700;'+(nFail?'background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);color:var(--red)':(nWarn?'background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);color:var(--amber)':'background:rgba(0,128,42,.08);border:1px solid rgba(0,128,42,.3);color:var(--gr)'));
+  sum.textContent=nFail?('\u2717 '+nFail+' problem'+(nFail>1?'s':'')+' to fix'+(nWarn?' \u00b7 '+nWarn+' to review':'')):(nWarn?('\u26a0 Core systems OK \u00b7 '+nWarn+' thing'+(nWarn>1?'s':'')+' to review'):'\u2713 All checks passed \u2014 everything is working');
+  box.appendChild(sum);
+}
+
 async function testFeed(){
   const sEl=document.getElementById('feed-status');
   const rEl=document.getElementById('feed-result');
@@ -1981,7 +2079,18 @@ function renderSetup(){
       </div>
     </div>`:''}
   </div>
-  ${!state.draw?(()=>{
+  <div class="card" style="margin-bottom:16px;overflow:hidden">
+    <button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen.diag=!state.sOpen.diag;render()">
+      <span>🩺 SYSTEM CHECK <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> — test the feed, database &amp; Cloudflare connection</span></span>
+      <span style="color:var(--txm)">${state.sOpen.diag?'▲':'▼'}</span>
+    </button>
+    ${state.sOpen.diag?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">
+      <p style="font-size:.8rem;color:var(--txd);margin:9px 0 11px;line-height:1.55">Checks everything the sweepstake relies on — database read/write, your sign-in, the results feed, the background Cloudflare poller and your links — and flags anything that needs attention. Safe to run anytime.</p>
+      <button class="btn btn-green" style="font-size:.74rem" onclick="runDiagnostics()">▶ RUN CHECKS</button>
+      <div id="diag-results"></div>
+    </div>`:''}
+  </div>
+    ${!state.draw?(()=>{
     const _pool=drawPool();const poolN=_pool.names;const usingSignups=_pool.fromSignups;
     const empty=usingSignups?0:(pc-poolN.length);
     const lower=poolN.map(n=>n.toLowerCase());
@@ -2319,7 +2428,7 @@ function renderStandings(){
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
-  return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${mePickerHTML(true)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+  return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
@@ -2347,7 +2456,7 @@ function renderStandings(){
       <div class="sc-hdr" onclick="state.expanded=state.expanded===p.name?null:'${safeName}';render()">
         <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&p.total>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:${rank<3?'.78rem':'.82rem'};color:${rank<3&&p.total>0?'#3a2a00':'var(--txm)'};box-shadow:${rank<3&&p.total>0?'0 2px 8px rgba(224,168,46,.35)':'none'};border:1px solid ${rank<3&&p.total>0?'transparent':'var(--b)'}">${rank<3&&p.total>0?['1','2','3'][rank]:rank+1}</div>
         <div style="display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0">
-        ${(()=>{const prev=_prevRanks[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
+        ${(()=>{const prev=(_baseRanks||{})[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
       </div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
@@ -2451,6 +2560,7 @@ function safeUrl(u){u=(u||'').trim();if(!u)return'';if(/^\s*javascript:/i.test(u
 function donateLink(){return state.charity&&state.charity.on?safeUrl(state.charity.link):'';}
 function donateBtnHTML(o){o=o||{};const url=donateLink();if(!url)return'';const big=o.big;const label=o.label||'Donate';
   return `<a href="${url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;${big?'padding:12px 22px;font-size:.95rem;':'padding:7px 15px;font-size:.78rem;'}background:linear-gradient(135deg,#e0245e,#b81d4e);color:#fff;border-radius:${big?'11px':'8px'};font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em;text-decoration:none;box-shadow:0 3px 10px rgba(224,36,94,.32);border:none">❤ ${esc(label)}</a>`;}
+function donateTickerLink(){const url=donateLink();if(!url)return'';const nm=(state.charity&&state.charity.name)?state.charity.name:'charity';return `<a href="${url.replace(/"/g,'&quot;')}" target="_blank" rel="noopener noreferrer" style="color:#ff6b9d;font-weight:700;text-decoration:underline;text-underline-offset:2px">❤ Donate to ${esc(nm)} →</a>`;}
 function donateShow(place){
   if(!donateLink())return false;
   const e=(state.charity&&state.charity.emphasis)||'balanced';
@@ -2494,6 +2604,7 @@ function render(){
   }
   document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}${t.id==='live'?' live':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
   updateHdr();
+  refreshRankBaseline();
   const c=document.getElementById('content');
   if(state.tab==='setup'&&adminSess){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
   else if(state.tab==='setup'){c.innerHTML=renderDraw();}
