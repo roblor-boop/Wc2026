@@ -253,8 +253,8 @@ html.dark .bk-match.final{border-color:rgba(255,215,0,.45);box-shadow:0 0 20px r
 .dc{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px;animation:fadeUp .38s ease forwards;opacity:0;box-shadow:var(--shadow);transition:box-shadow .2s}
 .dc-hdr{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--b)}
 .dc:hover{box-shadow:var(--shadow-lg)}
-.dc.gld{border-color:rgba(168,120,0,.4)}
-html.dark .dc.gld{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--card));border-color:rgba(255,215,0,.28)}
+.dc.gold{border-color:rgba(168,120,0,.4)}
+html.dark .dc.gold{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--card));border-color:rgba(255,215,0,.28)}
 .team-row{display:flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--b);border-radius:7px;margin-bottom:4px;background:var(--cardh);transition:background .12s}
 .team-row:hover{background:var(--bg2)}
 .team-row.out{opacity:.5}
@@ -579,7 +579,7 @@ const CONFIG = {
     messagingSenderId: "612147408344",
     appId:             "1:612147408344:web:c6c5447e18668f4f0c16ad"
   },
-  footballApiKey: "1ec655d13a1847efb4a43b39951e3bb8",
+  footballApiKey: "",
   teamsWebhook:   "",                         // optional — Teams notifications
   title:          "Carlyle London Office Sweepstake"
 };
@@ -656,7 +656,7 @@ async function fbDel(path){
   if(DB&&!firebase.auth().currentUser){showToast('Session expired — please sign in again','error');adminSess=false;render();return false;}
   try{
     if(DB)await DB.ref(path).remove();
-    else sDel('wc26h:'+path.replace(/\//g,':'),val);
+    else await sDel('wc26h:'+path.replace(/\//g,':'));
     return true;
   }catch(e){
     if(e.code==='PERMISSION_DENIED')showToast('Blocked — check Firebase rules','error');
@@ -827,6 +827,27 @@ function shareStandings(){
 const TK_CD='\uE000';  // placeholder swapped for a live-updating countdown span inside the ticker
 const DN='\uE001';  // placeholder → a real tappable Donate link in the ticker
 function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+const OFFICE_BANTER=[
+  "💬 This table > the Monday standup",
+  "☕ Loser buys the brews — the office is listening",
+  "📺 Goals on in the kitchen, get involved",
+  "🤫 Spoiler-free zone by the coffee machine, ta",
+  "📸 Someone's screenshotting this for the group chat as we speak",
+  "🏅 Bragging rights — the only prize worth having",
+  "🗣️ Big talk in the kitchen — let the table settle it",
+  "🍵 Pretty sure the tea round's riding on this",
+  "😅 Keep it friendly… ish",
+  "👔 More drama than the appraisals, this",
+  "📅 Half the office checking this more than their inbox",
+  "🤝 No hard feelings… till the final whistle"
+];
+const OFFICE_BANTER_PRE=[
+  "📝 Get your name in — don't be the one who missed it",
+  "💬 Office is already chatting — get involved",
+  "🏆 Glory and a year of bragging rights up for grabs",
+  "☕ Sweepstake talk by the kettle from here on",
+  "🎲 Last chance for a team — the draw's coming"
+];
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
   const a=[];
@@ -840,53 +861,61 @@ function tickerItems(){
     Object.entries(state.grR).forEach(([id,r])=>{if(r&&r.played){const f=GF[id];if(f)scan(f.home,f.away,r.hg,r.ag);}});
     Object.values(state.koR).forEach(m=>{if(m&&m.played&&m.home&&m.away)scan(m.home,m.away,m.hg,m.ag);});
     const seed=(gp+kp)*7+(lb[0]?Math.round(lb[0].total):0)*3+goals+lb.length;
-    const pick=arr=>arr[((seed%arr.length)+arr.length)%arr.length];
+    const pk=(arr,o)=>arr[((((seed+(o||0))%arr.length)+arr.length)%arr.length)];
+    const pick=arr=>pk(arr,0);
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
-    // Live group scores (the exciting real-time bit)
+    const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners loving it"],3):"nice for "+o.join(" & ");
     liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}–${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
     if(champ){
       a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are WORLD CHAMPIONS — ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
+      a.push(pick([`🎉 ${lb[0].name} is the office champion — bragging rights locked in for a year`,`👑 Take a bow, ${lb[0].name} — top of the pile`,`🏅 ${lb[0].name} takes the lot — someone find a trophy (a mug'll do)`]));
       if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?` · 🥉 ${lb[2].name} bronze`:""}`);
       const callers=lb.filter(p=>p.pred&&p.pred.team===champ);
       if(callers.length)a.push(`🔮 ${pick(["Called it!","Crystal-ball award —","Take a bow —"])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the off`);
+      if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} finishes bottom — there's always next year`,`🥄 Wooden spoon to ${last.name} — chin up, hero`]));}
     } else if(started){
       const L=lb[0],margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
-      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace — ${L.total} pts`]));
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace — ${L.total} pts`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show — ${L.total} pts`,`🏆 ${L.name} in pole position, ${L.total} pts`,`📈 ${L.name} leading the charge — ${L.total}`,`🎯 ${L.name} the one to catch on ${L.total}`]));
       if(lb.length>1){
-        if(margin===0)a.push(`🤝 ${L.name} & ${lb[1].name} dead level at the top!`);
-        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top!`,`📸 Photo finish — ${lb[1].name} just ${margin} behind`]));
+        if(margin===0)a.push(pick([`🤝 ${L.name} & ${lb[1].name} dead level at the top!`,`😤 ${L.name} and ${lb[1].name} can't be separated — it's on`,`⚖️ Level pegging up top: ${L.name} & ${lb[1].name}`]));
+        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top!`,`📸 Photo finish — ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} breathing down ${L.name}'s neck — ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`]));
+        else a.push(pk([`😏 ${L.name} getting comfy up top — someone go knock 'em off`,`🎯 Big target on ${L.name}'s back at number one`,`☕ ${L.name} out front… first round's on you then?`,`👀 Whole office gunning for ${L.name} now`],7));
+        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting down ${L.name} — ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off top`,`🔪 ${lb[1].name} sharpening up — ${margin} behind`],4));
         const within=lb.filter(p=>L.total-p.total<=5).length;
-        if(within>=3&&margin>0)a.push(`😮 ${within} players within 5 pts of top — anyone's race!`);
+        if(within>=3&&margin>0)a.push(pick([`😮 ${within} within 5 pts of top — anyone's race!`,`🍿 ${within} players in the mix up top — grab the popcorn`,`🎢 ${within} covered by 5 pts — wild`]));
+        for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} & ${lb[i+1].name} locked together on ${lb[i].total}`);break;}}
       }
       const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
-      if(form){const o=form.owners;a.push((`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts — ${o.length>2?o.length+" owners happy":"nice for "+o.join(" & ")}`).replace(/ +/g," ").trim());}
+      if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts — ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts — ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering — ${form.pts} pts, ${ownTxt(o)}`],2).replace(/ +/g," ").trim());}
       const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the FINAL"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
-      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`💥 ${(FLAGS[w]||"")} ${w} into ${rn[latest]}${o.length?` — ${o.length>2?o.length+" owners buzzing":o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
-      if(bigWin&&bigWin.mar>=3)a.push((`😱 Biggest win so far — ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l}`).replace(/ +/g," ").trim());
-      if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} holding up the table on ${last.total} — only way is up!`,`🥄 Someone's gotta prop it up — ${last.name} on ${last.total} (still time!)`,`🐢 ${last.name} taking the scenic route, ${last.total} pts`]));}
-      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`]));}
+      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","booking a spot in"],1)} ${rn[latest]}${o.length?` — ${o.length>2?o.length+" owners buzzing":o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
+      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far — ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} put on a show — ${bigWin.ws}–${bigWin.ls} v ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l} — ouch`],1).replace(/ +/g," ").trim());
+      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total} — only way is up!`,`🥄 Someone's gotta prop it up — ${last.name} on ${last.total} (still time!)`,`🐢 ${last.name} taking the scenic route, ${last.total} pts`,`🪑 ${last.name} keeping the bottom seat warm — ${last.total} pts`,`☕ Wooden spoon watch: ${last.name} on ${last.total} — teas on you?`,`💀 ${last.name} propping up the table — character building, this`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} needs results (and a prayer) — ${last.total} pts`]));}
+      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table — no drama, ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`,`🥪 ${mid.name} in no-man's-land on ${mid.total}`]));}
       if(me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
-        if(r===1)a.push(`👀 You're TOP, ${me}! 😎 Don't look back…`);
-        else if(r<=3)a.push(`🙌 You're ${ordinal(r)}, ${me} — ${gapTop} off the lead, medal in sight`);
-        else if(i===lb.length-1&&lb.length>3)a.push(`💪 You're last, ${me}… your comeback starts here`);
-        else a.push(`📈 You're ${ordinal(r)}, ${me} — ${gapTop} pts off top, all to play for`);}}
+        if(r===1)a.push(pick([`👀 You're TOP, ${me}! 😎 Don't look back…`,`🔥 Top of the office, ${me} — strut about a bit`,`👑 You're #1, ${me} — savour it`]));
+        else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me} — ${gapTop} off the lead, medal in sight`,`🥁 Podium spot, ${me} — ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me} — sniffing the lead, ${gapTop} back`]));
+        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}… comeback starts here`,`🙈 Rock bottom, ${me} — nowhere to go but up`,`🥄 Spoon's yours for now, ${me} — turn it round`]));
+        else a.push(pick([`📈 You're ${ordinal(r)}, ${me} — ${gapTop} off top, all to play for`,`👟 ${ordinal(r)}, ${me} — lace up, ${gapTop} to close`,`🎯 ${ordinal(r)}, ${me} — ${gapTop} to the summit`]));}}
+      a.push(pk(OFFICE_BANTER,5));
     }
-    if(gp+kp>0)a.push(`📊 ${gp+kp} matches played · ${goals} goals so far`);
-    if(!started&&!champ)a.push(pick(["🎲 Teams drawn at random — pure luck, no skill (sorry)","👀 Who landed the holders? Check the draw tab","🍀 Good luck everyone — it's all in the draw now"]));
+    if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played · ${goals} goals so far`,`⚽ ${goals} goals across ${gp+kp} games and counting`,`📊 ${gp+kp} down, ${goals} goals — stats nerds happy`],6));
+    if(!started&&!champ)a.push(pick([`🎲 Teams drawn — pure luck, no skill (sorry not sorry)`,`👀 Check the draw tab — who landed the holders?`,`🍀 It's in the lap of the gods now`,`💪 Everyone's a contender till the whistle goes`,`⏳ Kick-off can't come quick enough`]));
     if(state.predict.on&&!champ){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[0]} is the office favourite to win it (${top[1]} backer${top[1]>1?"s":""})`);}
     if(!started&&!champ&&cdText())a.push("⏳ "+TK_CD);
   } else {
     if(cdText())a.push("⏳ "+TK_CD);
     const n=Object.keys(state.signups||{}).length;
     if(n)a.push(`✍️ ${n} ${n>1?"players":"player"} signed up${n>1?" so far":""}`);
-    a.push(["🎲 Random draw — everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill required, just luck"][n%3]);
+    a.push(["🎲 Random draw — everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill required, just luck","👀 Who'll land the favourites? Soon find out","💬 Office chat's about to get spicy","📝 Get your name in — don't miss out"][n%6]);
+    a.push(OFFICE_BANTER_PRE[n%OFFICE_BANTER_PRE.length]);
   }
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
     else a.push(`❤ Free to enter${state.charity.name?" · in aid of "+state.charity.name:" · played for charity"}`);
-    if(donateLink()&&donateShow("ticker"))a.push(DN);  // rendered as a clickable “Donate to <charity>” link
+    if(donateLink()&&donateShow("ticker"))a.push(DN);
   }
   const out=[];const mx=Math.max(a.length,custom.length);
   for(let i=0;i<mx;i++){if(i<a.length)out.push(a[i]);if(i<custom.length)out.push(custom[i]);}
@@ -943,7 +972,13 @@ function todayMatchesHTML(){
 
 // ── SHARE URL ─────────────────────────────────────────────────────────────────
 function shareURL(){try{const p={d:state.draw,g:state.grR,k:state.koR,s:state.scoring,b:state.bonus,v:1};const url=`${location.origin}${location.pathname}?s=${btoa(unescape(encodeURIComponent(JSON.stringify(p))))}`;navigator.clipboard.writeText(url).then(()=>showToast('Share URL copied!','gold')).catch(()=>showToast('Copy URL from address bar','error'));}catch{showToast('Share error','error');}}
-function loadFromURL(){try{const p=new URLSearchParams(location.search).get('s');if(!p)return false;const d=JSON.parse(decodeURIComponent(escape(atob(p))));if(d.d)state.draw=d.d;if(d.g)state.grR=d.g;if(d.k)state.koR=d.k;if(d.s)state.scoring={...DEF_SCR,...d.s};if(d.b)state.bonus={...DEF_BONUS,...d.b};return true;}catch{return false;}}
+function loadFromURL(){try{const p=new URLSearchParams(location.search).get('s');if(!p)return false;const d=JSON.parse(decodeURIComponent(escape(atob(p))));
+  const dr=d.d?sanitizeDraw(d.d):null;if(dr)state.draw=dr;
+  if(d.g&&typeof d.g==='object'){const g={};Object.keys(d.g).forEach(id=>{if(GF[id]){const r=d.g[id]||{};g[id]={hg:Math.max(0,parseInt(r.hg)||0),ag:Math.max(0,parseInt(r.ag)||0),played:!!r.played};}});state.grR=g;}
+  if(d.k&&typeof d.k==='object'){const ko={};Object.keys(d.k).forEach(id=>{if(BRACKET[id]){const r=d.k[id]||{};const h=_knownTeam(r.home),a=_knownTeam(r.away),w=_knownTeam(r.winner);ko[id]={home:h?h.name:'',away:a?a.name:'',hg:Math.max(0,parseInt(r.hg)||0),ag:Math.max(0,parseInt(r.ag)||0),winner:w?w.name:'',round:BRACKET[id].r,played:!!r.played};}});state.koR=ko;}
+  if(d.s&&typeof d.s==='object'){const s={};Object.keys(d.s).forEach(k=>{const v=Number(d.s[k]);if(isFinite(v))s[k]=v;});state.scoring={...DEF_SCR,...s};}
+  if(d.b&&typeof d.b==='object'){const bb={};Object.keys(d.b).forEach(k=>{const v=d.b[k];if(typeof v==='boolean')bb[k]=v;else{const nv=Number(v);if(isFinite(nv))bb[k]=nv;}});state.bonus={...DEF_BONUS,...bb};}
+  return !!(dr||d.g||d.k);}catch{return false;}}
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
 // ── ACCESS GATE (viewer passcode) ─────────────────────────────────────────────
@@ -1104,7 +1139,7 @@ const SFX={_c:null,ctx(){if(state.muted)return null;if(!this._c){const AC=window
   tick(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='square';o.frequency.value=1150;g.gain.setValueAtTime(.10,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.05);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.06);},
   land(){const c=this.ctx();if(!c)return;[523,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.value=f;const t=c.currentTime+i*.06;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.34,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.45);});}
 };
-function toggleMute(){state.muted=!state.muted;const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');} fbSave('wc2026/cfg',stateForCfg());}
+function toggleMute(){state.muted=!state.muted;try{localStorage.setItem('wc26muted',state.muted?'1':'0');}catch(e){}const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');}}
 
 // ── CONFETTI ──────────────────────────────────────────────────────────────────
 function fireConfetti(){
@@ -1130,6 +1165,7 @@ function showOv(){document.getElementById('ov').style.display='flex';}
 function hideOv(){document.getElementById('ov').style.display='none';drawSkip=false;}
 
 async function doDraw(vn){
+  vn=(vn||[]).map(n=>cleanName(n)).filter(n=>n.length>=1);
   const n=vn.length;
   const parts=distributeTeams(vn);
   // Clear previous results + close registration
@@ -1649,7 +1685,7 @@ function showImportDraw(){
   showMod('Restore Draw from Backup','Paste your backup code below to restore the draw.',`RESTORE`,()=>{
     const ta=document.querySelector('#modal-box textarea');
     if(!ta){showToast('No data to import','error');return;}
-    try{const data=JSON.parse(ta.value);if(!data.participants)throw new Error();state.draw=data;fbSave('wc2026/draw',data);state.tab='draw';render();showToast('Draw restored!','gold');}catch{showToast('Invalid backup data','error');}
+    try{const data=sanitizeDraw(JSON.parse(ta.value));if(!data||!data.participants.length)throw new Error();state.draw=data;fbSave('wc2026/draw',data);state.tab='draw';render();showToast('Draw restored!','gold');}catch{showToast('Invalid backup data','error');}
   });
   setTimeout(()=>{const box=document.getElementById('modal-box');const ta=document.createElement('textarea');ta.placeholder='Paste backup JSON here…';ta.style.cssText='width:100%;height:150px;font-size:.72rem;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);padding:8px;margin-bottom:10px;font-family:monospace;resize:vertical';box.insertBefore(ta,box.querySelector('.btn').parentElement);},50);
 }
@@ -1721,7 +1757,7 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',muted:state.muted};}
+function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||''};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 // ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
@@ -1764,7 +1800,8 @@ async function submitSignup(){
   if(last.length<2){showToast('Last name required — so the organiser knows who you are','error');lEl.focus();return;}
   // Title-case both names for consistency
   const tc=s=>s.charAt(0).toUpperCase()+s.slice(1);
-  const name=tc(first)+' '+tc(last);
+  const name=cleanName(tc(first)+' '+tc(last));
+  if(name.length<2){showToast('Please enter a valid name','error');fEl.focus();return;}
   // Prevent duplicate sign-ups of the same name
   const existing=Object.values(state.signups||{}).map(s=>(s.name||'').toLowerCase());
   if(existing.includes(name.toLowerCase())){showToast('That name is already signed up','error');return;}
@@ -1840,7 +1877,8 @@ function editSignup(key){
   const s=state.signups&&state.signups[key];if(!s)return;
   _modInput('Edit name','SAVE',s.name,'First and last name',v=>{
     if(!_validFullName(v)){showToast('Enter a full name (first and last)','error');return;}
-    const name=_titleCase(v);
+    const name=cleanName(_titleCase(v));
+    if(!name){showToast('Enter a valid name','error');return;}
     state.signups[key]={...s,name};
     if(DB)DB.ref('wc2026/signups/'+key).set(state.signups[key]);
     render();showToast('Name updated');
@@ -1851,7 +1889,8 @@ function addSignupManual(){
   if(!adminSess)return;
   _modInput('Add a player','ADD','','First and last name',v=>{
     if(!_validFullName(v)){showToast('Enter a full name (first and last)','error');return;}
-    const name=_titleCase(v);
+    const name=cleanName(_titleCase(v));
+    if(!name){showToast('Enter a valid name','error');return;}
     const existing=signupNames().map(n=>n.toLowerCase());
     if(existing.includes(name.toLowerCase())){showToast('Already on the list','error');return;}
     const key='s'+Date.now()+Math.floor(Math.random()*1000);
@@ -2257,11 +2296,11 @@ function renderDraw(){
     const isF=idx===0&&p.total>0;
     return`<div class="dc${isF?' gold':''}" style="animation-delay:${idx*.04}s">
       <div class="dc-hdr">
-        <div style="width:22px;height:22px;border-radius:50%;background:${isF?'linear-gradient(135deg,var(--gold),var(--gold-dim))':'var(--b)'};display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:700;color:${isF?'#fff':'var(--txd)'};flex-shrink:0">${idx+1}</div>
+        <div style="width:22px;height:22px;border-radius:50%;background:${isF?'linear-gradient(135deg,var(--gold),var(--gold-d))':'var(--b)'};display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:.63rem;font-weight:700;color:${isF?'#fff':'var(--txd)'};flex-shrink:0">${idx+1}</div>
         <span style="font-family:'Oswald',sans-serif;font-size:.9rem;font-weight:600;color:var(--tx);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>
         <span style="font-family:'Oswald',sans-serif;font-size:.92rem;font-weight:700;color:${isF?'var(--gold)':p.total>0?'var(--gr)':'var(--txm)'}">${p.total}<span style="font-size:.56rem;color:var(--txm);margin-left:2px">pts</span></span>
       </div>
-      ${p.breakdown.map(t=>{const q=t.qual||'pending';return`<div class="team-row${q==='eliminated'?' elim':''}">
+      ${p.breakdown.map(t=>{const q=t.qual||'pending';return`<div class="team-row${q==='eliminated'?' out':''}">
         <span style="font-size:1rem">${t.flag}</span>
         <span style="font-size:.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${q==='eliminated'?'var(--txm)':'var(--tx)'};font-weight:500;${q==='eliminated'?'text-decoration:line-through':''}">${t.name}</span>
         ${t.pts>0?`<span style="font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;color:var(--gr)">+${t.pts}</span>`:''}
@@ -2333,7 +2372,7 @@ function renderTablesContent(qual){
     return`<div class="gt${complete?' done':''}">
       <div class="gt-hdr"><span class="gt-lbl">GROUP ${g}</span><span style="font-size:.62rem;color:var(--txm)">${played}/6${complete?' · Done':''}</span></div>
       <div class="gt-row" style="padding:3px 9px;border-bottom-width:1px"><span></span><span style="font-size:.56rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.06em">Team</span>${['P','W','D','L','GF','GA','GD','Pts'].map(h=>`<span style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;font-weight:600;text-align:center">${h}</span>`).join('')}</div>
-      ${rows.map((row,pos)=>{const qv=qual[row.name]||'pending';return`<div class="gt-row${qv==='eliminated'?' elim':''}">
+      ${rows.map((row,pos)=>{const qv=qual[row.name]||'pending';return`<div class="gt-row${qv==='eliminated'?' out':''}">
         <div style="display:flex;align-items:center;justify-content:center"><div style="width:5px;height:5px;border-radius:50%;background:${dotC(pos)}"></div></div>
         <div style="display:flex;align-items:center;gap:4px;min-width:0"><span style="font-size:.9rem">${row.flag}</span><span style="font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${qv==='eliminated'?'var(--txm)':'var(--tx)'}">${row.name}</span>${(qv==='top2'||qv==='best3rd')?`<span style="font-size:.52rem;padding:0 3px;border-radius:2px;background:${QCOL[qv]}18;border:1px solid ${QCOL[qv]}40;color:${QCOL[qv]};font-family:'Oswald',sans-serif;font-weight:600;flex-shrink:0">Q</span>`:''}</div>
         ${[row.P,row.W,row.D,row.L,row.GF,row.GA,(row.GD>0?'+':'')+row.GD,row.Pts].map((v,i)=>`<span class="gt-cell" style="color:${i===4?'var(--gr)':i===5?'var(--red)':i===6?row.GD>0?'var(--gr)':row.GD<0?'var(--red)':'var(--txd)':i===7?'var(--tx)':'var(--txd)'}">${v}</span>`).join('')}
@@ -2462,8 +2501,8 @@ function renderStandings(){
     <div style="font-size:2rem;margin-bottom:6px">🏆</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:.04em">${champ} ARE WORLD CHAMPIONS</div>
     <div style="font-size:.85rem;color:var(--tx);margin-top:5px">${champP.name} wins with <b>${champP.total}</b> points!</div>
-    ${isAdmin()?`<button onclick="downloadCert(calcLeaderboard()[0])" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold-dim));border:none;border-radius:6px;color:#fff;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">🏆 WINNER CERTIFICATE</button>`:''}
-    <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-dim))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
+    ${isAdmin()?`<button onclick="downloadCert(calcLeaderboard()[0])" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold-d));border:none;border-radius:6px;color:#fff;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">🏆 WINNER CERTIFICATE</button>`:''}
+    <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-d))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
     <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
   </div>`:''}
   ${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">TOURNAMENT STARTS 11 JUNE 2026</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">Enter match results in Fixtures and points update here.</div></div>`:''}
@@ -2580,7 +2619,21 @@ function startCountdown(){if(_cdTimer)return;_cdTimer=setInterval(()=>{
     const el=document.getElementById('countdown');if(!el)return;
     if(txt)el.textContent=txt;else{const w=el.closest('.cd-wrap');if(w)w.style.display='none';}
   },1000);}
-function esc(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function cleanName(s){return String(s||'').replace(/[^\p{L}\p{M}0-9 .'\-]/gu,'').replace(/\s+/g,' ').trim().slice(0,30);}
+function _knownTeam(n){return ALL_TEAMS.find(x=>x.name===n)||null;}
+// Rebuild a draw object from untrusted input (share link / pasted backup): clean player
+// names, and accept only real teams (canonical name/flag/group), dropping anything injected.
+function sanitizeDraw(dr){
+  if(!dr||typeof dr!=='object'||!Array.isArray(dr.participants))return null;
+  const participants=dr.participants.filter(p=>p&&typeof p==='object').map(p=>{
+    const teams=(Array.isArray(p.teams)?p.teams:[]).map(t=>{const k=_knownTeam((t&&typeof t==='object')?t.name:t);return k?{name:k.name,flag:k.flag,group:k.group}:null;}).filter(Boolean);
+    const r={name:cleanName(p.name),teams};
+    if(p.pred&&p.pred.team){const k=_knownTeam(p.pred.team);if(k)r.pred={team:k.name};}
+    return r;
+  }).filter(p=>p.name);
+  return {participants,participantCount:participants.length,drawnAt:String(dr.drawnAt||new Date().toISOString())};
+}
 function safeUrl(u){u=(u||'').trim();if(!u)return'';if(/^\s*javascript:/i.test(u))return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u;}
 function donateLink(){return state.charity&&state.charity.on?safeUrl(state.charity.link):'';}
 function donateBtnHTML(o){o=o||{};const url=donateLink();if(!url)return'';const big=o.big;const label=o.label||'Donate';
@@ -2655,7 +2708,6 @@ async function doReset(){if(!adminSess){showToast('Admin sign-in required','erro
 function protectedRunDraw(){requirePin(runDraw);}
 function protectedReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Reset everything?','This will permanently delete the draw and all results.','YES RESET',doReset,true);}
 async function copyDraw(){const lb=calcLeaderboard();const lines=[`🏆 ${CONFIG.title}`,'Drawn: '+new Date(state.draw.drawnAt).toLocaleString('en-GB'),''];lb.forEach((p,i)=>{lines.push(`${MEDAL[i]||(i+1)+'.'} ${p.name} — ${p.total} pts`);p.breakdown.forEach(t=>lines.push(`   ${t.flag} ${t.name} (Grp ${t.group})`));lines.push('');});try{await navigator.clipboard.writeText(lines.join('\n'));showToast('Copied!','gold');}catch{showToast('Copy failed','error');}}
-function adjKo(id,side,d){if(!tempS[id])tempS[id]={hg:0,ag:0};tempS[id][side]=Math.max(0,(tempS[id][side]||0)+d);const el=document.getElementById(`sk${side}${id}`);if(el)el.textContent=tempS[id][side];const ps=document.getElementById(`pens-${id}`);if(ps)ps.style.display=(tempS[id].hg===tempS[id].ag)?'flex':'none';}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // Register service worker for PWA / offline support
@@ -2676,6 +2728,7 @@ if('serviceWorker' in navigator){
   }).catch(()=>{});
 }
 initTheme();
+try{state.muted=localStorage.getItem('wc26muted')==='1';}catch(e){}
 // Set title from config
 if(CONFIG.title){document.title=CONFIG.title;const t=document.querySelector('.hdr-title');if(t)t.textContent=CONFIG.title;}
 
@@ -2713,6 +2766,9 @@ else if(DB){
     state.live=data.live||{};
     state.koR=data.ko||{};
     _accessHash=data.accessHash||null;
+    state.paid=data.paid||{};
+    state.signups=data.signups||{};
+    state.signupOpen=!!data.signupOpen;
     if(data.cfg){
       if(data.cfg.scoring)state.scoring={...DEF_SCR,...data.cfg.scoring};
       if(data.cfg.prize)state.prize={...{on:false,buyin:5,pay:[60,30,10]},...data.cfg.prize};
@@ -2728,11 +2784,6 @@ else if(DB){
       state.drawTime=data.cfg.drawTime||'';
       if(data.cfg.names)state.names=[...data.cfg.names,...Array(MAX_PLAYERS).fill('')].slice(0,MAX_PLAYERS);
       if(data.cfg.pc)state.pc=data.cfg.pc;
-      state.paid=data.paid||{};
-      state.signups=data.signups||{};
-      state.signupOpen=data.signupOpen||false;
-      if(data.cfg.muted!==undefined)state.muted=data.cfg.muted;
-      
     }
     if(first){
       first=false;
