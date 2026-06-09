@@ -107,7 +107,7 @@ input,select,button{font-family:'Barlow',sans-serif;outline:none}
 #loading{position:fixed;inset:0;background:#06091a;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .4s}
 #loading.gone{opacity:0;pointer-events:none}
 /* ── HEADER ──────────────────────────────────────────── */
-#hdr{background:var(--hdr);border-bottom:1px solid var(--hdr-bord);position:sticky;top:0;z-index:50;box-shadow:var(--hdr-shadow);position:relative;overflow:hidden}
+#hdr{background:var(--hdr);border-bottom:1px solid var(--hdr-bord);position:sticky;top:0;z-index:50;box-shadow:var(--hdr-shadow);overflow:hidden}
 #hdr::before{content:'';position:absolute;top:-60%;right:-10%;width:300px;height:300px;background:radial-gradient(circle,var(--hdr-glow),transparent 65%);pointer-events:none}
 #hdr-inner{max-width:1180px;margin:0 auto;padding:10px 14px 0}
 .hdr-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -334,6 +334,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 /* ── ANIMATIONS ──────────────────────────────────────── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .ticker{position:relative;overflow:hidden;white-space:nowrap;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:9px 0;margin-bottom:14px;box-shadow:var(--shadow);-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+#hdr-inner .ticker{margin:9px 0 11px}
 .ticker-track{display:inline-block;white-space:nowrap;will-change:transform;animation:tickerScroll var(--tk-dur,40s) linear infinite;font-size:.8rem;color:var(--tx);font-weight:500}
 .ticker:hover .ticker-track,.ticker:active .ticker-track{animation-play-state:paused}
 @keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -403,10 +404,10 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
       <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
     </div>
     <nav class="tab-nav" id="tab-nav"></nav>
+    <div id="ticker-slot"></div>
   </div>
 </div>
 <main>
-  <div id="ticker-slot"></div>
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
@@ -553,6 +554,9 @@ const KO_SCHED={
 };
 const DEF_SCR={group_win:2,group_draw:1,qualify_top2:5,qualify_3rd:2,win_r32:5,win_r16:7,win_qf:10,win_sf:15,win_final:20,goal_bonus:0};
 const SCR_LBL={group_win:'Group win',group_draw:'Group draw',qualify_top2:'Qualify (top 2)',qualify_3rd:'Qualify (best 3rd)',win_r32:'Win in R32',win_r16:'Win in R16',win_qf:'Win in QF',win_sf:'Win in SF',win_final:'Win the Final',goal_bonus:'Per goal (bonus)'};
+const DEF_BONUS={on:true,most_goals:5,fewest_goals:3,best_def:5,worst_def:3};
+const BONUS_LBL={most_goals:'Most goals scored',fewest_goals:'Fewest goals scored',best_def:'Best defence (fewest conceded)',worst_def:'Leakiest defence (most conceded)'};
+const BONUS_ICON={most_goals:'\u26bd',fewest_goals:'\ud83e\uddca',best_def:'\ud83d\udee1\ufe0f',worst_def:'\ud83e\udd45'};
 const QCOL={top2:'#007a3d',best3rd:'#0e8888',maybe3rd:'#c07000',eliminated:'#607080',pending:'#607080'};
 const QLBL={top2:'Qualified ✓',best3rd:'Qual (3rd) ✓',maybe3rd:'Maybe 3rd',eliminated:'Out',pending:'TBD'};
 const MEDAL=['🥇','🥈','🥉'];
@@ -594,7 +598,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=200;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -938,8 +942,8 @@ function todayMatchesHTML(){
 }
 
 // ── SHARE URL ─────────────────────────────────────────────────────────────────
-function shareURL(){try{const p={d:state.draw,g:state.grR,k:state.koR,s:state.scoring,v:1};const url=`${location.origin}${location.pathname}?s=${btoa(unescape(encodeURIComponent(JSON.stringify(p))))}`;navigator.clipboard.writeText(url).then(()=>showToast('Share URL copied!','gold')).catch(()=>showToast('Copy URL from address bar','error'));}catch{showToast('Share error','error');}}
-function loadFromURL(){try{const p=new URLSearchParams(location.search).get('s');if(!p)return false;const d=JSON.parse(decodeURIComponent(escape(atob(p))));if(d.d)state.draw=d.d;if(d.g)state.grR=d.g;if(d.k)state.koR=d.k;if(d.s)state.scoring={...DEF_SCR,...d.s};return true;}catch{return false;}}
+function shareURL(){try{const p={d:state.draw,g:state.grR,k:state.koR,s:state.scoring,b:state.bonus,v:1};const url=`${location.origin}${location.pathname}?s=${btoa(unescape(encodeURIComponent(JSON.stringify(p))))}`;navigator.clipboard.writeText(url).then(()=>showToast('Share URL copied!','gold')).catch(()=>showToast('Copy URL from address bar','error'));}catch{showToast('Share error','error');}}
+function loadFromURL(){try{const p=new URLSearchParams(location.search).get('s');if(!p)return false;const d=JSON.parse(decodeURIComponent(escape(atob(p))));if(d.d)state.draw=d.d;if(d.g)state.grR=d.g;if(d.k)state.koR=d.k;if(d.s)state.scoring={...DEF_SCR,...d.s};if(d.b)state.bonus={...DEF_BONUS,...d.b};return true;}catch{return false;}}
 
 // ── THEME ─────────────────────────────────────────────────────────────────────
 // ── ACCESS GATE (viewer passcode) ─────────────────────────────────────────────
@@ -1410,11 +1414,27 @@ function resolveSlot(sl,tables,thirds,assign,key){
 }
 function resolveBracket(){const{tables,thirds}=computeQual();const assign=bestThirdAssignment(tables,thirds);const res={};Object.keys(BRACKET).forEach(id=>{const b=BRACKET[id];res[id]={teamA:resolveSlot(b.sA,tables,thirds,assign,id+'_sA'),teamB:resolveSlot(b.sB,tables,thirds,assign,id+'_sB')};});return res;}
 function slotDesc(sl){if(sl.t==='winner')return`Winner Grp ${sl.g}`;if(sl.t==='runnerup')return`Runner-up Grp ${sl.g}`;if(sl.t==='best3rd')return`Best 3rd`;if(sl.t==='prev')return`W ${BRACKET[sl.m]?.l||sl.m}`;if(sl.t==='loser')return`L ${BRACKET[sl.m]?.l||sl.m}`;return'TBD';}
+// Bonus awards: results-only consolation prizes (most/fewest goals, best/worst defence).
+// Computed from played group + knockout results. Ties share the award. Settles at the tournament's end.
+function calcBonusAwards(){
+  if(!state.bonus||!state.bonus.on)return null;
+  const stat={};
+  const bump=(t,gf,ga)=>{if(!t)return;if(!stat[t])stat[t]={gf:0,ga:0,played:0};stat[t].gf+=gf;stat[t].ga+=ga;stat[t].played++;};
+  Object.entries(GF).forEach(([id,f])=>{const r=state.grR[id];if(!r||!r.played)return;bump(f.home,r.hg||0,r.ag||0);bump(f.away,r.ag||0,r.hg||0);});
+  Object.values(state.koR||{}).forEach(m=>{if(!m||!m.played)return;bump(m.home,m.hg||0,m.ag||0);bump(m.away,m.ag||0,m.hg||0);});
+  const teams=Object.keys(stat).filter(t=>stat[t].played>0);
+  if(!teams.length)return null;
+  const pick=(key,dir)=>{let best=null;teams.forEach(t=>{const v=stat[t][key];if(best===null||(dir>0?v>best:v<best))best=v;});return{value:best,teams:teams.filter(t=>stat[t][key]===best)};};
+  return{most_goals:pick('gf',1),fewest_goals:pick('gf',-1),best_def:pick('ga',-1),worst_def:pick('ga',1),stat:stat};
+}
+function teamOwner(name){if(!state.draw)return null;const p=state.draw.participants.find(pp=>pp.teams.some(t=>t.name===name));return p?p.name:null;}
 function calcLeaderboard(){
   if(!state.draw)return[];
   const{qual}=computeQual();const koArr=Object.values(state.koR).filter(m=>m.played);
   const champ=state.koR['m104']&&state.koR['m104'].played?state.koR['m104'].winner:null;
   const predMap={};if(state.predict.on)Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.prediction)predMap[s.name.toLowerCase()]=s.prediction;});
+  const _bonus=calcBonusAwards();const awardByTeam={};
+  if(_bonus){['most_goals','fewest_goals','best_def','worst_def'].forEach(k=>{const pp=(state.bonus&&state.bonus[k])||0;if(pp<=0||!_bonus[k])return;_bonus[k].teams.forEach(t=>{(awardByTeam[t]=awardByTeam[t]||[]).push({key:k,pts:pp});});});}
   return state.draw.participants.map(p=>{
     let total=0,pGoals=0,pKoWins=0;const breakdown=p.teams.map(team=>{
       let pts=0;const items=[];let gW=0,gD=0,gL=0,goals=0;
@@ -1429,6 +1449,7 @@ function calcLeaderboard(){
       if(qv==='top2'){pts+=state.scoring.qualify_top2;items.push(`Qual +${state.scoring.qualify_top2}`);}
       else if(qv==='best3rd'){pts+=state.scoring.qualify_3rd;items.push(`Best 3rd +${state.scoring.qualify_3rd}`);}
       const wins=koArr.filter(m=>m.winner===team.name);wins.forEach(m=>{const p2=state.scoring[`win_${m.round}`]||0;pts+=p2;items.push(`${KO_LABEL[m.round]} win +${p2}`);});
+      if(awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push(`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]} +${a.pts}`);});}
       pKoWins+=wins.length;pGoals+=goals;
       total+=pts;
       return{name:team.name,flag:team.flag,group:team.group,pts:Math.round(pts*10)/10,items,qual:qv};
@@ -1700,7 +1721,7 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',muted:state.muted};}
+function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',muted:state.muted};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 // ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
@@ -1713,7 +1734,6 @@ function renderWelcome(){
     <div style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;background:linear-gradient(135deg,var(--tx),var(--gr));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.01em;line-height:1.05;margin-bottom:10px">${CONFIG.title.toUpperCase()}</div>
     <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June – 19 July<br>Sign up and you'll be randomly drawn one or more of the 48 teams. Earn points as your teams win — climb the table for glory. Free to enter.</p>
     ${countdownHTML()}
-    ${mePickerHTML(false)}
     ${open?`
       ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back here to see which teams you've been given — then watch your points climb.</div></div>`:'';})()}
       <div class="card" style="padding:20px 18px;margin-bottom:18px;text-align:left;border:1px solid var(--pill-grbr);box-shadow:var(--shadow-lg)">
@@ -1723,8 +1743,10 @@ function renderWelcome(){
         ${state.predict.on?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🔮 BONUS: who will WIN the World Cup?</div><select id="signup-pred" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">No prediction</option>${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${t.name}">${t.flag} ${t.name}</option>`).join('')}</select><div style="font-size:.68rem;color:var(--txm);margin-top:4px">Nail it and you get +${state.predict.bonus} bonus points. Locked once you join.</div></div>`:''}
         <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:13px;font-size:.86rem">JOIN THE SWEEPSTAKE</button>
       </div>
+      ${mePickerHTML(false)}
       ${names.length?`<div style="text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;color:var(--txm);letter-spacing:.1em;margin-bottom:8px;text-align:center">${names.length} SIGNED UP SO FAR</div><div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:170px;overflow-y:auto;padding:2px">${names.map(n=>`<span style="padding:5px 12px;background:var(--card);border:1px solid var(--b);border-radius:16px;font-size:.8rem;color:var(--tx);box-shadow:var(--shadow)">${esc(n)}</span>`).join('')}</div></div>`:''}
     `:`
+      ${mePickerHTML(false)}
       <div class="card" style="padding:26px 18px;margin-bottom:18px;box-shadow:var(--shadow-lg)">
         <div style="font-size:2rem;margin-bottom:8px">⏳</div>
         <div style="font-family:'Oswald',sans-serif;font-size:.95rem;color:var(--tx);margin-bottom:6px;letter-spacing:.03em">THE DRAW HASN'T HAPPENED YET</div>
@@ -1862,27 +1884,18 @@ async function runDiagnostics(){
   i=add('Database \u2014 write');
   if(DB){try{await DB.ref('_diag').set({t:Date.now()});await DB.ref('_diag').remove();set(i,'ok','Write + delete fine \u2014 your rules accept your edits.');}catch(e){set(i,'fail','Write blocked: '+((e&&e.message)||e)+'. Check you\'re signed in and the database rules are published.');}}else set(i,'fail','No database connection.');
 
-  i=add('Live results feed (football-data.org)');
-  const key=apiKey();
-  if(!key||key==='PASTE_FOOTBALL_API_KEY'){set(i,'warn','No API key set in the app. Fine if the Cloudflare Worker handles results (below) \u2014 otherwise enter scores by hand.');}
+  i=add('Live results feed (auto-updating)');
+  if(!DB){set(i,'warn','No database connection, so the feed status can\'t be read.');}
   else{try{
-    const r=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':key}});
-    if(r.status===401||r.status===403)set(i,'fail','API key rejected (HTTP '+r.status+'). Check the key and that your football-data.org email is verified.');
-    else if(r.status===429)set(i,'warn','Rate limited (HTTP 429) \u2014 too many calls this minute. Wait and retry.');
-    else if(!r.ok)set(i,'fail','Connection failed (HTTP '+r.status+').');
-    else{const d=await r.json();const tot=(d.matches||[]).length;let bk={};try{bk=resolveBracket();}catch(e){}let matched=0;(d.matches||[]).forEach(m=>{const hn=normTeam((m.homeTeam&&m.homeTeam.name)||''),an=normTeam((m.awayTeam&&m.awayTeam.name)||'');if(findGFId(hn,an)||findKOId(hn,an,bk))matched++;});
-      if(tot===0)set(i,'warn','Connected \u2014 but the provider has no World Cup fixtures loaded yet. Normal before the tournament; they appear closer to kick-off.');
-      else set(i,'ok','Connected \u00b7 '+tot+' fixtures \u00b7 '+matched+'/'+tot+' match your teams'+(matched<tot?'. Any unmatched you can enter by hand.':'.'));}
-  }catch(e){set(i,'fail','Couldn\'t reach football-data.org: '+((e&&e.message)||'network error')+'.');}}
-
-  i=add('Background poller (Cloudflare Worker)');
-  if(DB){try{const snap=await DB.ref('_worker').once('value');const hb=snap.val();
-    if(!hb||!hb.lastRun)set(i,'warn','Not detected. To update results with nobody online, deploy the Worker in the poller folder. (Just deployed it? Give it ~3 minutes to run once, then re-check.)');
-    else{const ageMin=Math.round((Date.now()-hb.lastRun)/60000);
-      if(hb.ok===false)set(i,'fail','Last ran '+ageMin+' min ago but reported an error. Check the Worker logs in the Cloudflare dashboard.');
-      else if(ageMin<=6)set(i,'ok','Running \u2014 last ran '+(ageMin<1?'less than a minute':ageMin+' min')+' ago.');
-      else set(i,'warn','Last ran '+ageMin+' min ago (it should run every 3). It may be stopped or erroring \u2014 check the Cloudflare dashboard.');}
-  }catch(e){set(i,'warn','Couldn\'t read the Worker heartbeat.');}}else set(i,'warn','No database to read the heartbeat from.');
+    const snap=await DB.ref('_worker').once('value');const hb=snap.val();
+    if(!hb||!hb.lastRun){set(i,'fail','Not running. The background poller (Google Apps Script) hasn\'t checked in. Just set it up? Give it ~5 minutes, then re-check. Otherwise open the Apps Script editor and run the "install" function once.');}
+    else{const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
+      if(hb.ok===false)set(i,'fail','The poller ran '+ageTxt+' but hit an error: '+(hb.error||'unknown')+'. Fix it in the Apps Script editor \u2014 usually the football-data key or the Firebase login.');
+      else if(ageMin>13)set(i,'warn','Last successful check was '+ageTxt+', but it runs every 5 minutes. The timer may have stopped \u2014 open the Apps Script Triggers page and confirm the "poll" trigger is still listed.');
+      else if(hb.totalMatches===0)set(i,'warn','Working \u2014 last checked '+ageTxt+', but football-data has no World Cup fixtures loaded yet. Normal before kick-off; they appear closer to the first game.');
+      else if(hb.unmatchedCount>0)set(i,'warn','Working (last checked '+ageTxt+'), but '+hb.unmatchedCount+' finished fixture'+(hb.unmatchedCount>1?'s':'')+" couldn't be matched to your teams, so "+(hb.unmatchedCount>1?'they won':'it won')+"'t auto-score: "+(hb.unmatched||[]).join(', ')+'. Enter '+(hb.unmatchedCount>1?'those':'that')+' result'+(hb.unmatchedCount>1?'s':'')+' by hand in Fixtures.');
+      else set(i,'ok','Working \u2014 last checked '+ageTxt+(hb.totalMatches!=null?', reaching football-data and seeing '+hb.totalMatches+' fixtures':'')+'. Results update automatically, even with nobody online.');}
+  }catch(e){set(i,'warn','Couldn\'t read the feed status: '+((e&&e.message)||e)+'.');}}
 
   i=add('Donation link');
   if(!state.charity||!state.charity.on)set(i,'ok','Charity is off \u2014 no link needed.');
@@ -1904,45 +1917,35 @@ async function runDiagnostics(){
 async function testFeed(){
   const sEl=document.getElementById('feed-status');
   const rEl=document.getElementById('feed-result');
-  if(!apiKey()||apiKey()==='PASTE_FOOTBALL_API_KEY'){
-    if(rEl)rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ No API key set. Add your football-data.org key to enable auto-results.</div>';
+  if(!DB){
+    if(rEl)rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ No database connection, so the feed status can\'t be read.</div>';
     return;
   }
-  if(rEl)rEl.innerHTML='<div style="margin-top:10px;font-size:.78rem;color:var(--txm)">⏳ Testing connection…</div>';
+  if(rEl)rEl.innerHTML='<div style="margin-top:10px;font-size:.78rem;color:var(--txm)">⏳ Checking the auto-feed…</div>';
   try{
-    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches',{headers:{'X-Auth-Token':apiKey()}});
-    if(res.status===403||res.status===401){
-      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ API key rejected (HTTP '+res.status+'). Check the key is correct and your email is verified.</div>';
-      return;
+    const snap=await DB.ref('_worker').once('value');const hb=snap.val();
+    if(!hb||!hb.lastRun){
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Auto-feed not running</b><br><span style="color:var(--txd)">The background poller hasn\'t checked in. If you just set it up, wait ~5 minutes. Otherwise run the "install" function in the Apps Script editor.</span></div>';
+      if(sEl)sEl.innerHTML='Auto-feed not detected';return;
     }
-    if(res.status===429){
-      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber)">⚠ Rate limited (HTTP 429). The free tier allows 10 calls/min — wait a moment and retry.</div>';
-      return;
+    const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
+    if(hb.ok===false){
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor — usually the football-data key or Firebase login.</span></div>';
+      if(sEl)sEl.innerHTML='Last check: error';return;
     }
-    if(!res.ok){
-      rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ Connection failed (HTTP '+res.status+').</div>';
-      return;
+    if(ageMin>13){
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber);line-height:1.6">⚠ <b>May have stopped</b><br><span style="color:var(--txd)">Last successful check was '+ageTxt+' (it should run every 5 min). Check the Apps Script Triggers page.</span></div>';
+      if(sEl)sEl.innerHTML='Last check: '+ageTxt;return;
     }
-    const data=await res.json();
-    const total=(data.matches||[]).length;
-    const finished=(data.matches||[]).filter(m=>m.status==='FINISHED').length;
-    const scheduled=(data.matches||[]).filter(m=>m.status==='SCHEDULED'||m.status==='TIMED').length;
-    // Test name matching on the fixtures we have
-    let matched=0;const bk=resolveBracket();
-    (data.matches||[]).forEach(m=>{
-      const hn=normTeam(m.homeTeam?.name||''),an=normTeam(m.awayTeam?.name||'');
-      if(findGFId(hn,an)||findKOId(hn,an,bk))matched++;
-    });
     rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(0,128,42,.07);border:1px solid rgba(0,128,42,.3);border-radius:7px;font-size:.76rem;color:var(--gr);line-height:1.7">'+
-      '✓ <b>Feed connected</b><br>'+
-      '<span style="color:var(--txd)">Competition matches found: '+total+'<br>'+
-      'Finished: '+finished+' · Upcoming: '+scheduled+'<br>'+
-      'Matching your fixtures: '+matched+'/'+total+'</span>'+
-      (total===0?'<br><span style="color:var(--amber)">Note: WC2026 fixtures may not be loaded by the provider until closer to kick-off. The feed will start matching automatically once they are.</span>':'')+
+      '✓ <b>Auto-feed working</b><br>'+
+      '<span style="color:var(--txd)">Last checked: '+ageTxt+(hb.totalMatches!=null?'<br>Fixtures seen: '+hb.totalMatches:'')+(hb.wrote!=null?'<br>Results written this run: '+hb.wrote:'')+'</span>'+
+      (hb.unmatchedCount>0?'<br><span style="color:var(--amber)">⚠ '+hb.unmatchedCount+" fixture(s) couldn't be matched and won't auto-score: "+esc((hb.unmatched||[]).join(', '))+'. Enter by hand in Fixtures.</span>':'')+
+      (hb.totalMatches===0?'<br><span style="color:var(--amber)">No WC fixtures loaded by the provider yet — normal before kick-off.</span>':'')+
       '</div>';
     if(sEl)sEl.innerHTML='Last tested: '+new Date().toLocaleTimeString('en-GB')+' · working ✓';
   }catch(e){
-    rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ Network error: '+(e.message||'could not reach the API')+'</div>';
+    rEl.innerHTML='<div style="margin-top:10px;padding:9px 11px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red)">✗ Couldn\'t read the feed status: '+(e.message||'error')+'</div>';
   }
 }
 function toggleSignup(){
@@ -1994,7 +1997,7 @@ function renderSetup(){
   </div>
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">${apiKey()&&apiKey()!=='PASTE_FOOTBALL_API_KEY'?(state.footballApiKey?'Custom key set · tap Test to check':'Built-in key · tap Test to check'):'⚠ No API key — enter results manually'}</div></div>
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">Updates automatically via the background poller · tap Test to check</div></div>
       <div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="setApiKey()">${state.footballApiKey?'CHANGE KEY':'SET KEY'}</button><button class="btn btn-ghost" style="font-size:.7rem" onclick="testFeed()">TEST</button></div>
     </div>
     <div id="feed-result" style="margin-top:0"></div>
@@ -2027,7 +2030,7 @@ function renderSetup(){
     </div>
   </div>`;})()}
   <!-- Prize + Scoring collapsibles -->
-  ${['charity','scoring','predict','ticker'].map(key=>{
+  ${['charity','scoring','bonus','predict','ticker'].map(key=>{
     const open=state.sOpen[key];
     const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:(state.paid?Object.values(state.paid).filter(Boolean).length:0);
     const collected=paidCount*state.prize.buyin;
@@ -2035,7 +2038,7 @@ function renderSetup(){
       <label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.charity.on?'checked':''} onchange="state.charity.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Charity mode · free entry, optional donation</span></label>
       ${state.charity.on?`
         <div style="margin:4px 0 9px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">Charity name</div><input type="text" value="${(state.charity.name||'').replace(/"/g,'&quot;')}" placeholder="e.g. Macmillan Cancer Support" oninput="state.charity.name=this.value;saveSetup()" style="width:100%;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/></div>
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:11px"><span style="font-size:.78rem;color:var(--txd);min-width:118px">Suggested donation</span><span style="color:var(--txm)">£</span><input type="number" min="0" max="1000" value="${state.charity.suggested}" oninput="state.charity.suggested=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:60px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional</span></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:11px"><span style="font-size:.78rem;color:var(--txd);min-width:118px">Suggested donation</span><span style="color:var(--txm)">£</span><input type="number" min="0" max="1000" value="${state.charity.suggested}" oninput="state.charity.suggested=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:60px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">shown as "£${state.charity.suggested||10} or more"</span></div>
         <div style="border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">❤ TOTAL RAISED SO FAR</div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="color:var(--txm)">£</span><input type="number" min="0" step="any" value="${state.charity.total}" oninput="state.charity.total=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:100px;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem"/><span style="font-size:.72rem;color:var(--txm)">running total — shown to all</span></div>
         <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="font-size:.76rem;color:var(--txd);min-width:118px">Fundraising goal</span><span style="color:var(--txm)">£</span><input type="number" min="0" value="${state.charity.goal||0}" oninput="state.charity.goal=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:80px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional — shows a progress bar</span></div>
         <div style="margin-top:11px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">💷 Donation link <span style="color:var(--txm)">— JustGiving, Enthuse, etc.</span></div><input type="url" inputmode="url" value="${(state.charity.link||'').replace(/"/g,'&quot;')}" placeholder="e.g. justgiving.com/your-page" oninput="state.charity.link=this.value;saveSetup();render()" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><div style="font-size:.68rem;color:var(--txm);margin-top:4px;line-height:1.5">${donateLink()?'✓ A ❤ Donate button now shows to everyone — on the welcome screen, standings and fund bar.':'Add a link and a ❤ Donate button appears everywhere players can see it.'}</div></div>
@@ -2054,11 +2057,13 @@ function renderSetup(){
     :key==='scoring'?
     `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like — the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
     <button class="btn-sm" style="margin-top:9px" onclick="state.scoring={...DEF_SCR};saveSetup();render()">RESET TO DEFAULT</button>`
+    :key==='bonus'?
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results — no input needed. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off — only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
     :key==='predict'?
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points — and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick — the dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
     :
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion &amp; wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet — the automatic ones still show.</div>`}`:''}`;
-    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='predict'?'🔮 PREDICT THE CHAMPION':key==='ticker'?'📢 TICKER & MESSAGES':'';
+    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='ticker'?'📢 TICKER & MESSAGES':'';
     return`<div class="card" style="margin-bottom:10px;overflow:hidden"><button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen['${key}']=!state.sOpen['${key}'];render()"><span>${title}</span><span style="color:var(--txm)">${open?'▲':'▼'}</span></button>${open?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">${inner}</div>`:''}</div>`;
   }).join('')}
   <!-- Manual Assignment -->
@@ -2139,11 +2144,16 @@ function rulesHTML(onWelcome){
       ${panel('KNOCKOUTS · win the tie','🥊',ko)}
     </div>
     ${S.goal_bonus>0?`<div style="margin-top:11px;font-size:.8rem;color:var(--txm)">Plus <b style="color:var(--gr)">+${S.goal_bonus}</b> for every goal your teams score.</div>`:''}
+    ${state.bonus&&state.bonus.on&&['most_goals','best_def','fewest_goals','worst_def'].some(k=>(state.bonus[k]||0)>0)?`<div style="margin-top:11px;background:var(--cardh);border:1px solid var(--b);border-radius:11px;padding:11px 14px">
+      <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:5px">🏅 BONUS AWARDS · even if your teams flop</div>
+      <div style="font-size:.78rem;color:var(--txm);line-height:1.55;margin-bottom:5px">Worked out automatically — the best <b>and worst</b> teams both score, so a rotten draw can still win something:</div>
+      ${[['most_goals','⚽ Scores the most goals'],['best_def','🛡️ Concedes the fewest'],['fewest_goals','🧊 Scores the fewest'],['worst_def','🥅 Concedes the most']].filter(([k])=>(state.bonus[k]||0)>0).map(([k,l],i,arr)=>row(l,state.bonus[k],i===arr.length-1)).join('')}
+    </div>`:''}
     <div style="margin-top:14px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends wins — for the glory (and a winner's certificate). Level on points? It's settled by the champion prediction, then most knockout wins, then goals — so there's always a clear winner.`}</div>
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional £${state.charity.suggested||10} donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — entirely up to you, and it has no effect on the draw or who wins.</div>
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — we suggest £${state.charity.suggested||10} or more, but give whatever you're comfortable with. It's entirely up to you and has no effect on the draw or who wins.</div>
       ${onWelcome&&donateShow('welcome')?`<div style="margin-top:11px;text-align:center">${donateBtnHTML({big:true,label:state.charity.name?('Donate to '+state.charity.name):'Donate now'})}</div>`:''}
     </div>`:''}
     ${state.predict.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
@@ -2417,6 +2427,20 @@ function renderKOCard(mId,tA,tB){
   </div>`;
 }
 
+function bonusAwardsHTML(){
+  if(!state.bonus||!state.bonus.on||!state.draw)return'';
+  const ks=['most_goals','best_def','fewest_goals','worst_def'].filter(k=>(state.bonus[k]||0)>0);
+  if(!ks.length)return'';
+  const aw=calcBonusAwards();
+  const live=aw&&aw.stat&&Object.keys(aw.stat).length;
+  const rows=ks.map(k=>{
+    const pts=state.bonus[k]||0;let detail;
+    if(!aw||!aw[k]){detail='<span style="color:var(--txm)">decided once games begin</span>';}
+    else{detail=aw[k].teams.map(t=>{const tt=ALL_TEAMS.find(x=>x.name===t);const fl=tt?tt.flag:'';const ow=teamOwner(t);return `${fl} <b style="color:var(--tx)">${esc(t)}</b>${ow?` <span style="color:var(--txm)">· ${esc(ow)}</span>`:''}`;}).join('&nbsp;&nbsp;');}
+    return`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:var(--cardh);border-radius:7px"><span style="flex-shrink:0;font-size:.95rem">${BONUS_ICON[k]}</span><span style="flex:1;font-size:.78rem;line-height:1.5"><span style="color:var(--txd)">${BONUS_LBL[k].split(' (')[0]}</span><br>${detail}</span><span style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;color:var(--gr);font-size:.82rem">+${pts}</span></div>`;
+  }).join('');
+  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${live?'Provisional — these settle when the tournament ends.':'Up for grabs · awarded automatically from results.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
+}
 function renderStandings(){
   const lb=calcLeaderboard();const{qual}=computeQual();
   const np=state.draw?state.draw.participantCount:state.pc;
@@ -2432,7 +2456,7 @@ function renderStandings(){
     <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
-  ${lb.length>10?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find your name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}
+  ${lb.length>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}
   ${todayMatchesHTML()}
   ${champ&&champP?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
     <div style="font-size:2rem;margin-bottom:6px">🏆</div>
@@ -2481,6 +2505,7 @@ function renderStandings(){
       </div>`:''}
     </div>`;
   }).join('')})()}
+  ${bonusAwardsHTML()}
   <div style="margin-top:16px">${rulesHTML()}</div>`;
 }
 
@@ -2694,6 +2719,7 @@ else if(DB){
       if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},...data.cfg.charity};
       if(data.cfg.podium)state.podium={...{on:false,prizes:['','','']},...data.cfg.podium};
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
+      if(data.cfg.bonus)state.bonus={...DEF_BONUS,...data.cfg.bonus};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
       state.gateSignupOnly=data.cfg.gateSignupOnly!==false;
       state.footballApiKey=data.cfg.footballApiKey||'';
@@ -2729,7 +2755,7 @@ else if(DB){
 async function localInit(){
   
   const s=await sGet('wc26h:cfg');
-  if(s){if(s.pc)state.pc=Math.max(2,Math.min(24,s.pc));if(s.names)state.names=[...s.names,...Array(24).fill('')].slice(0,24);if(s.scoring)state.scoring={...DEF_SCR,...s.scoring};if(s.prize)state.prize={...{on:false,buyin:5,pay:[60,25,15]},...s.prize};if(s.muted!==undefined)state.muted=s.muted;}
+  if(s){if(s.pc)state.pc=Math.max(2,Math.min(24,s.pc));if(s.names)state.names=[...s.names,...Array(24).fill('')].slice(0,24);if(s.scoring)state.scoring={...DEF_SCR,...s.scoring};if(s.bonus)state.bonus={...DEF_BONUS,...s.bonus};if(s.prize)state.prize={...{on:false,buyin:5,pay:[60,25,15]},...s.prize};if(s.muted!==undefined)state.muted=s.muted;}
   const d=await sGet('wc26h:draw');if(d){state.draw=d;state.tab='draw';}
   const gr=await sGet('wc26h:gr');if(gr){state.grR=gr;recentResults=Object.entries(gr).filter(([_,r])=>r.played).slice(-8).map(([id,r])=>{const f=GF[id];return f?{home:f.home,away:f.away,hg:r.hg,ag:r.ag}:null;}).filter(Boolean).reverse();}
   const ko=await sGet('wc26h:ko');if(ko)state.koR=ko;
