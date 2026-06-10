@@ -872,7 +872,6 @@ const OFFICE_BANTER=[
   "🤫 No spoilers by the coffee machine",
   "📸 Someone's already put this in the group chat",
   "🏅 Bragging rights are the only prize that counts",
-  "🍵 Reckon the tea round's riding on this",
   "📅 Half the office checking this more than their emails",
   "🤝 No hard feelings till the whistle goes",
   "🗣️ Plenty of talk in the kitchen. Let the table sort it out",
@@ -899,13 +898,37 @@ const OFFICE_BANTER=[
   "💼 Diversified? You've got one team. Concentrated risk it is",
   "💸 Bragging rights: tax-free, fully yours, no clawback",
   "🐌 Slow start? Call it a J-curve and hold your nerve",
-  "🥅 Penalty shootout: maximum risk, minimum sleep"
+  "🥅 Penalty shootout: maximum risk, minimum sleep",
+  "📉 Group-stage form is not indicative of future results",
+  "⚠️ Past performance is no guarantee of future trophies",
+  "📜 Capital at risk. So are your bragging rights",
+  "🔍 No due diligence done, full conviction declared",
+  "🔍 Did the DD on your team only after you drew it, didn't you",
+  "🍀 High conviction on a team you'd never heard of yesterday",
+  "💪 Suddenly a lifelong supporter. Conviction's a wonderful thing",
+  "💼 Assets under management: one team and a lot of hope",
+  "📒 Whole book riding on eleven blokes you didn't pick",
+  "🎯 Beating the desk next to you is the only benchmark today",
+  "📊 This table's had more screen time than Bloomberg today",
+  "🖥️ Four monitors, all of them on the score",
+  "🚪 A few teams eyeing an early exit. Not the lucrative kind",
+  "🔚 A couple of portfolios heading for an early write-off",
+  "📈 Show me a better risk-adjusted return than this one",
+  "⏳ It's a long hold to July. One win isn't an exit",
+  "📉 Don't panic-sell after one bad result. Long-term hold, this",
+  "🧾 Fairly sure this one doesn't need compliance pre-clearance",
+  "💸 Two-and-twenty? No chance. This one's a freeroll",
+  "📆 'Hard stop at 3' — funny how that's also kickoff",
+  "📵 Out of office: emotionally, since the group stage started",
+  "🧮 No reconciliation required. The table doesn't lie",
+  "✅ This one always balances: someone wins, someone comes last",
+  "📑 Everyone's pitching their team like it's a live deal"
 ];
 const OFFICE_BANTER_PRE=[
   "📝 Get your name in before the draw",
   "💬 Office is already talking. Get involved",
   "🏆 A year of bragging rights up for grabs",
-  "☕ Sweepstake chat by the kettle from here",
+  "☕ Already the talk of the coffee machine",
   "🎲 Last chance for a team before the draw",
   "⚽ No football knowledge needed, just get a name in",
   "🍀 All down to luck. Anyone can win this",
@@ -915,8 +938,12 @@ const OFFICE_BANTER_PRE=[
   "🎉 Big draw coming up. You in?",
   "📣 Tell the desk next to you to sign up",
   "🤝 More players, more banter, more for charity",
-  "⏳ Draw's coming. Get your name down",
-  "🙌 Whole floor's getting involved. Don't miss out"
+  "🙌 Whole floor's getting involved. Don't miss out",
+  "📈 Nothing in, a year of bragging out. Best return going — get a name down",
+  "🔔 Consider this your capital call. Get in before the draw",
+  "📕 Books close at the draw — don't get shut out",
+  "💸 No fees, no carry, no catch — free to enter, all for charity",
+  "🧮 Two minutes of admin: get your name down before the draw"
 ];
 // Department-tailored hype — {D} is filled automatically with one of YOUR real teams (rotates).
 const DEPT_HYPE=[
@@ -935,8 +962,47 @@ const DEPT_HYPE=[
   "🏢 {D} fancy a trophy for the breakout room",
   "🏢 Never bet against {D}",
   "🏢 {D} already loading up the group chat",
-  "🏢 {D} want this one badly"
+  "🏢 {D} want this one badly",
+  "🏢 Word is {D} did zero due diligence and went all in",
+  "🏢 {D} backing themselves like it's their own fund",
+  "🏢 {D} reckon they've drawn the best book on the floor",
+  "🏢 High conviction coming out of {D} this morning",
+  "🏢 Don't bet against the {D} desk this year",
+  "🏢 {D} have done the numbers and like their chances"
 ];
+// Bespoke per-squad lines (real teams). Auto-matched to a squad name (case/spacing-insensitive); squads not listed fall back to the generic DEPT_HYPE templates.
+const SQUAD_LINES={
+"Compliance":["🏢 Compliance are the VAR of this sweepstake — every goal gets a second look","🏢 Compliance still checking whether cheering counts as a conflict of interest","🏢 Compliance have pre-cleared their own team and nobody else's"],
+"Corporate Accounting":["🏢 Accounting are the only ones who actually trust the goal-difference column","🏢 Corporate Accounting have already reconciled the leaderboard to the penny","🏢 Trust the table — Accounting would've spotted an error by now"],
+"Corporate Communications":["🏢 Comms have the post-match press conference ready, win or lose","🏢 Comms can spin a group-stage exit as 'a strong foundation'","🏢 Comms doing the gaffer's interview for him"],
+"Global Legal Investments":["🏢 Legal want the final result subject to documentation","🏢 Legal have read the rules twice and found no get-out clause","🏢 Legal reckon that one's offside on a technicality"],
+"Tax":["🏢 Tax have found a tax-efficient route to the trophy","🏢 Tax reckon their bragging rights are fully deductible","🏢 Tax reckon a 1-0 is the most efficient scoreline going"],
+"Global Sustainability":["🏢 Sustainability are targeting a net-zero defeat record","🏢 Sustainability backing the side that recycles possession best","🏢 Sustainability after a clean, green run to the final"],
+"Global Technology & Solutions":["🏢 Global Tech & Solutions installed the goal-line technology, obviously","🏢 Global Tech & Solutions will fix your bracket once you raise a ticket","🏢 Global Tech & Solutions: have you tried supporting a different team?"],
+"Human Capital Management":["🏢 HCM are calling a group-stage exit 'a development opportunity'","🏢 HCM reckon it's all about squad depth and a strong bench","🏢 HCM here to support you through the defeats"],
+"Investor Relations":["🏢 IR already managing expectations on an early exit","🏢 IR are basically the supporters' liaison this tournament","🏢 IR drafting the 'challenging quarter' update as we speak"],
+"Office Services":["🏢 Office Services know exactly who's watching at their desk","🏢 Office Services would have the pitch immaculate for kickoff"],
+"Global Workplace Services":["🏢 Workplace Services keeping the coffee machine going for the late kickoffs","🏢 Workplace Services are the groundsmen keeping the whole show on"],
+"Alpinvest":["🏢 AlpInvest would happily own a player on every single team","🏢 AlpInvest are the neutrals who somehow come out ahead"],
+"Europe Buyout":["🏢 Europe Buyout don't play for a draw","🏢 Europe Buyout want 90 minutes, full control, three points","🏢 Europe Buyout treating the final like a take-private"],
+"Private Credit":["🏢 Private Credit want a clean sheet and no surprises at the back","🏢 Private Credit expect a steady return and no nasty surprises"],
+"Europe Private Credit":["🏢 Europe Private Credit backing a safe pair of hands and a tidy yield","🏢 Europe Private Credit reckon it's won at the back"],
+"Global Credit Management":["🏢 Global Credit reckon it's won at the back","🏢 Global Credit don't lose — they recover"],
+"Europe Structured Credit":["🏢 Structured Credit reckon their squad's a solid AAA tranche","🏢 Structured Credit have the most solid back line in the building"],
+"Europe Real Estate":["🏢 Europe Real Estate are all about home advantage","🏢 Real Estate backing the side with the best home record","🏢 Europe Real Estate playing the long game — safe as houses"],
+"Europe Technology":["🏢 Europe Tech backing the young disruptor to break the press","🏢 Europe Technology calling their team a scalable platform"],
+"International Energy":["🏢 International Energy fancy a high press for the full 90","🏢 International Energy reckon it's won in the legs","🏢 International Energy reckon their team's got the most in the tank"],
+"Carlyle Global Wealth":["🏢 Carlyle Global Wealth reckon it's the people's game, and so's this","🏢 Carlyle Global Wealth want everyone to have a piece of the action"],
+"Abingworth":["🏢 Abingworth all about sports science and marginal gains","🏢 Abingworth backing the team with the best medical bench"],
+"Carlyle Capital Solutions":["🏢 Carlyle Capital Solutions would bankroll the January transfer window"],
+"Fund Management - GC":["🏢 Fund Management reckon it's all in the team selection"],
+"Fund Management-GPE":["🏢 Fund Management reckon it's all in the team selection"],
+"Global Portfolio Solutions":["🏢 Global Portfolio Solutions believe in rotating the whole squad"],
+"Finance Process & Operations":["🏢 Finance Process & Operations run matchday like clockwork"]
+};
+const _SQN=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const _SQUAD_NORM={};Object.keys(SQUAD_LINES).forEach(k=>{_SQUAD_NORM[_SQN(k)]=SQUAD_LINES[k];});
+const squadLinesFor=name=>_SQUAD_NORM[_SQN(name)]||null;
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
   const a=[];
@@ -958,42 +1024,42 @@ function tickerItems(){
     liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
     if(champ){
       a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
-      a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`]));
+      a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`,`🏆 ${champ} lift the trophy, ${lb[0].name} lifts the office crown`]));
       if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?`, ${lb[2].name} bronze`:""}`);
       const callers=lb.filter(p=>p.pred&&p.pred.team===champ);
       if(callers.length)a.push(`🔮 ${pick(["Called it.","Take a bow."])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the start`);
       if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} finishes bottom. There's always next year`,`🥄 Wooden spoon goes to ${last.name}. Chin up`]));}
     } else if(started){
       const L=lb[0],margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
-      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`]));
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table the office actually reads, ${L.total} pts`,`🧤 ${L.name} keeping it tight at the top, ${L.total}`]));
       if(lb.length>1){
         if(margin===0)a.push(pick([`🤝 ${L.name} and ${lb[1].name} level at the top`,`😤 Nothing between ${L.name} and ${lb[1].name}`,`⚖️ Dead level up top: ${L.name} and ${lb[1].name}`]));
-        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top`,`📸 Photo finish, ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} right on ${L.name}'s tail, ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`]));
-        else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`],7));
-        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`🔪 ${lb[1].name} sharpening up, ${margin} behind`],4));
+        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top`,`📸 Photo finish, ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} right on ${L.name}'s tail, ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`,`🍿 ${margin} pt${margin>1?"s":""} in it — proper squeaky-bum time`]));
+        else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`,`🎯 Whole office marking ${L.name} man-to-man now`,`🛋️ ${L.name} cruising at the top — someone bring out the deckchair`],7));
+        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`🔪 ${lb[1].name} sharpening up, ${margin} behind`,`🏃 ${lb[1].name} in hot pursuit, ${margin} off the summit`],4));
         const within=lb.filter(p=>L.total-p.total<=5).length;
         if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🍿 ${within} in the mix at the top, grab the popcorn`,`🎢 ${within} of them covered by 5 pts`]));
         for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} and ${lb[i+1].name} tied on ${lb[i].total}`);break;}}
       }
       const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
-      if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`],2).replace(/ +/g," ").trim());}
+      if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`,`⚽ ${form.flag} ${form.name} can't stop scoring, ${form.pts} pts, ${ownTxt(o)}`,`🚀 ${form.flag} ${form.name} the form team of the tournament, ${form.pts} pts`],2).replace(/ +/g," ").trim());}
       const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the final"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
       if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${o.length>2?o.length+" owners buzzing":"good for "+o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
-      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`],1).replace(/ +/g," ").trim());
-      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`]));}
+      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`,`🍗 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} put ${bigWin.ws} past ${bigWin.l}, get the cricket scorer in`],1).replace(/ +/g," ").trim());
+      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
       if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
       if(me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
-        if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`]));
-        else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`]));
-        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`]));
+        if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`,`🧤 Clean sheet at the top, ${me}. Don't let it slip`]));
+        else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`,`🥁 On the podium, ${me}, ${gapTop} to the summit`]));
+        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`]));
         else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
       // ── Department race (optional; the individual board still leads the ticker) ──
       const ds=(state.depts&&state.depts.on)?deptStandings():[];
       if(ds.length>=2){
         const dl=(state.depts.label||'Squads').toLowerCase();
         const D=ds[0],dm2=Math.round((ds[0].avg-ds[1].avg)*10)/10;
-        a.push(pk([`🏢 ${D.name} lead the office on ${D.avg} a head`,`🏢 ${D.name} top of the ${dl} on ${D.avg} per player`,`🏆 ${D.name} setting the pace, ${D.avg} a head`],3));
+        a.push(pk([`🏢 ${D.name} lead the office on ${D.avg} a head`,`🏢 ${D.name} top of the ${dl} on ${D.avg} per player`,`🏆 ${D.name} setting the pace, ${D.avg} a head`,`🏟️ ${D.name} the side to beat in the ${dl}, ${D.avg} a head`],3));
         if(dm2===0)a.push(`🤝 ${D.name} and ${ds[1].name} neck and neck up top`);
         else if(dm2<=3)a.push(pk([`🔥 Just ${dm2} between ${D.name} and ${ds[1].name}`,`😬 ${ds[1].name} breathing down ${D.name}'s neck, ${dm2} in it`],4));
         else a.push(pk([`😏 ${D.name} pulling clear of the pack`,`👀 The whole floor's chasing ${D.name} now`],5));
@@ -1001,9 +1067,9 @@ function tickerItems(){
         if(me){const myD=deptMap()[myLc];if(myD){const di=ds.findIndex(x=>x.name===myD);if(di>=0)a.push(pk([`🏢 Your lot (${myD}) sit ${ordinal(di+1)} of ${ds.length}`,`💼 ${myD} are ${ordinal(di+1)} in the office, ${me}`],7));}}
       }
       [5,19,33,47].forEach(o=>a.push(pk(OFFICE_BANTER,o)));   // several different banter lines per loop; rotate as results come in
-      if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;a.push(pk(DEPT_HYPE,seed).replace('{D}',dn[seed%dn.length]));a.push(pk(DEPT_HYPE,seed+11).replace('{D}',dn[(seed+7)%dn.length]));}
+      if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;const _sl=(idx,o)=>{const nm=dn[(((idx%dn.length)+dn.length)%dn.length)];const bsp=squadLinesFor(nm);return (bsp&&bsp.length)?pk(bsp,o):pk(DEPT_HYPE,o).replace('{D}',nm);};a.push(_sl(seed,seed));a.push(_sl(seed+7,seed+11));}
     }
-    if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games and counting`,`📊 ${gp+kp} games down, ${goals} goals`],6));
+    if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games and counting`,`📊 ${gp+kp} games down, ${goals} goals`,`🥅 ${goals} goals in ${gp+kp} games and the keepers are sweating`],6));
     if(!started&&!champ)a.push(pick([`🎲 Teams drawn at random. Pure luck`,`👀 Check the draw tab to see who got the favourites`,`🍀 It's all down to the draw now`,`💪 Everyone's in with a shout till the whistle goes`,`⏳ Not long until kick-off`]));
     if(state.predict.on&&!champ){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[0]} is the office favourite to win it (${top[1]} backer${top[1]>1?"s":""})`);}
     if(!started&&!champ&&cdText())a.push("⏳ "+TK_CD);
