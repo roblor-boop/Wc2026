@@ -313,6 +313,7 @@ html.dark .dc.gold{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--c
 /* ── MISC COMPONENTS ─────────────────────────────────── */
 .q-badge{font-size:.58rem;padding:1px 5px;border-radius:3px;font-family:'Oswald',sans-serif;font-weight:600;border:1px solid transparent;flex-shrink:0}
 .fb{padding:3px 8px;border-radius:5px;background:transparent;border:1px solid var(--b);color:var(--txm);font-family:'Oswald',sans-serif;font-size:.65rem;cursor:pointer;transition:all .15s}
+@media(max-width:600px){.fb{padding:7px 11px;font-size:.72rem}}
 .fb.on{background:rgba(0,128,42,.1);border-color:var(--gr);color:var(--gr)}
 html.dark .fb.on{background:rgba(0,230,118,.1)}
 .feed-item{display:flex;align-items:center;gap:8px;padding:7px 11px;background:var(--card);border:1px solid var(--b);border-radius:8px;font-size:.78rem;box-shadow:var(--shadow)}
@@ -598,7 +599,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=200;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},depts:{on:false,names:[],label:'Departments'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -897,6 +898,18 @@ function tickerItems(){
         else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`]));
         else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`]));
         else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
+      // ── Department race (optional; the individual board still leads the ticker) ──
+      const ds=(state.depts&&state.depts.on)?deptStandings():[];
+      if(ds.length>=2){
+        const dl=(state.depts.label||'Departments').toLowerCase();
+        const D=ds[0],dm2=Math.round((ds[0].avg-ds[1].avg)*10)/10;
+        a.push(pk([`🏢 ${D.name} lead the office on ${D.avg} a head`,`🏢 ${D.name} top of the ${dl} on ${D.avg} per player`,`🏆 ${D.name} setting the pace, ${D.avg} a head`],3));
+        if(dm2===0)a.push(`🤝 ${D.name} and ${ds[1].name} neck and neck up top`);
+        else if(dm2<=3)a.push(pk([`🔥 Just ${dm2} between ${D.name} and ${ds[1].name}`,`😬 ${ds[1].name} breathing down ${D.name}'s neck, ${dm2} in it`],4));
+        else a.push(pk([`😏 ${D.name} pulling clear of the pack`,`👀 The whole floor's chasing ${D.name} now`],5));
+        if(ds.length>=3){const dlast=ds[ds.length-1];a.push(pk([`🥄 ${dlast.name} propping up the ${dl}, only way is up`,`📉 ${dlast.name} could use a few results, bottom of the ${dl}`],6));}
+        if(me){const myD=deptMap()[myLc];if(myD){const di=ds.findIndex(x=>x.name===myD);if(di>=0)a.push(pk([`🏢 Your lot (${myD}) sit ${ordinal(di+1)} of ${ds.length}`,`💼 ${myD} are ${ordinal(di+1)} in the office, ${me}`],7));}}
+      }
       a.push(pk(OFFICE_BANTER,5));
     }
     if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games and counting`,`📊 ${gp+kp} games down, ${goals} goals`],6));
@@ -948,6 +961,16 @@ function addTickerMsg(){
   setTimeout(()=>{const e=document.getElementById('ticker-input');if(e)e.focus();},50);
 }
 function removeTickerMsg(i){if(state.ticker.messages){state.ticker.messages.splice(i,1);saveSetup();render();}}
+function addDept(){
+  const el=document.getElementById('dept-input');if(!el)return;
+  const v=el.value.trim();if(!v)return;
+  if(!state.depts.names)state.depts.names=[];
+  if(state.depts.names.length>=20){showToast('Max 20 teams','error');return;}
+  if(state.depts.names.some(d=>d.toLowerCase()===v.toLowerCase())){showToast('Already added','error');return;}
+  state.depts.names.push(v);el.value='';saveSetup();render();
+}
+function removeDept(i){if(state.depts.names){state.depts.names.splice(i,1);saveSetup();render();}}
+function setSignupDept(key,val){if(!adminSess)return;const s=state.signups&&state.signups[key];if(!s)return;if(val)s.dept=val;else delete s.dept;if(DB)DB.ref('wc2026/signups/'+key).set(s);render();}
 
 // ── LOADING SCREEN ────────────────────────────────────────────────────────────
 function hideLoading(){const el=document.getElementById('loading');if(el){el.classList.add('gone');setTimeout(()=>el.remove(),500);}}
@@ -1008,9 +1031,24 @@ function setAccessCode(){
     const h=await sha256(v);
     _accessHash=h;
     localStorage.setItem('wc26gate',h); // organiser won't be locked out
+    try{localStorage.setItem('wc26code',v);}catch(e){} // remembered on this device only, to build the invite
     fbSave('wc2026/accessHash',h);
     render();showToast('Access code set, viewers will need it 🔒','gold');
   });
+}
+async function copyInvite(){
+  const url=(typeof location!=='undefined'?location.href:'').split('#')[0].split('?')[0];
+  const title=CONFIG.title||'Office Sweepstake';
+  let code='';try{code=localStorage.getItem('wc26code')||'';}catch(e){}
+  const parts=[`${title} — World Cup 2026 ⚽`];
+  parts.push(state.charity&&state.charity.on?`Free to enter, just for fun${state.charity.name?`, with an optional donation to ${state.charity.name}`:''}.`:`Just for fun, with bragging rights on the line.`);
+  parts.push(state.signupOpen?`Sign up here and you'll be drawn teams at random:\n${url}`:`Follow the standings here:\n${url}`);
+  if(_accessHash&&code)parts.push(`Access code: ${code}`);
+  const msg=parts.join('\n\n');
+  try{ if(navigator.share){ await navigator.share({title,text:msg}); return; } }
+  catch(e){ if(e&&e.name==='AbortError')return; }
+  try{ await navigator.clipboard.writeText(msg); showToast('Invite copied, paste it anywhere','gold'); }
+  catch{ showToast('Could not copy on this device','error'); }
 }
 function setApiKey(){
   if(!adminSess)return;
@@ -1046,6 +1084,13 @@ function updateThemeBtn(){
 }
 // ── "THIS IS ME" — let a user mark their own name (stored locally per device) ──
 function getMyName(){return localStorage.getItem('wc26me')||'';}
+let _myTeams=new Set();
+// Teams owned by whoever has tagged themselves on this device (empty if no name picked or no draw)
+function myTeamSet(){
+  const me=getMyName();if(!me||!state.draw||!state.draw.participants)return new Set();
+  const p=state.draw.participants.find(pp=>pp.name.toLowerCase()===me.toLowerCase());
+  return new Set(p?p.teams.map(t=>t.name):[]);
+}
 function setMyName(name){
   if(getMyName()===name)localStorage.removeItem('wc26me'); // tapping again un-pins
   else localStorage.setItem('wc26me',name);
@@ -1238,18 +1283,18 @@ async function playCeremony(parts,n){
       if(drawSkip)break;
       setOv(`<div class="ov-phase-name"><div class="ov-count-num ov-pop">${num}</div></div>`);
       try{SFX.tick();}catch(e){}
-      await skipableDelay(620);
+      await skipableDelay(700);
     }
   }
   // Pacing scales with player count so it stays a proper event without dragging
   const tier=n<=16?0:n<=32?1:2;
-  const nameHold=[1200,900,600][tier], spinMs=[1550,1100,720][tier], landHold=[2900,2100,1300][tier];
+  const nameHold=[1300,1000,700][tier], spinMs=[1450,1150,820][tier], landHold=[3000,2400,1700][tier];
   const revealByTeam=state.drawByTeam||n>48;
 
   if(!drawSkip&&revealByTeam){
     // ── BY TEAM: each of the 48 teams, spin to reveal who got it ──
     const ownersByTeam={};parts.forEach(p=>p.teams.forEach(t=>{(ownersByTeam[t.name]=ownersByTeam[t.name]||[]).push(p.name);}));
-    const tSpin=n>120?640:880, tHold=n>120?950:1450;
+    const tSpin=n>120?680:880, tHold=n>120?1050:1600;
     const tCard=(t,ownerInner)=>`<div class="ov-phase-team"><div class="ov-counter">TEAM ${ALL_TEAMS.indexOf(t)+1} OF 48</div><div class="ov-team-card"><div class="ov-flag-big">${t.flag}</div><div class="ov-cname">${t.name}</div><div class="ov-cgroup">GROUP ${t.group}</div></div><div class="ov-for" style="margin-top:14px">GOES TO…</div><div class="ov-owner" id="ov-owner">${ownerInner}</div></div>`;
     for(const team of ALL_TEAMS){
       if(drawSkip)break;
@@ -1282,7 +1327,7 @@ async function playCeremony(parts,n){
       flashOv();try{SFX.land();}catch(e){}
       // Any further teams pop in just below
       if(cnt>1){
-        await skipableDelay(750);if(drawSkip)break;
+        await skipableDelay(850);if(drawSkip)break;
         const ex=document.getElementById('ov-extra');
         if(ex)ex.innerHTML=`<div class="ov-extra-row">${p.teams.slice(1).map((t,ti)=>`<span class="ov-extra-team ov-pop" style="animation-delay:${ti*.12}s">${t.flag} ${t.name} <span style="opacity:.55">${t.group}</span></span>`).join('')}</div>`;
       }
@@ -1294,7 +1339,7 @@ async function playCeremony(parts,n){
   setOv(`<div class="ov-phase-complete"><div style="font-size:2.8rem;margin-bottom:8px">🏆</div><div class="ov-done">DRAW COMPLETE!</div><div class="ov-done-sub" style="margin-top:6px">${n} PLAYERS · ${shared?'1 TEAM EACH (some shared)':base+(rem?'–'+(base+1):'')+' TEAMS EACH'}</div></div>`);
   try{SFX.fanfare();}catch(e){}
   fireConfetti();
-  await delay(1900);
+  await delay(2100);
   hideOv();
   _cerPlaying=false;
   state.tab='draw';render();
@@ -1495,6 +1540,39 @@ function calcLeaderboard(){
     return{...p,total:Math.round(total*10)/10,breakdown,koWins:pKoWins,goalsFor:pGoals,pred:{team:myPred,correct:predCorrect,bonus:predBonus}};
   // Tiebreakers so 1st place is always decisive & fair: points → correct champion prediction → knockout wins → goals scored → name
   }).sort((a,b)=>b.total-a.total||((b.pred&&b.pred.correct?1:0)-(a.pred&&a.pred.correct?1:0))||b.koWins-a.koWins||b.goalsFor-a.goalsFor||a.name.localeCompare(b.name));
+}
+
+// ── DEPARTMENTS (optional inter-team layer; individual board stays primary) ──
+// Map of player name (lowercase) → their chosen department, taken from sign-ups.
+function deptMap(){const m={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.dept)m[s.name.toLowerCase()]=s.dept;});return m;}
+// Departments ranked by AVERAGE points per person, so a bigger department can't win on headcount.
+function deptStandings(){
+  if(!state.depts||!state.depts.on)return[];
+  const lb=calcLeaderboard();if(!lb.length)return[];
+  const dm=deptMap();const agg={};
+  lb.forEach(p=>{const d=dm[p.name.toLowerCase()];if(!d)return;if(!agg[d])agg[d]={name:d,total:0,count:0};agg[d].total+=p.total;agg[d].count++;});
+  return Object.values(agg).map(x=>({name:x.name,count:x.count,total:Math.round(x.total*10)/10,avg:x.count?Math.round(x.total/x.count*10)/10:0}))
+    .sort((a,b)=>b.avg-a.avg||b.total-a.total||a.name.localeCompare(b.name));
+}
+function deptTableHTML(){
+  const ds=deptStandings();
+  const label=(state.depts&&state.depts.label)||'Departments';
+  if(!ds.length)return`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} have players yet.</div>`;
+  const maxAvg=Math.max(1,...ds.map(d=>d.avg));
+  const dm=deptMap();const lb=calcLeaderboard();const noDept=lb.filter(p=>!dm[p.name.toLowerCase()]).length;
+  return`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px">Ranked by average points per person, so team size doesn't matter.</div>${ds.map((d,rank)=>{
+    const lead=rank===0&&d.avg>0;
+    const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
+    const pctW=Math.round((d.avg/maxAvg)*100);
+    return`<div class="sc${lead?' gold':''}${rank<3&&d.avg>0?' podium':''}" style="margin-bottom:8px"><div class="sc-hdr" style="cursor:default">
+      <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&d.avg>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:${rank<3&&d.avg>0?'#3a2a00':'var(--txm)'};border:1px solid ${rank<3&&d.avg>0?'transparent':'var(--b)'}">${rank+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx)">${esc(d.name)}</div>
+        <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${d.count} player${d.count>1?'s':''} · ${d.total} pts total</div>
+        <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${lead?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${lead?'var(--gold)':d.avg>0?'var(--gr)':'var(--txm)'}">${d.avg}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">AVG / PERSON</div></div>
+    </div></div>`;}).join('')}${noDept?`<div style="font-size:.68rem;color:var(--txm);text-align:center;margin-top:8px">${noDept} player${noDept>1?'s':''} not in a ${esc(label.toLowerCase().replace(/s$/,''))}</div>`:''}`;
 }
 
 // ── LIVE MATCHES ──────────────────────────────────────────────────────────────
@@ -1699,16 +1777,16 @@ function renderMC(id){
   const chCls=fix.ch?.startsWith('BBC')?'ch-bbc':'ch-itv';
   const admin=isAdmin();
   // Vertical row per team — full-width names, score control on the right
-  const teamRow=(name,isWin,isLose,side)=>`
-    <div class="mcr${isWin?' win':isLose?' lose':''}">
+  const teamRow=(name,isWin,isLose,side)=>{const mine=_myTeams.has(name);return`
+    <div class="mcr${isWin?' win':isLose?' lose':''}"${mine?' style="background:var(--pill-gr);border-radius:7px"':''}>
       <span class="mcr-flag">${FLAGS[name]||'⚽'}</span>
-      <span class="mcr-name">${name}</span>
+      <span class="mcr-name">${mine?'⭐ ':''}${name}</span>
       ${played
         ?`<span class="mcr-score${isWin?' win':''}">${side==='hg'?r.hg:r.ag}</span>`
         :admin
           ?`<span class="mcr-ctrl"><button class="adj" onclick="adj('${id}','${side}',-1)">−</button><span class="sval" id="s${side}${id}">${side==='hg'?hg:ag}</span><button class="adj" onclick="adj('${id}','${side}',1)">+</button></span>`
           :''}
-    </div>`;
+    </div>`;};
   return`<div class="mc${played?' played':live?' live-now':''}" id="mc-${id}">
   <div class="mc-meta">
     <span style="display:flex;align-items:center;gap:4px">
@@ -1755,7 +1833,7 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||''};}
+function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',depts:state.depts};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 // ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
@@ -1771,10 +1849,10 @@ function renderWelcome(){
     ${open?`
       ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back to see which teams you've been given, then watch your points climb.</div></div>`:'';})()}
       <div class="card" style="padding:20px 18px;margin-bottom:18px;text-align:left;border:1px solid var(--pill-grbr);box-shadow:var(--shadow-lg)">
-        <div style="font-family:'Oswald',sans-serif;font-size:.86rem;color:var(--gr);letter-spacing:.05em;margin-bottom:4px;text-align:center">✍️ SIGN UP TO PLAY</div>
-        <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:16px">Enter your <b>full name</b> so the organiser can identify you.</p>
+        <div style="font-family:'Oswald',sans-serif;font-size:.86rem;color:var(--gr);letter-spacing:.05em;margin-bottom:16px;text-align:center">✍️ SIGN UP TO PLAY</div>
         <input id="signup-fname" type="text" maxlength="20" placeholder="First name *" autocomplete="given-name" style="width:100%;padding:12px 14px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.95rem;margin-bottom:9px" onkeydown="if(event.key==='Enter')submitSignup()"/><input id="signup-lname" type="text" maxlength="20" placeholder="Last name *" autocomplete="family-name" style="width:100%;padding:12px 14px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.95rem;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitSignup()"/>
         ${state.predict.on?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🔮 BONUS: who will WIN the World Cup?</div><select id="signup-pred" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">No prediction</option>${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${t.name}">${t.flag} ${t.name}</option>`).join('')}</select><div style="font-size:.68rem;color:var(--txm);margin-top:4px">Nail it and you get +${state.predict.bonus} bonus points. Locked once you join.</div></div>`:''}
+        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🏢 YOUR ${esc((state.depts.label||'TEAM').toUpperCase().replace(/S$/,''))}</div><select id="signup-dept" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">Pick your ${esc((state.depts.label||'team').toLowerCase().replace(/s$/,''))}…</option>${state.depts.names.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select></div>`:''}
         <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:13px;font-size:.86rem">JOIN THE SWEEPSTAKE</button>
       </div>
       ${mePickerHTML(false)}
@@ -1795,7 +1873,7 @@ async function submitSignup(){
   if(!fEl||!lEl)return;
   const first=fEl.value.trim(),last=lEl.value.trim();
   if(first.length<2){showToast('Please enter your first name','error');fEl.focus();return;}
-  if(last.length<2){showToast('Last name needed, so the organiser knows who you are','error');lEl.focus();return;}
+  if(last.length<2){showToast('Please enter your last name too','error');lEl.focus();return;}
   // Title-case both names for consistency
   const tc=s=>s.charAt(0).toUpperCase()+s.slice(1);
   const name=cleanName(tc(first)+' '+tc(last));
@@ -1804,11 +1882,16 @@ async function submitSignup(){
   const existing=Object.values(state.signups||{}).map(s=>(s.name||'').toLowerCase());
   if(existing.includes(name.toLowerCase())){showToast('That name is already signed up','error');return;}
   // Signups path is publicly writable (see Firebase rules)
+  let dept='';
+  if(state.depts&&state.depts.on&&(state.depts.names||[]).length){
+    const dEl=document.getElementById('signup-dept');dept=dEl?(dEl.value||''):'';
+    if(!dept){showToast('Please pick your '+((state.depts.label||'department').toLowerCase().replace(/s$/,'')),'error');return;}
+  }
   try{
     const key='s'+Date.now()+Math.floor(Math.random()*1000);
     const predEl=document.getElementById('signup-pred');
     const prediction=(state.predict.on&&predEl)?predEl.value||'':'';
-    const rec={name,at:Date.now()};if(prediction)rec.prediction=prediction;
+    const rec={name,at:Date.now()};if(prediction)rec.prediction=prediction;if(dept)rec.dept=dept;
     if(DB){await DB.ref('wc2026/signups/'+key).set(rec);}
     else{if(!state.signups)state.signups={};state.signups[key]=rec;}
     try{localStorage.setItem('wc26me',name);}catch(e){}
@@ -2008,7 +2091,7 @@ function renderSetup(){
   ${!state.draw?`<div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
       <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">✍️ PLAYER SIGN-UP</div><div style="font-size:.7rem;color:var(--txm);margin-top:2px">Players add their own name via the shared link</div></div>
-      <button class="btn ${state.signupOpen?'btn-green':'btn-ghost'}" style="font-size:.7rem;flex-shrink:0" onclick="toggleSignup()">${state.signupOpen?'🟢 OPEN':'OPEN IT'}</button>
+      <div style="display:flex;gap:6px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="copyInvite()">📋 INVITE</button><button class="btn ${state.signupOpen?'btn-green':'btn-ghost'}" style="font-size:.7rem" onclick="toggleSignup()">${state.signupOpen?'🟢 OPEN':'OPEN IT'}</button></div>
     </div>
     <div style="border-top:1px solid var(--b);padding-top:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -2017,6 +2100,7 @@ function renderSetup(){
       </div>
       ${signupCount?(()=>{const q=(state.signupQ||'').toLowerCase();const all=signupEntries();const shown=q?all.filter(([_,s])=>(s.name||'').toLowerCase().includes(q)):all;return `${signupCount>12?`<input type="text" value="${esc(state.signupQ||'')}" oninput="state.signupQ=this.value;render()" placeholder="Filter ${signupCount} names…" style="width:100%;padding:7px 10px;margin-bottom:8px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.8rem"/>`:''}<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;max-height:300px;overflow-y:auto">${shown.length?shown.map(([key,s])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px 6px 11px;background:var(--cardh);border-radius:7px">
         <span style="flex:1;font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${s.prediction?` <span style="font-size:.62rem;color:var(--txm)">🔮 ${esc(s.prediction)}</span>`:''}</span>
+        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<select onchange="setSignupDept('${key}',this.value)" title="Department" style="padding:3px 5px;background:var(--inp);border:1px solid ${s.dept?'var(--gr)':'var(--b)'};border-radius:5px;color:${s.dept?'var(--gr)':'var(--txm)'};font-size:.68rem;max-width:108px"><option value="">— ${esc(state.depts.label||'Dept')}</option>${state.depts.names.map(d=>`<option value="${esc(d)}" ${s.dept===d?'selected':''}>${esc(d)}</option>`).join('')}</select>`:''}
         <button class="btn-sm" style="padding:2px 7px" onclick="editSignup('${key}')" title="Edit name">✎</button>
         <button class="btn-sm" style="padding:2px 8px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeSignup('${key}')" title="Remove">✕</button>
       </div>`).join(''):`<div style="font-size:.74rem;color:var(--txm);padding:6px">No names match "${esc(state.signupQ||'')}"</div>`}</div>
@@ -2067,7 +2151,7 @@ function renderSetup(){
     </div>
   </div>`;})()}
   <!-- Prize + Scoring collapsibles -->
-  ${['charity','scoring','bonus','predict','ticker'].map(key=>{
+  ${['charity','scoring','bonus','predict','depts','ticker'].map(key=>{
     const open=state.sOpen[key];
     const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:(state.paid?Object.values(state.paid).filter(Boolean).length:0);
     const collected=paidCount*state.prize.buyin;
@@ -2095,12 +2179,14 @@ function renderSetup(){
     `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like, though the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
     <button class="btn-sm" style="margin-top:9px" onclick="state.scoring={...DEF_SCR};saveSetup();render()">RESET TO DEFAULT</button>`
     :key==='bonus'?
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results, no input needed. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
     :key==='predict'?
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points, and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick. The dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
+    :key==='depts'?
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.depts.on?'checked':''} onchange="state.depts.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Pit office teams against each other (the individual board stays the main event)</span></label>${state.depts.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Add your teams below, then players pick one when they sign up. They're ranked by <b>average points per person</b>, so a big team can't win on numbers alone. <b>Set these up before you open sign-up</b> — renaming a team later won't move people who already picked the old name.</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:.74rem;color:var(--txd);white-space:nowrap">Label on screen</span><input type="text" maxlength="20" value="${esc(state.depts.label||'Departments')}" oninput="state.depts.label=this.value;saveSetup()" placeholder="Departments" style="flex:1;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:.8rem"/></div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="dept-input" type="text" maxlength="30" placeholder="e.g. Deals, Finance, Floor 3…" onkeydown="if(event.key==='Enter')addDept()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addDept()">Add</button></div>${(state.depts.names||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.depts.names.map((d,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">🏢 ${esc(d)}</span><button onclick="removeDept(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No teams yet. Add at least two.</div>`}`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Turn on to add office teams (departments, floors, whatever) that compete on average points, with a pick added to the sign-up form and a team view on the standings.</div>`}`
     :
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion and wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet. The automatic ones still show.</div>`}`:''}`;
-    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='ticker'?'📢 TICKER & MESSAGES':'';
+    const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='depts'?('🏢 '+(state.depts.label||'DEPARTMENTS').toUpperCase()+(state.depts.on?'':' · off')):key==='ticker'?'📢 TICKER & MESSAGES':'';
     return`<div class="card" style="margin-bottom:10px;overflow:hidden"><button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen['${key}']=!state.sOpen['${key}'];render()"><span>${title}</span><span style="color:var(--txm)">${open?'▲':'▼'}</span></button>${open?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">${inner}</div>`:''}</div>`;
   }).join('')}
   <!-- Manual Assignment -->
@@ -2216,7 +2302,7 @@ function renderLive(){
     <h2 class="ttl" style="margin:0">On Now</h2>
     <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length} match${ids.length>1?'es':''}</span>
   </div>
-  <p class="sub">Updates automatically as results come in. No input needed.</p>
+  <p class="sub">Updates automatically as results come in.</p>
   ${ids.map(id=>{
     const f=GF[id];const s=state.live[id];const admin=isAdmin();
     const hasScore=!!s;const hg=s?.hg||0,ag=s?.ag||0;
@@ -2327,15 +2413,16 @@ function drawByTeamHTML(){
     </div>`).join('');
 }
 function renderFixtures(){
-  const vis=Object.entries(GF).filter(([_,f])=>(state.fG==='ALL'||f.group===state.fG)&&(state.fMD==='ALL'||String(f.matchday)===state.fMD));
+  const vis=Object.entries(GF).filter(([_,f])=>((!state.fT||state.fT==='ALL')?(state.fG==='ALL'||f.group===state.fG):state.fT==='__MINE__'?(_myTeams.has(f.home)||_myTeams.has(f.away)):(f.home===state.fT||f.away===state.fT))&&(state.fMD==='ALL'||String(f.matchday)===state.fMD));
   const played=vis.filter(([id])=>state.grR[id]?.played).length;
   const feed=recentResults.slice(0,5);
   return`<h2 class="ttl">Fixtures</h2><p class="sub">All 72 group matches with UK kick-off times and TV channels.</p>
   ${feed.length?`<div style="margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.1em;color:var(--txm);margin-bottom:6px">RECENT RESULTS</div><div style="display:flex;flex-direction:column;gap:5px">${feed.map(r=>`<div class="feed-item"><span style="font-size:.9rem">${FLAGS[r.home]||'⚽'}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;color:${r.hg===r.ag?'var(--amber)':'var(--gr)'};padding:0 6px">${r.hg}–${r.ag}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${r.away}</span><span style="font-size:.9rem">${FLAGS[r.away]||'⚽'}</span></div>`).join('')}</div></div>`:''}
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start">
-    <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">GROUP</div><div style="display:flex;gap:3px;flex-wrap:wrap">${['ALL',...Object.keys(GD)].map(g=>`<button class="fb${state.fG===g?' on':''}" onclick="state.fG='${g}';render()">${g}</button>`).join('')}</div></div>
+    <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">GROUP</div><div style="display:flex;gap:3px;flex-wrap:wrap">${['ALL',...Object.keys(GD)].map(g=>`<button class="fb${state.fG===g?' on':''}" onclick="state.fG='${g}';state.fT='ALL';render()">${g}</button>`).join('')}</div></div>
     <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">MATCHDAY</div><div style="display:flex;gap:3px">${[['ALL','All'],['1','MD1'],['2','MD2'],['3','MD3']].map(([v,l])=>`<button class="fb${state.fMD===v?' on':''}" onclick="state.fMD='${v}';render()">${l}</button>`).join('')}</div></div>
-    <span style="font-size:.7rem;color:var(--txm);margin-left:auto;align-self:flex-end">${played}/${vis.length} played</span>
+    <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">TEAM</div><select onchange="state.fT=this.value;state.fG='ALL';render()" style="padding:5px 8px;background:var(--inp);border:1px solid ${(!state.fT||state.fT==='ALL')?'var(--b)':'var(--gr)'};border-radius:6px;color:var(--tx);font-size:.78rem;font-family:inherit;cursor:pointer;max-width:190px"><option value="ALL">All teams</option>${_myTeams.size?`<option value="__MINE__" ${state.fT==='__MINE__'?'selected':''}>⭐ My teams</option>`:''}${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${esc(t.name)}" ${state.fT===t.name?'selected':''}>${t.flag} ${esc(t.name)}</option>`).join('')}</select></div>
+    <div style="margin-left:auto;align-self:flex-end;display:flex;align-items:center;gap:8px">${(state.fG!=='ALL'||state.fMD!=='ALL'||state.fT!=='ALL')?`<button class="fb" onclick="state.fG='ALL';state.fMD='ALL';state.fT='ALL';render()" style="color:var(--gr);border-color:var(--pill-grbr)">✕ Clear</button>`:''}<span style="font-size:.7rem;color:var(--txm)">${played}/${vis.length} played</span></div>
   </div>
   ${(()=>{
     // Group fixtures by date for scannable, BBC-Sport-style day sections
@@ -2347,12 +2434,17 @@ function renderFixtures(){
       return new Date(2026,months[ma],+da)-new Date(2026,months[mb],+db);
     });
     if(!dates.length)return'<div class="card" style="padding:20px;text-align:center;color:var(--txm)">No matches match these filters.</div>';
-    return dates.map(dt=>{
+    const _n0=new Date();_n0.setHours(0,0,0,0);
+    const _tIdx=dates.findIndex(d=>isTodayDt(d));
+    const _fIdx=dates.findIndex(d=>{const[da,ma]=d.split(' ');return new Date(2026,months[ma],+da)>=_n0;});
+    const jumpDt=_tIdx>=0?dates[_tIdx]:(_fIdx>=0?dates[_fIdx]:null);
+    const jumpBtn=(jumpDt&&dates[0]!==jumpDt)?`<button class="fb" onclick="document.getElementById('fx-jump')?.scrollIntoView({behavior:'smooth',block:'start'})" style="margin-bottom:12px;color:var(--gr);border-color:var(--pill-grbr)">📅 ${isTodayDt(jumpDt)?'Jump to today':'Jump to next matches'}</button>`:'';
+    return jumpBtn+dates.map(dt=>{
       const ids=byDate[dt];
       const done=ids.filter(id=>state.grR[id]?.played).length;
       const rel=relDate(dt);
       const isToday=isTodayDt(dt);
-      return`<div style="margin-bottom:16px">
+      return`<div style="margin-bottom:16px"${dt===jumpDt?' id="fx-jump"':''}>
         <div style="position:sticky;top:54px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
           <span style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.04em;color:${isToday?'var(--gr)':'var(--tx)'}">${rel}${isToday?' ●':''}</span>
           <span style="font-size:.66rem;color:var(--txm)">${ids.length} match${ids.length>1?'es':''}${done?` · ${done} played`:''}</span>
@@ -2370,7 +2462,7 @@ function renderTablesContent(qual){
     return`<div class="gt${complete?' done':''}">
       <div class="gt-hdr"><span class="gt-lbl">GROUP ${g}</span><span style="font-size:.62rem;color:var(--txm)">${played}/6${complete?' · Done':''}</span></div>
       <div class="gt-row" style="padding:3px 9px;border-bottom-width:1px"><span></span><span style="font-size:.56rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.06em">Team</span>${['P','W','D','L','GF','GA','GD','Pts'].map(h=>`<span style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;font-weight:600;text-align:center">${h}</span>`).join('')}</div>
-      ${rows.map((row,pos)=>{const qv=qual[row.name]||'pending';return`<div class="gt-row${qv==='eliminated'?' out':''}">
+      ${rows.map((row,pos)=>{const qv=qual[row.name]||'pending';const mine=_myTeams.has(row.name);return`<div class="gt-row${qv==='eliminated'?' out':''}"${mine?' style="background:var(--pill-gr)"':''}>
         <div style="display:flex;align-items:center;justify-content:center"><div style="width:5px;height:5px;border-radius:50%;background:${dotC(pos)}"></div></div>
         <div style="display:flex;align-items:center;gap:4px;min-width:0"><span style="font-size:.9rem">${row.flag}</span><span style="font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${qv==='eliminated'?'var(--txm)':'var(--tx)'}">${row.name}</span>${(qv==='top2'||qv==='best3rd')?`<span style="font-size:.52rem;padding:0 3px;border-radius:2px;background:${QCOL[qv]}18;border:1px solid ${QCOL[qv]}40;color:${QCOL[qv]};font-family:'Oswald',sans-serif;font-weight:600;flex-shrink:0">Q</span>`:''}</div>
         ${[row.P,row.W,row.D,row.L,row.GF,row.GA,(row.GD>0?'+':'')+row.GD,row.Pts].map((v,i)=>`<span class="gt-cell" style="color:${i===4?'var(--gr)':i===5?'var(--red)':i===6?row.GD>0?'var(--gr)':row.GD<0?'var(--red)':'var(--txd)':i===7?'var(--tx)':'var(--txd)'}">${v}</span>`).join('')}
@@ -2401,7 +2493,7 @@ function renderKO(){
     {h:'R16',ms:['m93','m94','m95','m96']},
     {h:'R32',ms:['m81','m82','m83','m84','m85','m86','m87','m88']},
   ];
-  function bkSlot(name,isW,isL){const f=name?FLAGS[name]||'⚽':'🔲';return`<div class="bk-slot${isW?' w':isL?' l':''}"><span style="font-size:.9rem;filter:${isL?'grayscale(.7)':'none'}">${f}</span><span class="bn">${name||'TBD'}</span>${isW?`<span style="color:var(--gr);font-size:.72rem">✓</span>`:''}</div>`;}
+  function bkSlot(name,isW,isL){const f=name?FLAGS[name]||'⚽':'🔲';const mine=!!(name&&_myTeams.has(name));return`<div class="bk-slot${isW?' w':isL?' l':''}"${mine&&!isW?' style="background:var(--pill-gr)"':''}><span style="font-size:.9rem;filter:${isL?'grayscale(.7)':'none'}">${f}</span><span class="bn">${mine?'⭐ ':''}${name||'TBD'}</span>${isW?`<span style="color:var(--gr);font-size:.72rem">✓</span>`:''}</div>`;}
   const bkHtml=bkCols.map((col,ci)=>{
     const pairs=[];for(let i=0;i<col.ms.length;i+=2)pairs.push(col.ms.slice(i,i+2));
     return`<div class="bk-col">
@@ -2424,7 +2516,7 @@ function renderKO(){
     </div>`;
   }).join('');
   return`<h2 class="ttl">Knockout Stage</h2>
-  <p style="font-size:.75rem;color:var(--txm);margin-bottom:14px">Teams fill in <b>automatically</b> from group results, no input needed. Dates, venues and UK kick-off times are from the official BBC schedule (all times BST).</p>
+  <p style="font-size:.75rem;color:var(--txm);margin-bottom:14px">Teams appear here as the group stage finishes. Dates, venues and UK kick-off times (BST) are from the official BBC schedule.</p>
   ${champ?`<div style="margin-bottom:16px;padding:9px 14px;background:linear-gradient(90deg,rgba(176,120,0,.1),transparent);border:1px solid rgba(176,120,0,.35);border-radius:8px;display:flex;align-items:center;gap:8px"><span style="color:var(--gold);font-family:'Oswald',sans-serif;letter-spacing:.05em">🏆 WORLD CHAMPIONS:</span><span style="font-size:1rem">${FLAGS[champ]}</span><span style="color:var(--tx);font-weight:600">${champ}</span></div>`:''}
   <div class="card" style="padding:12px 8px 12px;margin-bottom:22px;overflow:hidden">
     <div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin-bottom:9px;padding-left:6px">TOURNAMENT BRACKET</div>
@@ -2452,9 +2544,9 @@ function renderKOCard(mId,tA,tB){
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span style="font-family:'Oswald',sans-serif;font-size:.63rem;color:${rc};letter-spacing:.07em">${bc.l}</span>${dw&&played?`<span style="font-size:.6rem;padding:1px 5px;background:rgba(192,112,0,.15);border:1px solid rgba(192,112,0,.4);border-radius:3px;color:var(--amber);font-family:'Oswald',sans-serif;font-weight:600">PENS</span>`:''}</div>
     ${schLine?`<div style="margin-bottom:6px">${schLine}</div>`:''}
     ${[{name:tA||descA,flag:tA?FLAGS[tA]||'⚽':'🔲',isW:hw,isL:aw&&played,score:r?.hg,side:'hg'},{name:tB||descB,flag:tB?FLAGS[tB]||'⚽':'🔲',isW:aw,isL:hw&&played,score:r?.ag,side:'ag'}].map(({name,flag,isW,isL,score,side})=>`
-    <div style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;background:${isW?'rgba(0,122,61,.07)':isL?'rgba(120,120,120,.05)':'transparent'}">
+    <div style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;background:${isW?'rgba(0,122,61,.07)':isL?'rgba(120,120,120,.05)':(_myTeams.has(name)?'var(--pill-gr)':'transparent')}">
       <span style="font-size:.98rem;filter:${isL?'grayscale(.7)':'none'}">${flag}</span>
-      <span style="flex:1;font-size:.82rem;color:${isW?'var(--gr)':isL?'var(--txm)':'var(--tx)'};font-weight:${isW?600:400};${isL?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${name}</span>
+      <span style="flex:1;font-size:.82rem;color:${isW?'var(--gr)':isL?'var(--txm)':'var(--tx)'};font-weight:${isW?600:400};${isL?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${_myTeams.has(name)?'⭐ ':''}${name}</span>
       ${canEnter?`<button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',-1)">−</button><span class="sval" id="sk${side}${mId}" style="font-size:1rem">${tempS[mId][side]}</span><button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',1)">+</button>`:''}
       ${played?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:${isW?'var(--gr)':'var(--txm)'}">${score}</span>${isW?`<span style="color:var(--gr);font-size:.8rem">✓</span>`:''}`:''}
     </div>`).join('<div style="height:1px;background:var(--b);margin:2px 0"></div>')}
@@ -2488,13 +2580,18 @@ function renderStandings(){
   const champ=state.koR['m104']?.winner;const champP=champ?lb.find(p=>p.breakdown.some(b=>b.name===champ)):null;
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
+  const dmap=deptMap();const deptsActive=!!(state.depts&&state.depts.on&&(state.depts.names||[]).length&&lb.length);
+  const showDeptView=deptsActive&&state.standView==='depts';
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
   return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Auto-calculated · tap a player for breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
+    <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Tap a player for the breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
-  ${lb.length>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}
-  ${todayMatchesHTML()}
+  ${deptsActive?`<div style="display:flex;gap:4px;margin-bottom:14px;background:var(--inp);border-radius:9px;padding:3px;width:fit-content">
+    <button onclick="state.standView='players';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView!=='depts'?'var(--card)':'transparent'};color:${state.standView!=='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView!=='depts'?'var(--shadow)':'none'}">PLAYERS</button>
+    <button onclick="state.standView='depts';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView==='depts'?'var(--card)':'transparent'};color:${state.standView==='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView==='depts'?'var(--shadow)':'none'}">${esc((state.depts.label||'DEPARTMENTS').toUpperCase())}</button>
+  </div>`:''}
+  ${!showDeptView?`${lb.length>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}${todayMatchesHTML()}`:''}
   ${champ&&champP?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
     <div style="font-size:2rem;margin-bottom:6px">🏆</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:.04em">${champ} ARE WORLD CHAMPIONS</div>
@@ -2503,10 +2600,9 @@ function renderStandings(){
     <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-d))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
     <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
   </div>`:''}
-  ${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">TOURNAMENT STARTS 11 JUNE 2026</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">Enter match results in Fixtures and points update here.</div></div>`:''}
-  ${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}
+  ${!showDeptView?`${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">TOURNAMENT STARTS 11 JUNE 2026</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">Enter match results in Fixtures and points update here.</div></div>`:''}${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}`:''}
   ${thermometerHTML()}
-  ${(()=>{const maxPts=Math.max(1,...lb.map(p=>p.total));return lbFiltered.map((p)=>{
+  ${(()=>{if(showDeptView)return deptTableHTML();const maxPts=Math.max(1,...lb.map(p=>p.total));return lbFiltered.map((p)=>{
     const rank=lb.indexOf(p);
     const isF=rank===0&&p.total>0;const prz=prizeAt(rank);const open=state.expanded===p.name;
     const isMe=myName&&p.name===myName;
@@ -2520,7 +2616,7 @@ function renderStandings(){
         ${(()=>{const prev=(_baseRanks||{})[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
       </div>
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
           <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length}/${p.teams.length} qualified${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
           <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${isF?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
         </div>
@@ -2665,7 +2761,7 @@ function render(){
   const liveCount=state.draw?liveMatchIds().length:0;
   if(liveCount>0)tabs.push({id:'live',l:`LIVE (${liveCount})`});
   tabs.push(
-    {id:'draw',l:'DRAW'},
+    {id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')},
     {id:'fixtures',l:'FIXTURES'},
     {id:'tables',l:'TABLES'},
     {id:'knockout',l:'KNOCKOUT'},
@@ -2681,6 +2777,7 @@ function render(){
   document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}${t.id==='live'?' live':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
   updateHdr();
   refreshRankBaseline();
+  _myTeams=myTeamSet();
   const c=document.getElementById('content');
   if(state.tab==='setup'&&adminSess){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
   else if(state.tab==='setup'){c.innerHTML=renderDraw();}
@@ -2777,6 +2874,7 @@ else if(DB){
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.bonus)state.bonus={...DEF_BONUS,...data.cfg.bonus};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
+      if(data.cfg.depts)state.depts={...{on:false,names:[],label:'Departments'},...data.cfg.depts};
       state.gateSignupOnly=data.cfg.gateSignupOnly!==false;
       state.footballApiKey=data.cfg.footballApiKey||'';
       state.autoDraw=!!data.cfg.autoDraw;
