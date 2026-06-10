@@ -310,6 +310,38 @@ html.dark .dc.gold{background:linear-gradient(135deg,rgba(255,215,0,.06),var(--c
 .ov-extra{margin-top:14px;min-height:1px}
 .ov-extra-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:460px;margin:0 auto}
 .ov-extra-team{font-family:'Oswald',sans-serif;font-size:.95rem;color:#fff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:7px 14px;display:inline-block}
+.ov-phase-countdown{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;animation:ovIn .3s ease}
+.ov-cd-label{font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.16em;color:#00e676;text-transform:uppercase}
+.ov-cd-num{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(6rem,26vw,17rem);line-height:.9;color:#fff;text-shadow:0 0 50px rgba(0,230,118,.55)}
+.ov-cd-sub{font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.24em;color:rgba(255,255,255,.4)}
+.ov-cd-pop{animation:cdMsgPop .5s cubic-bezier(.2,1.3,.4,1)}
+.ov-cd-tick{animation:ovCdTick .85s ease-out}
+@keyframes ovCdTick{0%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes cdMsgPop{0%{opacity:0;transform:scale(.7) translateY(10px)}60%{opacity:1;transform:scale(1.08)}100%{transform:scale(1) translateY(0)}}
+.ov-me{color:#ffd700;font-weight:700;text-shadow:0 0 18px rgba(255,215,0,.6)}
+.ov-me-tag{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.1em;background:#ffd700;color:#1a1400;border-radius:5px;padding:2px 6px;margin-left:4px;vertical-align:middle}
+.ov-spotlight-me{color:#ffd700!important;text-shadow:0 0 44px rgba(255,215,0,.65)!important}
+.ovf-row.ovf-mine{background:rgba(255,215,0,.16);border-color:rgba(255,215,0,.5);box-shadow:0 0 16px rgba(255,215,0,.3)}
+.ovf-me{color:#ffd700}
+.ov-phase-mine{text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;animation:ovIn .4s ease}
+.ov-mine-hd{font-family:'Oswald',sans-serif;font-size:1.7rem;font-weight:700;color:#ffd700;text-shadow:0 0 40px rgba(255,215,0,.5)}
+.ov-mine-label{font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.28em;color:rgba(255,255,255,.4)}
+.ov-mine-teams{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:460px}
+.ov-mine-team{display:flex;flex-direction:column;align-items:center;gap:3px;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.35);border-radius:16px;padding:18px 26px}
+.ov-mine-flag{font-size:3.6rem;line-height:1;filter:drop-shadow(0 0 16px rgba(255,215,0,.3))}
+.ov-mine-tname{font-family:'Oswald',sans-serif;font-size:1.5rem;font-weight:700;color:#fff}
+.ov-mine-grp{font-size:.62rem;color:rgba(255,255,255,.45);font-family:'Oswald',sans-serif;letter-spacing:.12em}
+.ov-mine-co{font-size:.88rem;color:rgba(255,255,255,.7);max-width:420px}
+.ov-mine-luck{font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.14em;color:#00e676;margin-top:2px}
+#ov-feed{position:absolute;left:0;right:0;bottom:0;max-height:30vh;display:flex;flex-direction:column;z-index:100;pointer-events:none}
+#ov-feed .ovf-hd{font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.42);text-align:center;padding:9px 0 6px;background:linear-gradient(to top,rgba(4,8,26,.9),rgba(4,8,26,.5) 72%,transparent)}
+#ov-feed .ovf-list{overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:0 14px 14px;background:linear-gradient(to top,rgba(4,8,26,.93) 55%,transparent);scrollbar-width:thin}
+.ovf-row{display:flex;align-items:center;gap:9px;justify-content:center;flex-wrap:wrap;font-size:.84rem;color:#fff;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:9px;padding:6px 13px;animation:ovfIn .35s ease}
+.ovf-row.new{background:rgba(0,230,118,.13);border-color:rgba(0,230,118,.4);box-shadow:0 0 16px rgba(0,230,118,.3)}
+.ovf-row .ovf-nm{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.02em}
+.ovf-row .ovf-tm{opacity:.92}
+.ovf-row .ovf-arrow{opacity:.4;font-size:.9rem}
+@keyframes ovfIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 /* ── MISC COMPONENTS ─────────────────────────────────── */
 .q-badge{font-size:.58rem;padding:1px 5px;border-radius:3px;font-family:'Oswald',sans-serif;font-weight:600;border:1px solid transparent;flex-shrink:0}
 .fb{padding:3px 8px;border-radius:5px;background:transparent;border:1px solid var(--b);color:var(--txm);font-family:'Oswald',sans-serif;font-size:.65rem;cursor:pointer;transition:all .15s}
@@ -334,11 +366,13 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:300;display:none}
 /* ── ANIMATIONS ──────────────────────────────────────── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fl{display:inline-block;width:1.3em;height:.92em;vertical-align:-.16em;border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.12)}
 .ticker{position:relative;overflow:hidden;white-space:nowrap;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:9px 0;margin-bottom:14px;box-shadow:var(--shadow);-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 #hdr-inner .ticker{margin:9px 0 11px}
-.ticker-track{display:inline-block;white-space:nowrap;will-change:transform;animation:tickerScroll var(--tk-dur,40s) linear infinite;font-size:.8rem;color:var(--tx);font-weight:500}
+.ticker-track{display:inline-block;white-space:nowrap;will-change:transform;transform:translateZ(0);backface-visibility:hidden;animation:tickerScroll var(--tk-dur,40s) linear infinite;font-size:.8rem;color:var(--tx);font-weight:500}
 .ticker:hover .ticker-track,.ticker:active .ticker-track{animation-play-state:paused}
-@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes tickerScroll{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+.tk-cd{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 @media (prefers-reduced-motion:reduce){.ticker-track{animation-duration:0s!important;animation:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.5}40%{transform:scale(1);opacity:1}}
@@ -377,6 +411,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div class="ov-bg"></div>
   <div id="ov-flash"></div>
   <div class="ov-inner" id="ov-inner"></div>
+  <div id="ov-feed"></div>
   <button id="ov-skip" onclick="skipDraw()">SKIP →</button>
 </div>
 <div id="toast"></div>
@@ -416,7 +451,9 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
-const GD={A:[{n:'Mexico',f:'🇲🇽'},{n:'South Africa',f:'🇿🇦'},{n:'South Korea',f:'🇰🇷'},{n:'Czechia',f:'🇨🇿'}],B:[{n:'Canada',f:'🇨🇦'},{n:'Switzerland',f:'🇨🇭'},{n:'Qatar',f:'🇶🇦'},{n:'Bosnia & Herz.',f:'🇧🇦'}],C:[{n:'Brazil',f:'🇧🇷'},{n:'Morocco',f:'🇲🇦'},{n:'Scotland',f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},{n:'Haiti',f:'🇭🇹'}],D:[{n:'USA',f:'🇺🇸'},{n:'Paraguay',f:'🇵🇾'},{n:'Australia',f:'🇦🇺'},{n:'Turkey',f:'🇹🇷'}],E:[{n:'Germany',f:'🇩🇪'},{n:'Curaçao',f:'🇨🇼'},{n:'Côte d\'Ivoire',f:'🇨🇮'},{n:'Ecuador',f:'🇪🇨'}],F:[{n:'Netherlands',f:'🇳🇱'},{n:'Japan',f:'🇯🇵'},{n:'Tunisia',f:'🇹🇳'},{n:'Sweden',f:'🇸🇪'}],G:[{n:'Belgium',f:'🇧🇪'},{n:'Egypt',f:'🇪🇬'},{n:'Iran',f:'🇮🇷'},{n:'New Zealand',f:'🇳🇿'}],H:[{n:'Spain',f:'🇪🇸'},{n:'Cabo Verde',f:'🇨🇻'},{n:'Saudi Arabia',f:'🇸🇦'},{n:'Uruguay',f:'🇺🇾'}],I:[{n:'France',f:'🇫🇷'},{n:'Senegal',f:'🇸🇳'},{n:'Norway',f:'🇳🇴'},{n:'Iraq',f:'🇮🇶'}],J:[{n:'Argentina',f:'🇦🇷'},{n:'Algeria',f:'🇩🇿'},{n:'Austria',f:'🇦🇹'},{n:'Jordan',f:'🇯🇴'}],K:[{n:'Portugal',f:'🇵🇹'},{n:'Colombia',f:'🇨🇴'},{n:'Uzbekistan',f:'🇺🇿'},{n:'DR Congo',f:'🇨🇩'}],L:[{n:'England',f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{n:'Croatia',f:'🇭🇷'},{n:'Ghana',f:'🇬🇭'},{n:'Panama',f:'🇵🇦'}]};
+const ENG_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#fff"/><rect x="25" width="10" height="42" fill="#ce1124"/><rect y="16" width="60" height="10" fill="#ce1124"/></svg>';
+const SCO_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#005eb8"/><path d="M0 0L60 42M60 0L0 42" stroke="#fff" stroke-width="8" fill="none"/></svg>';
+const GD={A:[{n:'Mexico',f:'🇲🇽'},{n:'South Africa',f:'🇿🇦'},{n:'South Korea',f:'🇰🇷'},{n:'Czechia',f:'🇨🇿'}],B:[{n:'Canada',f:'🇨🇦'},{n:'Switzerland',f:'🇨🇭'},{n:'Qatar',f:'🇶🇦'},{n:'Bosnia & Herz.',f:'🇧🇦'}],C:[{n:'Brazil',f:'🇧🇷'},{n:'Morocco',f:'🇲🇦'},{n:'Scotland',f:SCO_SVG},{n:'Haiti',f:'🇭🇹'}],D:[{n:'USA',f:'🇺🇸'},{n:'Paraguay',f:'🇵🇾'},{n:'Australia',f:'🇦🇺'},{n:'Turkey',f:'🇹🇷'}],E:[{n:'Germany',f:'🇩🇪'},{n:'Curaçao',f:'🇨🇼'},{n:'Côte d\'Ivoire',f:'🇨🇮'},{n:'Ecuador',f:'🇪🇨'}],F:[{n:'Netherlands',f:'🇳🇱'},{n:'Japan',f:'🇯🇵'},{n:'Tunisia',f:'🇹🇳'},{n:'Sweden',f:'🇸🇪'}],G:[{n:'Belgium',f:'🇧🇪'},{n:'Egypt',f:'🇪🇬'},{n:'Iran',f:'🇮🇷'},{n:'New Zealand',f:'🇳🇿'}],H:[{n:'Spain',f:'🇪🇸'},{n:'Cabo Verde',f:'🇨🇻'},{n:'Saudi Arabia',f:'🇸🇦'},{n:'Uruguay',f:'🇺🇾'}],I:[{n:'France',f:'🇫🇷'},{n:'Senegal',f:'🇸🇳'},{n:'Norway',f:'🇳🇴'},{n:'Iraq',f:'🇮🇶'}],J:[{n:'Argentina',f:'🇦🇷'},{n:'Algeria',f:'🇩🇿'},{n:'Austria',f:'🇦🇹'},{n:'Jordan',f:'🇯🇴'}],K:[{n:'Portugal',f:'🇵🇹'},{n:'Colombia',f:'🇨🇴'},{n:'Uzbekistan',f:'🇺🇿'},{n:'DR Congo',f:'🇨🇩'}],L:[{n:'England',f:ENG_SVG},{n:'Croatia',f:'🇭🇷'},{n:'Ghana',f:'🇬🇭'},{n:'Panama',f:'🇵🇦'}]};
 const S1=[[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]],S3=[[0,3],[1,2],[0,1],[2,3],[0,2],[1,3]];
 const SC={
   // ── GROUP A ──────────────────────────────────────────────────────
@@ -599,7 +636,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=400;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},depts:{on:false,names:[],label:'Departments'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',drawCountdown:60,muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -838,14 +875,67 @@ const OFFICE_BANTER=[
   "🍵 Reckon the tea round's riding on this",
   "📅 Half the office checking this more than their emails",
   "🤝 No hard feelings till the whistle goes",
-  "🗣️ Plenty of talk in the kitchen. Let the table sort it out"
+  "🗣️ Plenty of talk in the kitchen. Let the table sort it out",
+  "⚽ No football knowledge needed. Strong opinions, essential",
+  "🙌 Cheer two desks over? Someone's team just scored",
+  "🎧 Headphones in, scores up, work… ongoing",
+  "📵 'In a meeting' = watching with the sound off",
+  "😅 Pretending to read emails, actually checking scores",
+  "🫣 One eye on the spreadsheet, one eye on the score",
+  "🏆 A year of bragging rights on the line",
+  "😬 Nobody remembers who won. Everybody remembers who came last",
+  "😎 Big talk over by the lifts this morning",
+  "📤 That result's already in three group chats",
+  "🙃 Lost your match? Blame the printer",
+  "😏 Quietly confident is the office way. Loudly confident is more fun",
+  "🛗 Sweepstake chat in the lift queue from here on",
+  "🫡 Respect to whoever drew the favourites. Pure luck, mind",
+  "🧠 Tactics being argued like it's the actual World Cup",
+  "🔥 Form is temporary, the sweepstake table is forever",
+  "🚀 Early points mean nothing… unless they're yours",
+  "⏳ Long way to go. Don't celebrate the group stage too hard",
+  "🧾 Only spreadsheet anyone's refreshing today is this one",
+  "💹 Strong fundamentals, shame about the defending",
+  "💼 Diversified? You've got one team. Concentrated risk it is",
+  "💸 Bragging rights: tax-free, fully yours, no clawback",
+  "🐌 Slow start? Call it a J-curve and hold your nerve",
+  "🥅 Penalty shootout: maximum risk, minimum sleep"
 ];
 const OFFICE_BANTER_PRE=[
   "📝 Get your name in before the draw",
   "💬 Office is already talking. Get involved",
   "🏆 A year of bragging rights up for grabs",
   "☕ Sweepstake chat by the kettle from here",
-  "🎲 Last chance for a team before the draw"
+  "🎲 Last chance for a team before the draw",
+  "⚽ No football knowledge needed, just get a name in",
+  "🍀 All down to luck. Anyone can win this",
+  "❤️ Free to enter, and it's all for charity",
+  "😏 Don't be the one who forgot to enter",
+  "👀 Everyone's wondering who'll land the favourites",
+  "🎉 Big draw coming up. You in?",
+  "📣 Tell the desk next to you to sign up",
+  "🤝 More players, more banter, more for charity",
+  "⏳ Draw's coming. Get your name down",
+  "🙌 Whole floor's getting involved. Don't miss out"
+];
+// Department-tailored hype — {D} is filled automatically with one of YOUR real teams (rotates).
+const DEPT_HYPE=[
+  "🏢 {D} reckon this is their year",
+  "🏢 Big talk coming out of {D} this morning",
+  "🏢 {D} quietly fancy their chances",
+  "🏢 Is it coming home to {D}?",
+  "🏢 {D} have got a point to prove",
+  "🏢 Don't write off {D} just yet",
+  "🏢 {D} putting their names on the line",
+  "🏢 Word is {D} are taking this very seriously",
+  "🏢 {D} v the rest of the floor",
+  "🏢 {D} eyeing the office bragging rights",
+  "🏢 All eyes on {D} this year",
+  "🏢 {D} bringing the noise",
+  "🏢 {D} fancy a trophy for the breakout room",
+  "🏢 Never bet against {D}",
+  "🏢 {D} already loading up the group chat",
+  "🏢 {D} want this one badly"
 ];
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
@@ -901,7 +991,7 @@ function tickerItems(){
       // ── Department race (optional; the individual board still leads the ticker) ──
       const ds=(state.depts&&state.depts.on)?deptStandings():[];
       if(ds.length>=2){
-        const dl=(state.depts.label||'Departments').toLowerCase();
+        const dl=(state.depts.label||'Squads').toLowerCase();
         const D=ds[0],dm2=Math.round((ds[0].avg-ds[1].avg)*10)/10;
         a.push(pk([`🏢 ${D.name} lead the office on ${D.avg} a head`,`🏢 ${D.name} top of the ${dl} on ${D.avg} per player`,`🏆 ${D.name} setting the pace, ${D.avg} a head`],3));
         if(dm2===0)a.push(`🤝 ${D.name} and ${ds[1].name} neck and neck up top`);
@@ -910,7 +1000,8 @@ function tickerItems(){
         if(ds.length>=3){const dlast=ds[ds.length-1];a.push(pk([`🥄 ${dlast.name} propping up the ${dl}, only way is up`,`📉 ${dlast.name} could use a few results, bottom of the ${dl}`],6));}
         if(me){const myD=deptMap()[myLc];if(myD){const di=ds.findIndex(x=>x.name===myD);if(di>=0)a.push(pk([`🏢 Your lot (${myD}) sit ${ordinal(di+1)} of ${ds.length}`,`💼 ${myD} are ${ordinal(di+1)} in the office, ${me}`],7));}}
       }
-      a.push(pk(OFFICE_BANTER,5));
+      [5,19,33,47].forEach(o=>a.push(pk(OFFICE_BANTER,o)));   // several different banter lines per loop; rotate as results come in
+      if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;a.push(pk(DEPT_HYPE,seed).replace('{D}',dn[seed%dn.length]));a.push(pk(DEPT_HYPE,seed+11).replace('{D}',dn[(seed+7)%dn.length]));}
     }
     if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games and counting`,`📊 ${gp+kp} games down, ${goals} goals`],6));
     if(!started&&!champ)a.push(pick([`🎲 Teams drawn at random. Pure luck`,`👀 Check the draw tab to see who got the favourites`,`🍀 It's all down to the draw now`,`💪 Everyone's in with a shout till the whistle goes`,`⏳ Not long until kick-off`]));
@@ -921,7 +1012,8 @@ function tickerItems(){
     const n=Object.keys(state.signups||{}).length;
     if(n)a.push(`✍️ ${n} ${n>1?"players":"player"} signed up${n>1?" so far":""}`);
     a.push(["🎲 Random draw, everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill needed, just luck","👀 Who'll land the favourites?","💬 Office chat about to heat up","📝 Get your name in"][n%6]);
-    a.push(OFFICE_BANTER_PRE[n%OFFICE_BANTER_PRE.length]);
+    [0,1,2].forEach(k=>a.push(OFFICE_BANTER_PRE[(n+k)%OFFICE_BANTER_PRE.length]));
+    if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;const dc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.dept)dc[s.dept]=(dc[s.dept]||0)+1;});const ranked=Object.entries(dc).sort((x,y)=>y[1]-x[1]);if(ranked.length&&ranked[0][1]>0)a.push(`🏢 ${ranked[0][0]} turning out in force, ${ranked[0][1]} name${ranked[0][1]>1?'s':''} in`);a.push(DEPT_HYPE[n%DEPT_HYPE.length].replace('{D}',dn[n%dn.length]));a.push(DEPT_HYPE[(n+5)%DEPT_HYPE.length].replace('{D}',dn[(n+3)%dn.length]));}
   }
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
@@ -936,7 +1028,7 @@ function tickerBarHTML(){
   if(!state.ticker||!state.ticker.on)return'';
   const items=tickerItems();if(!items.length)return'';
   const sep='<span style="color:var(--gr);margin:0 15px;opacity:.5">◆</span>';
-  const row=items.map(t=>t===DN?`<span style="padding:0 2px">${donateTickerLink()}</span>`:`<span style="padding:0 2px">${esc(t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`)}</span>`).join(sep)+sep;
+  const row=items.map(t=>{if(t===DN)return `<span style="padding:0 2px">${donateTickerLink()}</span>`;const _svg=[];let _t=String(t).replace(/<svg class="fl"[\s\S]*?<\/svg>/g,m=>{_svg.push(m);return '\uE020'+(_svg.length-1)+';';});let h=esc(_t).replace(TK_CD,`<span class="tk-cd">${esc(cdText()||'')}</span>`);_svg.forEach((sv,i)=>{h=h.split('\uE020'+i+';').join(sv);});return `<span style="padding:0 2px">${h}</span>`;}).join(sep)+sep;
   const dur=Math.max(22,Math.round(items.join(' ').length*0.22));
   return`<div class="ticker"><div class="ticker-track" style="--tk-dur:${dur}s">${row}${row}</div></div>`;
 }
@@ -967,7 +1059,7 @@ function addDept(){
   if(!state.depts.names)state.depts.names=[];
   if(state.depts.names.length>=30){showToast('Max 30 teams','error');return;}
   if(state.depts.names.some(d=>d.toLowerCase()===v.toLowerCase())){showToast('Already added','error');return;}
-  state.depts.names.push(v);el.value='';saveSetup();render();
+  state.depts.names.push(v);state.depts.names.sort((a,b)=>a.localeCompare(b));el.value='';saveSetup();render();
 }
 function removeDept(i){if(state.depts.names){state.depts.names.splice(i,1);saveSetup();render();}}
 function setSignupDept(key,val){if(!adminSess)return;const s=state.signups&&state.signups[key];if(!s)return;if(val)s.dept=val;else delete s.dept;if(DB)DB.ref('wc2026/signups/'+key).set(s);render();}
@@ -1180,7 +1272,8 @@ const SFX={_c:null,ctx(){if(state.muted)return null;if(!this._c){const AC=window
   goal(){const c=this.ctx();if(!c)return;[110,130,155,110,130,155].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sawtooth';o.frequency.value=f;const t=c.currentTime+i*.08;g.gain.setValueAtTime(.4,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.4);});},
   save(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.setValueAtTime(440,c.currentTime);o.frequency.exponentialRampToValueAtTime(880,c.currentTime+.1);g.gain.setValueAtTime(.2,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.28);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.32);},
   tick(){const c=this.ctx();if(!c)return;const o=c.createOscillator();const g=c.createGain();o.type='square';o.frequency.value=1150;g.gain.setValueAtTime(.10,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.05);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.06);},
-  land(){const c=this.ctx();if(!c)return;[523,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.value=f;const t=c.currentTime+i*.06;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.34,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.45);});}
+  land(){const c=this.ctx();if(!c)return;[523,784].forEach((f,i)=>{const o=c.createOscillator();const g=c.createGain();o.type='sine';o.frequency.value=f;const t=c.currentTime+i*.06;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.34,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.4);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.45);});},
+  buildup(secs){const c=this.ctx();if(!c)return function(){};const t0=c.currentTime,dur=Math.max(1,secs);const master=c.createGain();master.gain.setValueAtTime(0.0001,t0);master.gain.exponentialRampToValueAtTime(0.10,t0+dur*0.8);master.gain.linearRampToValueAtTime(0.15,t0+dur);const filt=c.createBiquadFilter();filt.type='lowpass';filt.frequency.setValueAtTime(360,t0);filt.frequency.exponentialRampToValueAtTime(2200,t0+dur);filt.connect(master);master.connect(c.destination);const oscs=[110,164.81,220].map((f,i)=>{const o=c.createOscillator();o.type='sine';o.frequency.setValueAtTime(f,t0);o.frequency.linearRampToValueAtTime(f*1.05,t0+dur);const g=c.createGain();g.gain.value=[0.55,0.3,0.2][i];o.connect(g);g.connect(filt);o.start(t0);return o;});return function(){try{const tn=c.currentTime;master.gain.cancelScheduledValues(tn);master.gain.setTargetAtTime(0.0001,tn,0.12);oscs.forEach(o=>{try{o.stop(tn+0.6);}catch(e){}});}catch(e){}};}
 };
 function toggleMute(){state.muted=!state.muted;try{localStorage.setItem('wc26muted',state.muted?'1':'0');}catch(e){}const b=document.getElementById('mute-btn');if(b){b.textContent=state.muted?'🔇':'🔊';b.className='hbtn'+(state.muted?' dim':'');}}
 
@@ -1206,6 +1299,8 @@ function setOv(html){document.getElementById('ov-inner').innerHTML=html;}
 function flashOv(){const f=document.getElementById('ov-flash');if(f){f.classList.remove('go');void f.offsetWidth;f.classList.add('go');}}
 function showOv(){document.getElementById('ov').style.display='flex';}
 function hideOv(){document.getElementById('ov').style.display='none';drawSkip=false;}
+function ovFeedReset(){const f=document.getElementById('ov-feed');if(f)f.innerHTML='';}
+function ovFeedAdd(html,mine){const f=document.getElementById('ov-feed');if(!f)return;let l=document.getElementById('ov-feed-list');if(!l){f.innerHTML='<div class="ovf-hd">DRAWN SO FAR</div><div class="ovf-list" id="ov-feed-list"></div>';l=document.getElementById('ov-feed-list');}const prev=l.querySelector('.ovf-row.new');if(prev)prev.classList.remove('new');const row=document.createElement('div');row.className='ovf-row new'+(mine?' ovf-mine':'');row.innerHTML=html;l.insertBefore(row,l.firstChild);}
 
 async function doDraw(vn){
   vn=(vn||[]).map(n=>cleanName(n)).filter(n=>n.length>=1);
@@ -1256,9 +1351,10 @@ let _cerPlaying=false;
 // Spin one element's innerHTML through random teasers, decelerating (slot-machine feel).
 async function spinEl(elId,teaserFn,ms){
   // Slot-machine: blurs fast, then a long dramatic slow-down before it lands.
-  let t=0;
+  let t=0,lastTick=-999;
   while(t<ms&&!drawSkip){
     const el=document.getElementById(elId);if(el)el.innerHTML=teaserFn();
+    if(t-lastTick>=58){try{SFX.tick();}catch(e){}lastTick=t;}   // throttled tick: clean roulette clicks (not a buzz) when spinning fast, every frame as it slows
     const prog=Math.min(1,t/ms);
     const d=46+Math.round(prog*prog*prog*474); // 46ms → ~520ms: stays fast, then really slows
     await delay(d);t+=d;
@@ -1269,16 +1365,37 @@ async function playCeremony(parts,n){
   _cerPlaying=true;
   drawSkip=false;
   const base=Math.floor(48/n),rem=48%n,shared=n>48;
+  const myLc=(getMyName()||'').toLowerCase();                                 // who's watching on THIS device (set at sign-up)
+  const isMe=(name)=>!!myLc&&name&&name.toLowerCase()===myLc;
   const F=()=>ALL_TEAMS[Math.floor(Math.random()*ALL_TEAMS.length)];      // random team teaser
   const nm=parts.map(p=>p.name);
   const RN=()=>nm[Math.floor(Math.random()*nm.length)];                    // random name teaser
   showOv();
-  // ── INTRO: flags swirl (drumroll) then a 3·2·1 countdown for the final beat of suspense ──
+  ovFeedReset();
+  // ── BUILD-UP COUNTDOWN: a big anticipation countdown to the draw (length set by admin; 0 = straight in) ──
+  const cdSecs=Math.max(0,Math.min(120,state.drawCountdown==null?60:state.drawCountdown|0));
+  if(!drawSkip&&cdSecs>0){
+    const HYPE=['THE BIG DRAW IS ABOUT TO BEGIN','48 TEAMS · ONE CHAMPION','WHO WILL YOU GET?','EVERY TEAM IS UP FOR GRABS','FORTUNES ABOUT TO BE DECIDED','FEELING LUCKY?','GOOD LUCK, EVERYONE!'];
+    let stopBuildup=function(){};try{stopBuildup=SFX.buildup(cdSecs);}catch(e){}   // soft rising build-up music
+    // Build the countdown screen ONCE; then only the number ticks (no full re-render, so nothing flashes).
+    setOv(`<div class="ov-phase-countdown"><div class="ov-cd-label" id="ov-cd-label"></div><div class="ov-cd-num" id="ov-cd-num"></div><div class="ov-cd-sub">THE DRAW BEGINS IN…</div></div>`);
+    let lastMsg=null;
+    for(let s=cdSecs;s>=1&&!drawSkip;s--){
+      const msg=s<=3?'HERE WE GO!':s<=6?'ALMOST THERE…':HYPE[Math.floor((cdSecs-s)/5)%HYPE.length];
+      const numEl=document.getElementById('ov-cd-num');
+      if(numEl){numEl.textContent=s;numEl.classList.remove('ov-cd-tick');void numEl.offsetWidth;numEl.classList.add('ov-cd-tick');}
+      if(msg!==lastMsg){const lblEl=document.getElementById('ov-cd-label');if(lblEl){lblEl.textContent=msg;lblEl.classList.remove('ov-cd-pop');void lblEl.offsetWidth;lblEl.classList.add('ov-cd-pop');}lastMsg=msg;}
+      try{SFX.tick();}catch(e){}
+      await skipableDelay(1000);
+    }
+    try{stopBuildup();}catch(e){}
+  }
+  // ── INTRO: flags swirl (drumroll); the short 3·2·1 only runs when there was no long build-up ──
   drawCycleInterval=setInterval(()=>{const t=F();setOv(`<div class="ov-phase-shuffle"><div class="ov-label">THE DRAW</div><div class="ov-flag">${t.flag}</div><div class="ov-name-big">${t.name}</div><div class="ov-dots"><span></span><span></span><span></span></div></div>`);},80);
   try{SFX.drumroll();}catch(e){}
-  await skipableDelay(2100);
+  await skipableDelay(cdSecs>0?1300:2100);
   clearInterval(drawCycleInterval);
-  if(!drawSkip){
+  if(!drawSkip&&cdSecs===0){
     for(const num of ['3','2','1']){
       if(drawSkip)break;
       setOv(`<div class="ov-phase-name"><div class="ov-count-num ov-pop">${num}</div></div>`);
@@ -1303,8 +1420,10 @@ async function playCeremony(parts,n){
       await spinEl('ov-owner',()=>`<span class="ov-spin-name">${esc(RN())}</span>`,tSpin);
       if(drawSkip)break;
       const el=document.getElementById('ov-owner');
-      if(el)el.innerHTML=`<span class="ov-land" style="color:#fff">${own.length?own.map(esc).join('&nbsp; · &nbsp;'):'<span style="opacity:.5">No owner</span>'}</span>`;
-      flashOv();try{SFX.land();}catch(e){}
+      const mineHere=own.some(isMe);
+      if(el)el.innerHTML=`<span class="ov-land" style="color:#fff">${own.length?own.map(o=>isMe(o)?`<span class="ov-me">${esc(o)} <span class="ov-me-tag">← YOU!</span></span>`:esc(o)).join('&nbsp; · &nbsp;'):'<span style="opacity:.5">No owner</span>'}</span>`;
+      flashOv();try{SFX.land();if(mineHere)SFX.ding();}catch(e){}
+      ovFeedAdd(`<span class="ovf-tm">${team.flag} ${esc(team.name)}</span><span class="ovf-arrow">→</span><span class="ovf-nm">${own.length?own.map(o=>isMe(o)?`<b class="ovf-me">${esc(o)}</b>`:esc(o)).join(', '):'<span style="opacity:.45">no owner</span>'}</span>`,mineHere);
       await skipableDelay(tHold);
     }
   } else if(!drawSkip){
@@ -1312,7 +1431,7 @@ async function playCeremony(parts,n){
     for(const[idx,p] of parts.entries()){
       if(drawSkip)break;
       const cnt=p.teams.length;const t1=p.teams[0];
-      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight">${esc(p.name).toUpperCase()}</div><div class="ov-sub">${cnt>1?'drawing '+cnt+' teams…':'spinning for their team…'}</div></div>`);
+      setOv(`<div class="ov-phase-name"><div class="ov-counter">PLAYER ${idx+1} OF ${n}</div><div class="ov-spotlight${isMe(p.name)?' ov-spotlight-me':''}">${esc(p.name).toUpperCase()}</div><div class="ov-sub">${isMe(p.name)?'⭐ THIS IS YOU — here comes your team!':(cnt>1?'drawing '+cnt+' teams…':'spinning for their team…')}</div></div>`);
       try{SFX.ding();}catch(e){}
       await skipableDelay(nameHold);
       if(drawSkip)break;
@@ -1331,9 +1450,22 @@ async function playCeremony(parts,n){
         const ex=document.getElementById('ov-extra');
         if(ex)ex.innerHTML=`<div class="ov-extra-row">${p.teams.slice(1).map((t,ti)=>`<span class="ov-extra-team ov-pop" style="animation-delay:${ti*.12}s">${t.flag} ${t.name} <span style="opacity:.55">${t.group}</span></span>`).join('')}</div>`;
       }
+      ovFeedAdd(`<span class="ovf-nm">${isMe(p.name)?`<b class="ovf-me">${esc(p.name)}</b>`:esc(p.name)}</span><span class="ovf-arrow">→</span><span class="ovf-tm">${p.teams.map(t=>t.flag+' '+esc(t.name)).join(' · ')}</span>`,isMe(p.name));
       // Generous pause to appreciate & read who's been drawn
       await skipableDelay(landHold);
     }
+  }
+  // ── YOUR RESULT: a personal card for whoever's watching on this device ──
+  const myP=myLc?parts.find(p=>p.name.toLowerCase()===myLc):null;
+  if(myP&&!drawSkip){
+    const myTeamNames=new Set(myP.teams.map(t=>t.name));
+    const co=[];parts.forEach(p=>{if(p!==myP&&p.teams.some(t=>myTeamNames.has(t.name))&&!co.includes(p.name))co.push(p.name);});
+    const myFirst=esc((getMyName()||'').split(' ')[0]);
+    const teamsHTML=myP.teams.map(t=>`<div class="ov-mine-team"><div class="ov-mine-flag">${t.flag}</div><div class="ov-mine-tname">${esc(t.name)}</div><div class="ov-mine-grp">GROUP ${t.group}</div></div>`).join('');
+    const coLine=co.length?`Sharing with ${co.map(esc).join(', ')}`:'All yours — no sharing!';
+    setOv(`<div class="ov-phase-mine"><div class="ov-mine-hd">🎉 YOU'RE IN${myFirst?', '+myFirst:''}!</div><div class="ov-mine-label">YOUR TEAM${myP.teams.length>1?'S':''}</div><div class="ov-mine-teams">${teamsHTML}</div><div class="ov-mine-co">${coLine}</div><div class="ov-mine-luck">GOOD LUCK! 🤞</div></div>`);
+    flashOv();try{SFX.fanfare();}catch(e){}fireConfetti();
+    await skipableDelay(4200);
   }
   // ── FINALE ──
   setOv(`<div class="ov-phase-complete"><div style="font-size:2.8rem;margin-bottom:8px">🏆</div><div class="ov-done">DRAW COMPLETE!</div><div class="ov-done-sub" style="margin-top:6px">${n} PLAYERS · ${shared?'1 TEAM EACH (some shared)':base+(rem?'–'+(base+1):'')+' TEAMS EACH'}</div></div>`);
@@ -1556,7 +1688,7 @@ function deptStandings(){
 }
 function deptTableHTML(){
   const ds=deptStandings();
-  const label=(state.depts&&state.depts.label)||'Departments';
+  const label=(state.depts&&state.depts.label)||'Squads';
   if(!ds.length)return`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} have players yet.</div>`;
   const maxAvg=Math.max(1,...ds.map(d=>d.avg));
   const dm=deptMap();const lb=calcLeaderboard();const noDept=lb.filter(p=>!dm[p.name.toLowerCase()]).length;
@@ -1833,7 +1965,7 @@ function updateHdr(){
 }
 
 // ── RENDER TABS ───────────────────────────────────────────────────────────────
-function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',depts:state.depts};}
+function stateForCfg(){return{pc:state.pc,names:state.names.slice(0,state.pc),scoring:state.scoring,bonus:state.bonus,prize:state.prize,charity:state.charity,podium:state.podium,predict:state.predict,ticker:state.ticker,gateSignupOnly:state.gateSignupOnly,footballApiKey:state.footballApiKey||'',autoDraw:!!state.autoDraw,drawByTeam:!!state.drawByTeam,drawTime:state.drawTime||'',drawCountdown:state.drawCountdown,depts:state.depts};}
 function saveSetup(){if(!adminSess)return;clearTimeout(state._st);state._st=setTimeout(()=>fbSave('wc2026/cfg',stateForCfg()),400);}
 
 // ── WELCOME / SELF SIGN-UP (public, before draw) ──────────────────────────────
@@ -1852,7 +1984,7 @@ function renderWelcome(){
         <div style="font-family:'Oswald',sans-serif;font-size:.86rem;color:var(--gr);letter-spacing:.05em;margin-bottom:16px;text-align:center">✍️ SIGN UP TO PLAY</div>
         <input id="signup-fname" type="text" maxlength="20" placeholder="First name *" autocomplete="given-name" style="width:100%;padding:12px 14px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.95rem;margin-bottom:9px" onkeydown="if(event.key==='Enter')submitSignup()"/><input id="signup-lname" type="text" maxlength="20" placeholder="Last name *" autocomplete="family-name" style="width:100%;padding:12px 14px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.95rem;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitSignup()"/>
         ${state.predict.on?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🔮 BONUS: who will WIN the World Cup?</div><select id="signup-pred" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">No prediction</option>${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${t.name}">${t.flag} ${t.name}</option>`).join('')}</select><div style="font-size:.68rem;color:var(--txm);margin-top:4px">Nail it and you get +${state.predict.bonus} bonus points. Locked once you join.</div></div>`:''}
-        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🏢 YOUR ${esc((state.depts.label||'TEAM').toUpperCase().replace(/S$/,''))}</div><select id="signup-dept" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">Pick your ${esc((state.depts.label||'team').toLowerCase().replace(/s$/,''))}…</option>${state.depts.names.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select></div>`:''}
+        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<div style="margin-bottom:12px"><div style="font-size:.74rem;color:var(--gr);font-family:'Oswald',sans-serif;letter-spacing:.04em;margin-bottom:5px">🏢 YOUR ${esc((state.depts.label||'TEAM').toUpperCase().replace(/S$/,''))}</div><select id="signup-dept" style="width:100%;padding:11px 13px;background:var(--inp);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.9rem"><option value="">Pick your ${esc((state.depts.label||'team').toLowerCase().replace(/s$/,''))}…</option>${state.depts.names.slice().sort((a,b)=>a.localeCompare(b)).map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select></div>`:''}
         <button class="btn btn-green" onclick="submitSignup()" style="width:100%;padding:13px;font-size:.86rem">JOIN THE SWEEPSTAKE</button>
       </div>
       ${mePickerHTML(false)}
@@ -1885,7 +2017,7 @@ async function submitSignup(){
   let dept='';
   if(state.depts&&state.depts.on&&(state.depts.names||[]).length){
     const dEl=document.getElementById('signup-dept');dept=dEl?(dEl.value||''):'';
-    if(!dept){showToast('Please pick your '+((state.depts.label||'department').toLowerCase().replace(/s$/,'')),'error');return;}
+    if(!dept){showToast('Please pick your '+((state.depts.label||'squad').toLowerCase().replace(/s$/,'')),'error');return;}
   }
   try{
     const key='s'+Date.now()+Math.floor(Math.random()*1000);
@@ -2100,7 +2232,7 @@ function renderSetup(){
       </div>
       ${signupCount?(()=>{const q=(state.signupQ||'').toLowerCase();const all=signupEntries();const shown=q?all.filter(([_,s])=>(s.name||'').toLowerCase().includes(q)):all;return `${signupCount>12?`<input type="text" value="${esc(state.signupQ||'')}" oninput="state.signupQ=this.value;render()" placeholder="Filter ${signupCount} names…" style="width:100%;padding:7px 10px;margin-bottom:8px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.8rem"/>`:''}<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;max-height:300px;overflow-y:auto">${shown.length?shown.map(([key,s])=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px 6px 11px;background:var(--cardh);border-radius:7px">
         <span style="flex:1;font-size:.82rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}${s.prediction?` <span style="font-size:.62rem;color:var(--txm)">🔮 ${esc(s.prediction)}</span>`:''}</span>
-        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<select onchange="setSignupDept('${key}',this.value)" title="Department" style="padding:3px 5px;background:var(--inp);border:1px solid ${s.dept?'var(--gr)':'var(--b)'};border-radius:5px;color:${s.dept?'var(--gr)':'var(--txm)'};font-size:.68rem;max-width:108px"><option value="">— ${esc(state.depts.label||'Dept')}</option>${state.depts.names.map(d=>`<option value="${esc(d)}" ${s.dept===d?'selected':''}>${esc(d)}</option>`).join('')}</select>`:''}
+        ${(state.depts&&state.depts.on&&(state.depts.names||[]).length)?`<select onchange="setSignupDept('${key}',this.value)" title="Department" style="padding:3px 5px;background:var(--inp);border:1px solid ${s.dept?'var(--gr)':'var(--b)'};border-radius:5px;color:${s.dept?'var(--gr)':'var(--txm)'};font-size:.68rem;max-width:108px"><option value="">— ${esc(state.depts.label||'Squad')}</option>${state.depts.names.slice().sort((a,b)=>a.localeCompare(b)).map(d=>`<option value="${esc(d)}" ${s.dept===d?'selected':''}>${esc(d)}</option>`).join('')}</select>`:''}
         <button class="btn-sm" style="padding:2px 7px" onclick="editSignup('${key}')" title="Edit name">✎</button>
         <button class="btn-sm" style="padding:2px 8px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeSignup('${key}')" title="Remove">✕</button>
       </div>`).join(''):`<div style="font-size:.74rem;color:var(--txm);padding:6px">No names match "${esc(state.signupQ||'')}"</div>`}</div>
@@ -2183,7 +2315,7 @@ function renderSetup(){
     :key==='predict'?
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points, and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick. The dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
     :key==='depts'?
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.depts.on?'checked':''} onchange="state.depts.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Pit office teams against each other (the individual board stays the main event)</span></label>${state.depts.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Add your teams below, then players pick one when they sign up. They're ranked by <b>average points per person</b>, so a big team can't win on numbers alone. <b>Set these up before you open sign-up</b> — renaming a team later won't move people who already picked the old name.</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:.74rem;color:var(--txd);white-space:nowrap">Label on screen</span><input type="text" maxlength="20" value="${esc(state.depts.label||'Departments')}" oninput="state.depts.label=this.value;saveSetup()" placeholder="Departments" style="flex:1;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:.8rem"/></div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="dept-input" type="text" maxlength="30" placeholder="e.g. Deals, Finance, Floor 3…" onkeydown="if(event.key==='Enter')addDept()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addDept()">Add</button></div>${(state.depts.names||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.depts.names.map((d,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">🏢 ${esc(d)}</span><button onclick="removeDept(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No teams yet. Add at least two.</div>`}`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Turn on to add office teams (departments, floors, whatever) that compete on average points, with a pick added to the sign-up form and a team view on the standings.</div>`}`
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.depts.on?'checked':''} onchange="state.depts.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Pit office teams against each other (the individual board stays the main event)</span></label>${state.depts.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Add your teams below, then players pick one when they sign up. They're ranked by <b>average points per person</b>, so a big team can't win on numbers alone. <b>Set these up before you open sign-up</b> — renaming a team later won't move people who already picked the old name.</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:.74rem;color:var(--txd);white-space:nowrap">Label on screen</span><input type="text" maxlength="20" value="${esc(state.depts.label||'Squads')}" oninput="state.depts.label=this.value;saveSetup()" placeholder="Squads" style="flex:1;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:.8rem"/></div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="dept-input" type="text" maxlength="30" placeholder="e.g. Deals, Finance, Floor 3…" onkeydown="if(event.key==='Enter')addDept()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addDept()">Add</button></div>${(state.depts.names||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.depts.names.map((d,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">🏢 ${esc(d)}</span><button onclick="removeDept(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No teams yet. Add at least two.</div>`}`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Turn on to add office teams (departments, floors, whatever) that compete on average points, with a pick added to the sign-up form and a team view on the standings.</div>`}`
     :
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion and wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet. The automatic ones still show.</div>`}`:''}`;
     const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='depts'?('🏢 '+(state.depts.label||'DEPARTMENTS').toUpperCase()+(state.depts.on?'':' · off')):key==='ticker'?'📢 TICKER & MESSAGES':'';
@@ -2241,6 +2373,7 @@ function renderSetup(){
       <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--b)">
         <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">🎬 DRAW REVEAL STYLE</div>
         <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" ${state.drawByTeam?'checked':''} onchange="state.drawByTeam=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Reveal <b>team-by-team</b> (each team, then who got it) instead of player-by-player. Much quicker for big sign-ups, and used automatically whenever there are more players than teams.</span></label>
+        <label style="display:block;font-size:.73rem;color:var(--txd);line-height:1.6;margin-top:12px">⏱️ <b>Build-up countdown</b> before the reveal: <input type="number" min="0" max="120" value="${state.drawCountdown==null?60:state.drawCountdown}" onchange="state.drawCountdown=Math.max(0,Math.min(120,parseInt(this.value)||0));saveSetup();render()" style="width:60px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:.82rem;margin:0 3px"/> seconds <span style="opacity:.6">· a big on-screen countdown for the live event (0 = go straight in)</span></label>
       </div>
     </div>`;
   })():''}
@@ -2874,11 +3007,12 @@ else if(DB){
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.bonus)state.bonus={...DEF_BONUS,...data.cfg.bonus};
       if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
-      if(data.cfg.depts)state.depts={...{on:false,names:[],label:'Departments'},...data.cfg.depts};
+      if(data.cfg.depts){state.depts={...{on:false,names:[],label:'Squads'},...data.cfg.depts};if(Array.isArray(state.depts.names))state.depts.names.sort((a,b)=>a.localeCompare(b));}
       state.gateSignupOnly=data.cfg.gateSignupOnly!==false;
       state.footballApiKey=data.cfg.footballApiKey||'';
       state.autoDraw=!!data.cfg.autoDraw;
       state.drawByTeam=!!data.cfg.drawByTeam;
+      if(data.cfg.drawCountdown!=null)state.drawCountdown=Math.max(0,Math.min(120,data.cfg.drawCountdown|0));
       state.drawTime=data.cfg.drawTime||'';
       if(data.cfg.names)state.names=[...data.cfg.names,...Array(MAX_PLAYERS).fill('')].slice(0,MAX_PLAYERS);
       if(data.cfg.pc)state.pc=data.cfg.pc;
