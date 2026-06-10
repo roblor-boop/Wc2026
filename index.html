@@ -965,7 +965,7 @@ function addDept(){
   const el=document.getElementById('dept-input');if(!el)return;
   const v=el.value.trim();if(!v)return;
   if(!state.depts.names)state.depts.names=[];
-  if(state.depts.names.length>=20){showToast('Max 20 teams','error');return;}
+  if(state.depts.names.length>=30){showToast('Max 30 teams','error');return;}
   if(state.depts.names.some(d=>d.toLowerCase()===v.toLowerCase())){showToast('Already added','error');return;}
   state.depts.names.push(v);el.value='';saveSetup();render();
 }
