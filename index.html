@@ -411,7 +411,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun — not affiliated with or endorsed by The Carlyle Group.</footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.</footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -640,26 +640,26 @@ async function sDel(k){
 // Even if client-side guards are bypassed, Firebase rules block non-auth writes.
 async function fbSave(path,val){
   if(!adminSess){showToast('Admin sign-in required','error');return false;}
-  if(DB&&!firebase.auth().currentUser){showToast('Session expired — please sign in again','error');adminSess=false;render();return false;}
+  if(DB&&!firebase.auth().currentUser){showToast('Session expired, please sign in again','error');adminSess=false;render();return false;}
   try{
     if(DB)await DB.ref(path).set(val);
     else sSave('wc26h:'+path.replace(/\//g,':'),val);
     return true;
   }catch(e){
-    if(e.code==='PERMISSION_DENIED')showToast('Blocked — check Firebase rules','error');
+    if(e.code==='PERMISSION_DENIED')showToast('Blocked, check Firebase rules','error');
     else console.error('fbSave error:',e);
     return false;
   }
 }
 async function fbDel(path){
   if(!adminSess){showToast('Admin sign-in required','error');return false;}
-  if(DB&&!firebase.auth().currentUser){showToast('Session expired — please sign in again','error');adminSess=false;render();return false;}
+  if(DB&&!firebase.auth().currentUser){showToast('Session expired, please sign in again','error');adminSess=false;render();return false;}
   try{
     if(DB)await DB.ref(path).remove();
     else await sDel('wc26h:'+path.replace(/\//g,':'));
     return true;
   }catch(e){
-    if(e.code==='PERMISSION_DENIED')showToast('Blocked — check Firebase rules','error');
+    if(e.code==='PERMISSION_DENIED')showToast('Blocked, check Firebase rules','error');
     else console.error('fbDel error:',e);
     return false;
   }
@@ -742,7 +742,7 @@ async function notifyTeams(matchId,hg,ag){
   const lb=calcLeaderboard();
   const affected=lb.filter(p=>p.teams.some(t=>t.name===f.home||t.name===f.away)).map(p=>{const t=p.teams.find(t=>t.name===f.home||t.name===f.away);const bd=p.breakdown.find(b=>b.name===t.name);return{name:p.name,team:t.name,flag:t.flag,pts:bd?.pts||0};});
   const hw=hg>ag,aw=ag>hg;
-  const card={"@type":"MessageCard","@context":"http://schema.org/extensions","themeColor":hw||aw?"00e676":"f59e0b","summary":`${f.home} ${hg}-${ag} ${f.away}`,"sections":[{"activityTitle":`⚽ **${f.home} ${hg} – ${ag} ${f.away}**`,"activitySubtitle":`Group ${f.group} · Matchday ${f.matchday} · ${hw?f.home+' WIN':aw?f.away+' WIN':'DRAW'}`,"facts":affected.map(a=>({name:a.flag+' '+a.team,value:a.name+' — '+a.pts+'pts'}))},{"text":`[📊 View Standings](${location.href})`}]};
+  const card={"@type":"MessageCard","@context":"http://schema.org/extensions","themeColor":hw||aw?"00e676":"f59e0b","summary":`${f.home} ${hg}-${ag} ${f.away}`,"sections":[{"activityTitle":`⚽ **${f.home} ${hg} – ${ag} ${f.away}**`,"activitySubtitle":`Group ${f.group} · Matchday ${f.matchday} · ${hw?f.home+' WIN':aw?f.away+' WIN':'DRAW'}`,"facts":affected.map(a=>({name:a.flag+' '+a.team,value:a.name+': '+a.pts+'pts'}))},{"text":`[📊 View Standings](${location.href})`}]};
   fetch(CONFIG.teamsWebhook,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(card)}).catch(()=>{});
 }
 
@@ -811,15 +811,15 @@ async function shareText(text){
   const url=(typeof location!=='undefined'?location.href:'').split('#')[0];
   try{ if(navigator.share){ await navigator.share({title:CONFIG.title||'Sweepstake',text,url}); return; } }
   catch(e){ if(e&&e.name==='AbortError')return; }
-  try{ await navigator.clipboard.writeText(text+(url?'\n'+url:'')); showToast('Copied to clipboard — paste anywhere','gold'); }
+  try{ await navigator.clipboard.writeText(text+(url?'\n'+url:'')); showToast('Copied to clipboard, paste anywhere','gold'); }
   catch{ showToast('Sharing not supported on this device','error'); }
 }
 function shareStandings(){
   const lb=calcLeaderboard();if(!lb.length){showToast('Nothing to share yet','error');return;}
   const medals=['🥇','🥈','🥉'];
-  const top=lb.slice(0,3).map((p,i)=>`${medals[i]} ${p.name} — ${p.total}`).join('\n');
+  const top=lb.slice(0,3).map((p,i)=>`${medals[i]} ${p.name}: ${p.total}`).join('\n');
   const ch=state.charity.on&&(state.charity.total||0)>0?`\n❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`:'';
-  shareText(`${CONFIG.title} — standings so far:\n${top}${ch}`);
+  shareText(`${CONFIG.title} standings so far:\n${top}${ch}`);
 }
 
 // ── TICKER ────────────────────────────────────────────────────────────────────
@@ -828,25 +828,23 @@ const TK_CD='\uE000';  // placeholder swapped for a live-updating countdown span
 const DN='\uE001';  // placeholder → a real tappable Donate link in the ticker
 function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 const OFFICE_BANTER=[
-  "💬 This table > the Monday standup",
-  "☕ Loser buys the brews — the office is listening",
-  "📺 Goals on in the kitchen, get involved",
-  "🤫 Spoiler-free zone by the coffee machine, ta",
-  "📸 Someone's screenshotting this for the group chat as we speak",
-  "🏅 Bragging rights — the only prize worth having",
-  "🗣️ Big talk in the kitchen — let the table settle it",
-  "🍵 Pretty sure the tea round's riding on this",
-  "😅 Keep it friendly… ish",
-  "👔 More drama than the appraisals, this",
-  "📅 Half the office checking this more than their inbox",
-  "🤝 No hard feelings… till the final whistle"
+  "💬 More talked about than the Monday meeting",
+  "☕ Loser buys the teas?",
+  "📺 Goals on in the kitchen",
+  "🤫 No spoilers by the coffee machine",
+  "📸 Someone's already put this in the group chat",
+  "🏅 Bragging rights are the only prize that counts",
+  "🍵 Reckon the tea round's riding on this",
+  "📅 Half the office checking this more than their emails",
+  "🤝 No hard feelings till the whistle goes",
+  "🗣️ Plenty of talk in the kitchen. Let the table sort it out"
 ];
 const OFFICE_BANTER_PRE=[
-  "📝 Get your name in — don't be the one who missed it",
-  "💬 Office is already chatting — get involved",
-  "🏆 Glory and a year of bragging rights up for grabs",
-  "☕ Sweepstake talk by the kettle from here on",
-  "🎲 Last chance for a team — the draw's coming"
+  "📝 Get your name in before the draw",
+  "💬 Office is already talking. Get involved",
+  "🏆 A year of bragging rights up for grabs",
+  "☕ Sweepstake chat by the kettle from here",
+  "🎲 Last chance for a team before the draw"
 ];
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
@@ -865,56 +863,56 @@ function tickerItems(){
     const pick=arr=>pk(arr,0);
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
-    const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners loving it"],3):"nice for "+o.join(" & ");
-    liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}–${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
+    const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners happy"],3):"good for "+o.join(" & ");
+    liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
     if(champ){
-      a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are WORLD CHAMPIONS — ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
-      a.push(pick([`🎉 ${lb[0].name} is the office champion — bragging rights locked in for a year`,`👑 Take a bow, ${lb[0].name} — top of the pile`,`🏅 ${lb[0].name} takes the lot — someone find a trophy (a mug'll do)`]));
-      if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?` · 🥉 ${lb[2].name} bronze`:""}`);
+      a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
+      a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`]));
+      if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?`, ${lb[2].name} bronze`:""}`);
       const callers=lb.filter(p=>p.pred&&p.pred.team===champ);
-      if(callers.length)a.push(`🔮 ${pick(["Called it!","Crystal-ball award —","Take a bow —"])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the off`);
-      if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} finishes bottom — there's always next year`,`🥄 Wooden spoon to ${last.name} — chin up, hero`]));}
+      if(callers.length)a.push(`🔮 ${pick(["Called it.","Take a bow."])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the start`);
+      if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} finishes bottom. There's always next year`,`🥄 Wooden spoon goes to ${last.name}. Chin up`]));}
     } else if(started){
       const L=lb[0],margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
-      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace — ${L.total} pts`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show — ${L.total} pts`,`🏆 ${L.name} in pole position, ${L.total} pts`,`📈 ${L.name} leading the charge — ${L.total}`,`🎯 ${L.name} the one to catch on ${L.total}`]));
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`]));
       if(lb.length>1){
-        if(margin===0)a.push(pick([`🤝 ${L.name} & ${lb[1].name} dead level at the top!`,`😤 ${L.name} and ${lb[1].name} can't be separated — it's on`,`⚖️ Level pegging up top: ${L.name} & ${lb[1].name}`]));
-        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top!`,`📸 Photo finish — ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} breathing down ${L.name}'s neck — ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`]));
-        else a.push(pk([`😏 ${L.name} getting comfy up top — someone go knock 'em off`,`🎯 Big target on ${L.name}'s back at number one`,`☕ ${L.name} out front… first round's on you then?`,`👀 Whole office gunning for ${L.name} now`],7));
-        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting down ${L.name} — ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off top`,`🔪 ${lb[1].name} sharpening up — ${margin} behind`],4));
+        if(margin===0)a.push(pick([`🤝 ${L.name} and ${lb[1].name} level at the top`,`😤 Nothing between ${L.name} and ${lb[1].name}`,`⚖️ Dead level up top: ${L.name} and ${lb[1].name}`]));
+        else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top`,`📸 Photo finish, ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} right on ${L.name}'s tail, ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`]));
+        else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`],7));
+        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`🔪 ${lb[1].name} sharpening up, ${margin} behind`],4));
         const within=lb.filter(p=>L.total-p.total<=5).length;
-        if(within>=3&&margin>0)a.push(pick([`😮 ${within} within 5 pts of top — anyone's race!`,`🍿 ${within} players in the mix up top — grab the popcorn`,`🎢 ${within} covered by 5 pts — wild`]));
-        for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} & ${lb[i+1].name} locked together on ${lb[i].total}`);break;}}
+        if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🍿 ${within} in the mix at the top, grab the popcorn`,`🎢 ${within} of them covered by 5 pts`]));
+        for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} and ${lb[i+1].name} tied on ${lb[i].total}`);break;}}
       }
       const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
-      if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts — ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts — ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering — ${form.pts} pts, ${ownTxt(o)}`],2).replace(/ +/g," ").trim());}
-      const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the FINAL"};
+      if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`],2).replace(/ +/g," ").trim());}
+      const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the final"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
-      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","booking a spot in"],1)} ${rn[latest]}${o.length?` — ${o.length>2?o.length+" owners buzzing":o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
-      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far — ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} put on a show — ${bigWin.ws}–${bigWin.ls} v ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}–${bigWin.ls} ${bigWin.l} — ouch`],1).replace(/ +/g," ").trim());
-      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total} — only way is up!`,`🥄 Someone's gotta prop it up — ${last.name} on ${last.total} (still time!)`,`🐢 ${last.name} taking the scenic route, ${last.total} pts`,`🪑 ${last.name} keeping the bottom seat warm — ${last.total} pts`,`☕ Wooden spoon watch: ${last.name} on ${last.total} — teas on you?`,`💀 ${last.name} propping up the table — character building, this`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} needs results (and a prayer) — ${last.total} pts`]));}
-      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table — no drama, ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`,`🥪 ${mid.name} in no-man's-land on ${mid.total}`]));}
+      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${o.length>2?o.length+" owners buzzing":"good for "+o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
+      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`],1).replace(/ +/g," ").trim());
+      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`]));}
+      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
       if(me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
-        if(r===1)a.push(pick([`👀 You're TOP, ${me}! 😎 Don't look back…`,`🔥 Top of the office, ${me} — strut about a bit`,`👑 You're #1, ${me} — savour it`]));
-        else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me} — ${gapTop} off the lead, medal in sight`,`🥁 Podium spot, ${me} — ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me} — sniffing the lead, ${gapTop} back`]));
-        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}… comeback starts here`,`🙈 Rock bottom, ${me} — nowhere to go but up`,`🥄 Spoon's yours for now, ${me} — turn it round`]));
-        else a.push(pick([`📈 You're ${ordinal(r)}, ${me} — ${gapTop} off top, all to play for`,`👟 ${ordinal(r)}, ${me} — lace up, ${gapTop} to close`,`🎯 ${ordinal(r)}, ${me} — ${gapTop} to the summit`]));}}
+        if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`]));
+        else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`]));
+        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`]));
+        else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
       a.push(pk(OFFICE_BANTER,5));
     }
-    if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played · ${goals} goals so far`,`⚽ ${goals} goals across ${gp+kp} games and counting`,`📊 ${gp+kp} down, ${goals} goals — stats nerds happy`],6));
-    if(!started&&!champ)a.push(pick([`🎲 Teams drawn — pure luck, no skill (sorry not sorry)`,`👀 Check the draw tab — who landed the holders?`,`🍀 It's in the lap of the gods now`,`💪 Everyone's a contender till the whistle goes`,`⏳ Kick-off can't come quick enough`]));
+    if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games and counting`,`📊 ${gp+kp} games down, ${goals} goals`],6));
+    if(!started&&!champ)a.push(pick([`🎲 Teams drawn at random. Pure luck`,`👀 Check the draw tab to see who got the favourites`,`🍀 It's all down to the draw now`,`💪 Everyone's in with a shout till the whistle goes`,`⏳ Not long until kick-off`]));
     if(state.predict.on&&!champ){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[0]} is the office favourite to win it (${top[1]} backer${top[1]>1?"s":""})`);}
     if(!started&&!champ&&cdText())a.push("⏳ "+TK_CD);
   } else {
     if(cdText())a.push("⏳ "+TK_CD);
     const n=Object.keys(state.signups||{}).length;
     if(n)a.push(`✍️ ${n} ${n>1?"players":"player"} signed up${n>1?" so far":""}`);
-    a.push(["🎲 Random draw — everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill required, just luck","👀 Who'll land the favourites? Soon find out","💬 Office chat's about to get spicy","📝 Get your name in — don't miss out"][n%6]);
+    a.push(["🎲 Random draw, everyone's in with a shout","🏆 Bragging rights on the line","🍀 No skill needed, just luck","👀 Who'll land the favourites?","💬 Office chat about to heat up","📝 Get your name in"][n%6]);
     a.push(OFFICE_BANTER_PRE[n%OFFICE_BANTER_PRE.length]);
   }
   if(state.charity.on){
     if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
-    else a.push(`❤ Free to enter${state.charity.name?" · in aid of "+state.charity.name:" · played for charity"}`);
+    else a.push(`❤ Free to enter${state.charity.name?", in aid of "+state.charity.name:" — played for charity"}`);
     if(donateLink()&&donateShow("ticker"))a.push(DN);
   }
   const out=[];const mx=Math.max(a.length,custom.length);
@@ -1000,7 +998,7 @@ async function submitGate(){
   if(!inp)return;
   const h=await sha256(inp.value.trim());
   if(h===_accessHash){localStorage.setItem('wc26gate',h);hideGate();maybePlayCeremony();}
-  else{if(err)err.textContent='Incorrect code — try again';inp.value='';inp.focus();}
+  else{if(err)err.textContent='Incorrect code, try again';inp.value='';inp.focus();}
 }
 // Admin: set / change / remove the viewer access code
 function setAccessCode(){
@@ -1011,12 +1009,12 @@ function setAccessCode(){
     _accessHash=h;
     localStorage.setItem('wc26gate',h); // organiser won't be locked out
     fbSave('wc2026/accessHash',h);
-    render();showToast('Access code set — viewers will need it 🔒','gold');
+    render();showToast('Access code set, viewers will need it 🔒','gold');
   });
 }
 function setApiKey(){
   if(!adminSess)return;
-  _modInput('football-data.org API key','SAVE',state.footballApiKey||'','Paste key — blank uses built-in',v=>{
+  _modInput('football-data.org API key','SAVE',state.footballApiKey||'','Paste key, or leave blank for built-in',v=>{
     state.footballApiKey=(v||'').trim();
     saveSetup();render();
     showToast(state.footballApiKey?'Custom API key saved 🔑':'Reverted to built-in key','gold');
@@ -1068,8 +1066,8 @@ function myPositionHTML(){
   const base=(_baseRanks||{})[p.name];let mv='';
   if(started&&base&&base!==rank){const d=base-rank;mv=d>0?` <span style="color:var(--gr);font-weight:700">▲${d} today</span>`:` <span style="color:#e0245e;font-weight:700">▼${Math.abs(d)} today</span>`;}
   let status;
-  if(!started)status=`You're all set — ${p.teams.length} team${p.teams.length>1?'s':''} drawn. Tournament starts soon!`;
-  else if(rank===1)status=n>1?`Top of the table — ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
+  if(!started)status=`You're all set. ${p.teams.length} team${p.teams.length>1?'s':''} drawn, tournament starts soon!`;
+  else if(rank===1)status=n>1?`Top of the table, ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
   else status=`${gapLead} pt${gapLead!==1?'s':''} behind the leader${i<n-1?` · ${ahead} clear of ${ordinal(rank+1)}`:''}`;
   const rc=rank===1&&started?'var(--gold)':'var(--gr)';
   return `<div class="card" style="padding:13px 15px;margin-bottom:13px;display:flex;align-items:center;gap:14px;border:1px solid var(--pill-grbr);background:linear-gradient(135deg,var(--pill-gr),transparent);box-shadow:var(--shadow)">`
@@ -1087,12 +1085,12 @@ function mePickerHTML(showWhenSet){
   if(isSet){
     if(!showWhenSet)return '';
     return `<div class="card" style="padding:9px 13px;margin-bottom:12px;display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--pill-grbr);background:var(--pill-gr)">`
-      +`<span style="font-size:.78rem;color:var(--gr)">👤 Personalised for <b>${esc(me)}</b> — your row's highlighted and the shout-outs are yours</span>`
+      +`<span style="font-size:.78rem;color:var(--gr)">👤 Personalised for <b>${esc(me)}</b>. Your row's highlighted and the shout-outs are yours</span>`
       +`<button onclick="chooseMe('')" style="background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-size:.64rem;font-family:'Oswald',sans-serif;letter-spacing:.06em;padding:4px 11px;cursor:pointer">NOT ME</button></div>`;
   }
-  const opts=['<option value="">— choose your name —</option>'].concat(names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`)).join('');
+  const opts=['<option value="">Choose your name…</option>'].concat(names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`)).join('');
   return `<div class="card" style="padding:11px 13px;margin-bottom:12px;border:1px dashed var(--b);text-align:left">`
-    +`<div style="font-size:.78rem;color:var(--tx);margin-bottom:7px">👤 Following along? Pick your name to personalise this device${state.draw?" — we'll highlight your row and cheer you on in the ticker":''}.</div>`
+    +`<div style="font-size:.78rem;color:var(--tx);margin-bottom:7px">👤 Following along? Pick your name to personalise this device${state.draw?", and we'll highlight your row and cheer you on in the ticker":''}.</div>`
     +`<select onchange="chooseMe(this.value)" style="width:100%;padding:9px 11px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.85rem;font-family:inherit;cursor:pointer">${opts}</select></div>`;
 }
 
@@ -1202,7 +1200,7 @@ function checkAutoDraw(){
   const t=Date.parse(state.drawTime);if(isNaN(t)||Date.now()<t)return;
   const {names:pool}=drawPool();if(pool.length<2)return;
   _autoDrawFired=true;
-  showToast('⏰ The scheduled time has arrived — running the draw now!','gold');
+  showToast('⏰ Draw time has arrived, running it now!','gold');
   doDraw(pool);
 }
 function protectedRunDraw_legacy(){}
@@ -1550,7 +1548,7 @@ function endLive(id){
     fbSave('wc2026/live',state.live);
     const f=GF[id];recentResults.unshift({home:f.home,away:f.away,hg:s.hg||0,ag:s.ag||0,ts:Date.now()});if(recentResults.length>8)recentResults.pop();
     _snapRanks();checkMilestones(id,null);
-    state.tab='live';render();showToast('Full time — result saved','gold');
+    state.tab='live';render();showToast('Full time, result saved','gold');
   });
 }
 function cancelLive(id){
@@ -1768,10 +1766,10 @@ function renderWelcome(){
   return`<div style="text-align:center;padding:28px 18px 32px;max-width:460px;margin:0 auto">
     <div style="width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,#00e676,#00a838);display:flex;align-items:center;justify-content:center;font-size:2.6rem;box-shadow:0 8px 32px rgba(0,168,56,.35),inset 0 2px 0 rgba(255,255,255,.25)">⚽</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;background:linear-gradient(135deg,var(--tx),var(--gr));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.01em;line-height:1.05;margin-bottom:10px">${CONFIG.title.toUpperCase()}</div>
-    <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June – 19 July<br>Sign up and you'll be randomly drawn one or more of the 48 teams. Earn points as your teams win — climb the table for glory. Free to enter.</p>
+    <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June to 19 July<br>Sign up and you'll be drawn one or more of the 48 teams at random. They rack up points as they win, and whoever has the most at the end takes the bragging rights. Free to enter.</p>
     ${countdownHTML()}
     ${open?`
-      ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back here to see which teams you've been given — then watch your points climb.</div></div>`:'';})()}
+      ${(()=>{const me=getMyName();const mine=me&&names.some(n=>n.toLowerCase()===me.toLowerCase());return mine?`<div class="card" style="padding:14px 16px;margin-bottom:14px;border:1px solid var(--pill-grbr);background:var(--pill-gr);text-align:left"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;color:var(--gr);letter-spacing:.03em;margin-bottom:3px">✓ You're signed up, ${esc(me.split(' ')[0])}!</div><div style="font-size:.78rem;color:var(--tx);line-height:1.55">The organiser will run the draw soon. Check back to see which teams you've been given, then watch your points climb.</div></div>`:'';})()}
       <div class="card" style="padding:20px 18px;margin-bottom:18px;text-align:left;border:1px solid var(--pill-grbr);box-shadow:var(--shadow-lg)">
         <div style="font-family:'Oswald',sans-serif;font-size:.86rem;color:var(--gr);letter-spacing:.05em;margin-bottom:4px;text-align:center">✍️ SIGN UP TO PLAY</div>
         <p style="font-size:.76rem;color:var(--txm);text-align:center;margin-bottom:16px">Enter your <b>full name</b> so the organiser can identify you.</p>
@@ -1797,7 +1795,7 @@ async function submitSignup(){
   if(!fEl||!lEl)return;
   const first=fEl.value.trim(),last=lEl.value.trim();
   if(first.length<2){showToast('Please enter your first name','error');fEl.focus();return;}
-  if(last.length<2){showToast('Last name required — so the organiser knows who you are','error');lEl.focus();return;}
+  if(last.length<2){showToast('Last name needed, so the organiser knows who you are','error');lEl.focus();return;}
   // Title-case both names for consistency
   const tc=s=>s.charAt(0).toUpperCase()+s.slice(1);
   const name=cleanName(tc(first)+' '+tc(last));
@@ -1969,7 +1967,7 @@ async function testFeed(){
     }
     const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
     if(hb.ok===false){
-      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor — usually the football-data key or Firebase login.</span></div>';
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor, usually the football-data key or Firebase login.</span></div>';
       if(sEl)sEl.innerHTML='Last check: error';return;
     }
     if(ageMin>13){
@@ -1980,7 +1978,7 @@ async function testFeed(){
       '✓ <b>Auto-feed working</b><br>'+
       '<span style="color:var(--txd)">Last checked: '+ageTxt+(hb.totalMatches!=null?'<br>Fixtures seen: '+hb.totalMatches:'')+(hb.wrote!=null?'<br>Results written this run: '+hb.wrote:'')+'</span>'+
       (hb.unmatchedCount>0?'<br><span style="color:var(--amber)">⚠ '+hb.unmatchedCount+" fixture(s) couldn't be matched and won't auto-score: "+esc((hb.unmatched||[]).join(', '))+'. Enter by hand in Fixtures.</span>':'')+
-      (hb.totalMatches===0?'<br><span style="color:var(--amber)">No WC fixtures loaded by the provider yet — normal before kick-off.</span>':'')+
+      (hb.totalMatches===0?'<br><span style="color:var(--amber)">No WC fixtures loaded by the provider yet, normal before kick-off.</span>':'')+
       '</div>';
     if(sEl)sEl.innerHTML='Last tested: '+new Date().toLocaleTimeString('en-GB')+' · working ✓';
   }catch(e){
@@ -2023,15 +2021,15 @@ function renderSetup(){
         <button class="btn-sm" style="padding:2px 8px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeSignup('${key}')" title="Remove">✕</button>
       </div>`).join(''):`<div style="font-size:.74rem;color:var(--txm);padding:6px">No names match "${esc(state.signupQ||'')}"</div>`}</div>
       <div style="display:flex;gap:6px"><button class="btn-sm" style="flex:1" onclick="clearSignups()">CLEAR ALL SIGN-UPS</button></div>
-      <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">These sign-ups are <b>automatically</b> your draw pool — just run the draw. Spot a joke name? Remove it with ✕.</div>`;})():'<div style="font-size:.72rem;color:var(--txm)">No sign-ups yet. Open registration and share the link, or add players manually with + Add Player.</div>'}
+      <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">These sign-ups are <b>automatically</b> your draw pool. Just run the draw. Spot a joke name? Remove it with ✕.</div>`;})():'<div style="font-size:.72rem;color:var(--txm)">No sign-ups yet. Open registration and share the link, or add players manually with + Add Player.</div>'}
     </div>
   </div>`:''}
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">🔒 VIEWER ACCESS CODE</div><div style="font-size:.7rem;color:${_accessHash?'var(--gr)':'var(--txm)'};margin-top:2px">${_accessHash?(state.gateSignupOnly?'Code set — needed to view while sign-up is open':'Code set — needed to view at all times'):'No code — anyone with the link can view'}</div></div>
+      <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">🔒 VIEWER ACCESS CODE</div><div style="font-size:.7rem;color:${_accessHash?'var(--gr)':'var(--txm)'};margin-top:2px">${_accessHash?(state.gateSignupOnly?'Code set, needed to view while sign-up is open':'Code set, needed to view at all times'):'No code, anyone with the link can view'}</div></div>
       <button class="btn btn-ghost" style="font-size:.7rem;flex-shrink:0" onclick="setAccessCode()">${_accessHash?'CHANGE':'SET CODE'}</button>
     </div>
-    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:11px;cursor:pointer"><input type="checkbox" ${state.gateSignupOnly?'checked':''} onchange="state.gateSignupOnly=this.checked;saveSetup();checkGate();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Only require the code while sign-up is open — it lifts automatically once you close sign-up${_accessHash&&state.gateSignupOnly&&!state.signupOpen?' <b style="color:var(--gr)">(lifted now)</b>':''}, so everyone can watch the draw &amp; standings.</span></label>
+    <label style="display:flex;align-items:flex-start;gap:8px;margin-top:11px;cursor:pointer"><input type="checkbox" ${state.gateSignupOnly?'checked':''} onchange="state.gateSignupOnly=this.checked;saveSetup();checkGate();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Only require the code while sign-up is open. It lifts automatically once you close sign-up${_accessHash&&state.gateSignupOnly&&!state.signupOpen?' <b style="color:var(--gr)">(lifted now)</b>':''}, so everyone can watch the draw and standings.</span></label>
     ${_accessHash?`<button class="btn-sm" style="margin-top:10px;color:var(--red);border-color:rgba(192,32,32,.3)" onclick="removeAccessCode()">REMOVE CODE</button>`:''}
   </div>
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
@@ -2040,7 +2038,7 @@ function renderSetup(){
       <div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="setApiKey()">${state.footballApiKey?'CHANGE KEY':'SET KEY'}</button><button class="btn btn-ghost" style="font-size:.7rem" onclick="testFeed()">TEST</button></div>
     </div>
     <div id="feed-result" style="margin-top:0"></div>
-    <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">If the feed fails it just retries quietly every few minutes — and you can always enter or edit any score by hand on the Fixtures &amp; Knockout tabs. Manual entries are never overwritten.</div>
+    <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">If the feed fails it just retries quietly every few minutes, and you can always enter or edit any score by hand on the Fixtures and Knockout tabs. Manual entries are never overwritten.</div>
   </div>
   ${(()=>{
     const filled=names.slice(0,pc).map(n=>(n||'').trim());
@@ -2050,7 +2048,7 @@ function renderSetup(){
     const lower=filled.map(n=>n.toLowerCase());
     const dupes=new Set(lower.filter((n,i)=>n&&lower.indexOf(n)!==i));
     return`<div class="card" style="padding:13px 14px;margin-bottom:11px">
-    ${Object.values(state.signups||{}).filter(s=>s&&s.name).length?`<div style="padding:7px 10px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:7px;font-size:.71rem;color:var(--gr);margin-bottom:10px;line-height:1.45">✍️ You have sign-ups — <b>the draw will use those</b>. This manual list is only used if there are no sign-ups.</div>`:''}
+    ${Object.values(state.signups||{}).filter(s=>s&&s.name).length?`<div style="padding:7px 10px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:7px;font-size:.71rem;color:var(--gr);margin-bottom:10px;line-height:1.45">✍️ You have sign-ups, so <b>the draw will use those</b>. This manual list is only used if there are no sign-ups.</div>`:''}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">👥 PLAYERS <span style="color:var(--txm);font-weight:400">· ${namedCount} named${emptyCount?` · ${emptyCount} empty`:''}</span></div>
       <span style="font-size:.7rem;color:${pc>48?'var(--amber)':eq?'var(--gr)':'var(--txd)'}">${distributionLabel(pc)}</span>
@@ -2078,37 +2076,37 @@ function renderSetup(){
       ${state.charity.on?`
         <div style="margin:4px 0 9px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">Charity name</div><input type="text" value="${(state.charity.name||'').replace(/"/g,'&quot;')}" placeholder="e.g. Macmillan Cancer Support" oninput="state.charity.name=this.value;saveSetup()" style="width:100%;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/></div>
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:11px"><span style="font-size:.78rem;color:var(--txd);min-width:118px">Suggested donation</span><span style="color:var(--txm)">£</span><input type="number" min="0" max="1000" value="${state.charity.suggested}" oninput="state.charity.suggested=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:60px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">shown as "£${state.charity.suggested||10} or more"</span></div>
-        <div style="border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">❤ TOTAL RAISED SO FAR</div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="color:var(--txm)">£</span><input type="number" min="0" step="any" value="${state.charity.total}" oninput="state.charity.total=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:100px;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem"/><span style="font-size:.72rem;color:var(--txm)">running total — shown to all</span></div>
-        <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="font-size:.76rem;color:var(--txd);min-width:118px">Fundraising goal</span><span style="color:var(--txm)">£</span><input type="number" min="0" value="${state.charity.goal||0}" oninput="state.charity.goal=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:80px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional — shows a progress bar</span></div>
-        <div style="margin-top:11px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">💷 Donation link <span style="color:var(--txm)">— JustGiving, Enthuse, etc.</span></div><input type="url" inputmode="url" value="${(state.charity.link||'').replace(/"/g,'&quot;')}" placeholder="e.g. justgiving.com/your-page" oninput="state.charity.link=this.value;saveSetup();render()" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><div style="font-size:.68rem;color:var(--txm);margin-top:4px;line-height:1.5">${donateLink()?'✓ A ❤ Donate button now shows to everyone — on the welcome screen, standings and fund bar.':'Add a link and a ❤ Donate button appears everywhere players can see it.'}</div></div>
+        <div style="border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">❤ TOTAL RAISED SO FAR</div><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="color:var(--txm)">£</span><input type="number" min="0" step="any" value="${state.charity.total}" oninput="state.charity.total=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:100px;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem"/><span style="font-size:.72rem;color:var(--txm)">running total, shown to all</span></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:9px"><span style="font-size:.76rem;color:var(--txd);min-width:118px">Fundraising goal</span><span style="color:var(--txm)">£</span><input type="number" min="0" value="${state.charity.goal||0}" oninput="state.charity.goal=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:80px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><span style="font-size:.7rem;color:var(--txm)">optional, shows a progress bar</span></div>
+        <div style="margin-top:11px"><div style="font-size:.72rem;color:var(--txd);margin-bottom:3px">💷 Donation link <span style="color:var(--txm)">· JustGiving, Enthuse, etc.</span></div><input type="url" inputmode="url" value="${(state.charity.link||'').replace(/"/g,'&quot;')}" placeholder="e.g. justgiving.com/your-page" oninput="state.charity.link=this.value;saveSetup();render()" style="width:100%;padding:7px 9px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.83rem"/><div style="font-size:.68rem;color:var(--txm);margin-top:4px;line-height:1.5">${donateLink()?'✓ A ❤ Donate button now shows everywhere: the welcome screen, standings and fund bar.':'Add a link and a ❤ Donate button appears everywhere players can see it.'}</div></div>
         <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px">
           <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:3px">📣 CHARITY EMPHASIS</div>
           <div style="font-size:.7rem;color:var(--txm);margin-bottom:7px">How prominent the ❤ Donate prompts are. Fun always comes first.</div>
           <div style="display:flex;gap:6px">${['subtle','balanced','full'].map(lvl=>`<button onclick="state.charity.emphasis='${lvl}';saveSetup();render()" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid ${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--b)'};background:${((state.charity.emphasis||'balanced')===lvl)?'var(--pill-gr)':'transparent'};color:${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.03em;cursor:pointer;text-transform:capitalize">${lvl}</button>`).join('')}</div>
-          <div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({subtle:'Quietest — just a Donate button on the fund bar. The total still shows.',balanced:'Recommended — Donate on the welcome screen and fund bar, with a gentle ticker nudge. Fun stays front and centre.',full:'Maximum — Donate buttons on every screen and more frequent nudges. Good for a final push near your goal.'})[state.charity.emphasis||'balanced']}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({subtle:'Quietest. Just a Donate button on the fund bar, and the total still shows.',balanced:'Recommended. Donate on the welcome screen and fund bar, with a gentle ticker nudge. Fun stays front and centre.',full:'Maximum. Donate buttons on every screen and more frequent nudges, good for a final push near your goal.'})[state.charity.emphasis||'balanced']}</div>
         </div>
         </div>
         <div style="border-top:1px solid var(--b);padding-top:11px;margin-top:11px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${state.podium.on?'checked':''} onchange="state.podium.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd)">🏆 TOP-3 PRIZES (non-cash)</span></label>
-          ${state.podium.on?`<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">${['🥇 1st','🥈 2nd','🥉 3rd'].map((l,i)=>`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:.8rem;min-width:46px">${l}</span><input type="text" value="${(state.podium.prizes[i]||'').replace(/"/g,'&quot;')}" placeholder="${i===0?'e.g. Champion trophy + £20 voucher':i===1?'e.g. Box of chocolates':'e.g. A cheeky pint'}" oninput="state.podium.prizes[${i}]=this.value;saveSetup()" style="flex:1;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.8rem"/></div>`).join('')}<div style="font-size:.68rem;color:var(--txm)">Shown on the standings. Keep them non-cash (vouchers, trophy, treats) so it stays free & clean.</div></div>`:''}
+          ${state.podium.on?`<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">${['🥇 1st','🥈 2nd','🥉 3rd'].map((l,i)=>`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:.8rem;min-width:46px">${l}</span><input type="text" value="${(state.podium.prizes[i]||'').replace(/"/g,'&quot;')}" placeholder="${i===0?'e.g. Champion trophy + £20 voucher':i===1?'e.g. Box of chocolates':'e.g. A cheeky pint'}" oninput="state.podium.prizes[${i}]=this.value;saveSetup()" style="flex:1;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.8rem"/></div>`).join('')}<div style="font-size:.68rem;color:var(--txm)">Shown on the standings. Keep them non-cash (vouchers, trophy, treats) so it stays free and clean.</div></div>`:''}
         </div>
       `:'<div style="font-size:.74rem;color:var(--txm);margin-top:6px">Turn on to show a charity total and free-entry messaging.</div>'}`
     :key==='scoring'?
-    `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like — the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
+    `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like, though the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
     <button class="btn-sm" style="margin-top:9px" onclick="state.scoring={...DEF_SCR};saveSetup();render()">RESET TO DEFAULT</button>`
     :key==='bonus'?
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results — no input needed. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off — only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results, no input needed. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
     :key==='predict'?
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points — and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick — the dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points, and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick. The dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
     :
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion &amp; wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet — the automatic ones still show.</div>`}`:''}`;
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion and wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet. The automatic ones still show.</div>`}`:''}`;
     const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='ticker'?'📢 TICKER & MESSAGES':'';
     return`<div class="card" style="margin-bottom:10px;overflow:hidden"><button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen['${key}']=!state.sOpen['${key}'];render()"><span>${title}</span><span style="color:var(--txm)">${open?'▲':'▼'}</span></button>${open?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">${inner}</div>`:''}</div>`;
   }).join('')}
   <!-- Manual Assignment -->
   <div class="card" style="margin-bottom:16px;overflow:hidden">
     <button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen.manual=!state.sOpen.manual;render()">
-      <span>🔧 MANUAL DRAW OVERRIDE <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> — restore a lost draw manually</span></span>
+      <span>🔧 MANUAL DRAW OVERRIDE <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> · restore a lost draw manually</span></span>
       <span style="color:var(--txm)">${state.sOpen.manual?'▲':'▼'}</span>
     </button>
     ${state.sOpen.manual?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">
@@ -2125,11 +2123,11 @@ function renderSetup(){
   </div>
   <div class="card" style="margin-bottom:16px;overflow:hidden">
     <button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen.diag=!state.sOpen.diag;render()">
-      <span>🩺 SYSTEM CHECK <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> — test the feed, database &amp; Cloudflare connection</span></span>
+      <span>🩺 SYSTEM CHECK <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> · test the feed, database and poller</span></span>
       <span style="color:var(--txm)">${state.sOpen.diag?'▲':'▼'}</span>
     </button>
     ${state.sOpen.diag?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">
-      <p style="font-size:.8rem;color:var(--txd);margin:9px 0 11px;line-height:1.55">Checks everything the sweepstake relies on — database read/write, your sign-in, the results feed, the background Cloudflare poller and your links — and flags anything that needs attention. Safe to run anytime.</p>
+      <p style="font-size:.8rem;color:var(--txd);margin:9px 0 11px;line-height:1.55">Checks everything the sweepstake relies on: database read and write, your sign-in, the results feed, the background poller and your links. Flags anything that needs attention, and it's safe to run anytime.</p>
       <button class="btn btn-green" style="font-size:.74rem" onclick="runDiagnostics()">▶ RUN CHECKS</button>
       <div id="diag-results"></div>
     </div>`:''}
@@ -2144,25 +2142,25 @@ function renderSetup(){
     return`<div class="card" style="padding:13px 14px;margin-bottom:11px;border-color:${ready?'rgba(0,128,42,.3)':'var(--b)'}">
       <div style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.08em;color:var(--txd);margin-bottom:8px">DRAW READINESS</div>
       ${row(poolN.length>=2,`${poolN.length} player${poolN.length===1?'':'s'}${usingSignups?' · from sign-ups':''}`,'Need at least 2 players')}
-      ${usingSignups?'':row(empty===0,'All players named',`${empty} empty slot${empty>1?'s':''} — fill or remove them`)}
-      ${row(!hasDupes,'No duplicate names','Duplicate names found — fix above')}
-      ${row(true, state.charity.on?`Free entry${state.charity.name?' · for '+state.charity.name:' · for charity'}`:'Glory only','')}
+      ${usingSignups?'':row(empty===0,'All players named',`${empty} empty slot${empty>1?'s':''}, fill or remove them`)}
+      ${row(!hasDupes,'No duplicate names','Duplicate names found, fix above')}
+      ${row(true, state.charity.on?`Free entry${state.charity.name?' · for '+state.charity.name:' · for charity'}`:'Bragging rights only','')}
       <div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--b);font-size:.74rem;color:${ready?'var(--gr)':'var(--amber)'};font-weight:600">${ready?'✓ Ready to draw':'Resolve the warnings above before drawing'}</div>
       <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--b)">
         <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:5px">⏳ DRAW COUNTDOWN <span style="font-weight:400;letter-spacing:0">· optional</span></div>
-        <div style="font-size:.72rem;color:var(--txm);margin-bottom:7px">Set when the draw will happen — everyone sees a live countdown to it.</div>
+        <div style="font-size:.72rem;color:var(--txm);margin-bottom:7px">Set when the draw will happen, and everyone sees a live countdown to it.</div>
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><input type="datetime-local" value="${state.drawTime||''}" onchange="state.drawTime=this.value;saveSetup();render()" style="padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.8rem"/>${state.drawTime?`<button class="btn-sm" onclick="state.drawTime='';saveSetup();render()">Clear</button>`:''}</div>
-        ${state.drawTime?`<label style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;cursor:pointer"><input type="checkbox" ${state.autoDraw?'checked':''} onchange="state.autoDraw=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">⚡ Run the draw <b>automatically</b> at this time — no tap needed. Just keep this admin tab open near then (phone is fine). The draw is always random.</span></label>`:''}
+        ${state.drawTime?`<label style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;cursor:pointer"><input type="checkbox" ${state.autoDraw?'checked':''} onchange="state.autoDraw=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">⚡ Run the draw <b>automatically</b> at this time, no tap needed. Just keep this admin tab open near then (phone is fine). The draw is always random.</span></label>`:''}
       </div>
       <div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--b)">
         <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:6px">🎬 DRAW REVEAL STYLE</div>
-        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" ${state.drawByTeam?'checked':''} onchange="state.drawByTeam=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Reveal <b>team-by-team</b> (each team, then who got it) instead of player-by-player. Much quicker for big sign-ups — and used automatically whenever there are more players than teams.</span></label>
+        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer"><input type="checkbox" ${state.drawByTeam?'checked':''} onchange="state.drawByTeam=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer;margin-top:1px"/><span style="font-size:.73rem;color:var(--txd);line-height:1.5">Reveal <b>team-by-team</b> (each team, then who got it) instead of player-by-player. Much quicker for big sign-ups, and used automatically whenever there are more players than teams.</span></label>
       </div>
     </div>`;
   })():''}
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <button class="btn-draw" onclick="protectedRunDraw()">🎲 RUN THE DRAW</button>
-    ${state.draw?`<button class="btn btn-ghost" onclick="protectedReset()">RESET ALL</button>`:''}
+    ${state.draw?`<button class="btn btn-ghost" onclick="protectedResetResults()">RESET RESULTS</button><button class="btn btn-ghost" style="border-color:rgba(192,32,32,.3);color:var(--red)" onclick="protectedReset()">RESET DRAW &amp; RESULTS</button>`:''}
     <span style="font-size:.75rem;color:var(--txm);margin-left:auto">${names.slice(0,pc).filter(x=>x.trim()).length}/${pc} named</span>
   </div>`;
 }
@@ -2177,7 +2175,7 @@ function rulesHTML(onWelcome){
   const panel=(title,emoji,rows)=>`<div style="background:var(--cardh);border:1px solid var(--b);border-radius:11px;padding:11px 14px"><div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:4px">${emoji} ${title}</div>${rows.map(([k,l],i)=>row(l,S[k],i===rows.length-1)).join('')}</div>`;
   return `<div class="card" style="padding:18px 17px">
     <div style="font-family:'Oswald',sans-serif;font-size:1.18rem;font-weight:700;color:var(--tx);letter-spacing:.01em;margin-bottom:4px">How it works</div>
-    <p style="font-size:.82rem;color:var(--txm);line-height:1.55;margin-bottom:15px">You're randomly drawn ${teamsEach>1?`<b style="color:var(--tx)">${teamsEach} of the 48 teams</b>`:'one or more of the 48 teams'} — pure luck. They earn you points as they win, totalled up <b style="color:var(--tx)">automatically</b>. Most points at the end wins.</p>
+    <p style="font-size:.82rem;color:var(--txm);line-height:1.55;margin-bottom:15px">You're drawn ${teamsEach>1?`<b style="color:var(--tx)">${teamsEach} of the 48 teams</b>`:'one or more of the 48 teams'} at random, pure luck of the draw. They earn you points as they win, added up <b style="color:var(--tx)">automatically</b>. Most points at the end wins.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(238px,1fr));gap:10px">
       ${panel('GROUP STAGE','⚽',grp)}
       ${panel('KNOCKOUTS · win the tie','🥊',ko)}
@@ -2185,14 +2183,14 @@ function rulesHTML(onWelcome){
     ${S.goal_bonus>0?`<div style="margin-top:11px;font-size:.8rem;color:var(--txm)">Plus <b style="color:var(--gr)">+${S.goal_bonus}</b> for every goal your teams score.</div>`:''}
     ${state.bonus&&state.bonus.on&&['most_goals','best_def','fewest_goals','worst_def'].some(k=>(state.bonus[k]||0)>0)?`<div style="margin-top:11px;background:var(--cardh);border:1px solid var(--b);border-radius:11px;padding:11px 14px">
       <div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:5px">🏅 BONUS AWARDS · even if your teams flop</div>
-      <div style="font-size:.78rem;color:var(--txm);line-height:1.55;margin-bottom:5px">Worked out automatically — the best <b>and worst</b> teams both score, so a rotten draw can still win something:</div>
+      <div style="font-size:.78rem;color:var(--txm);line-height:1.55;margin-bottom:5px">Worked out automatically. The best <b>and worst</b> teams both score, so even a rotten draw can win something:</div>
       ${[['most_goals','⚽ Scores the most goals'],['best_def','🛡️ Concedes the fewest'],['fewest_goals','🧊 Scores the fewest'],['worst_def','🥅 Concedes the most']].filter(([k])=>(state.bonus[k]||0)>0).map(([k,l],i,arr)=>row(l,state.bonus[k],i===arr.length-1)).join('')}
     </div>`:''}
     <div style="margin-top:14px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends wins — for the glory (and a winner's certificate). Level on points? It's settled by the champion prediction, then most knockout wins, then goals — so there's always a clear winner.`}</div>
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Whoever's highest when the tournament ends wins, and gets a winner's certificate. Level on points? It comes down to the champion prediction first, then most knockout wins, then goals, so there's always a clear winner.`}</div>
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> If you'd like, there's an optional donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} — we suggest £${state.charity.suggested||10} or more, but give whatever you're comfortable with. It's entirely up to you and has no effect on the draw or who wins.</div>
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> There's an optional donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} if you'd like. We suggest £${state.charity.suggested||10} or more, but give whatever you're comfortable with. It's entirely up to you and has no effect on the draw or who wins.</div>
       ${onWelcome&&donateShow('welcome')?`<div style="margin-top:11px;text-align:center">${donateBtnHTML({big:true,label:state.charity.name?('Donate to '+state.charity.name):'Donate now'})}</div>`:''}
     </div>`:''}
     ${state.predict.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
@@ -2204,7 +2202,7 @@ function rulesHTML(onWelcome){
 function renderLive(){
   const ids=liveMatchIds();
   if(!ids.length){
-    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6">When a match kicks off it'll appear here automatically — with the score, the channel, and which players have teams playing.</p></div>`;
+    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6">When a match kicks off it'll show up here automatically, with the score, the channel, and which players have teams playing.</p></div>`;
   }
   ids.sort((a,b)=>{const la=state.live[a]?1:0,lb=state.live[b]?1:0;return lb-la;});
   const hasAnyScore=ids.some(id=>state.live[id]);
@@ -2244,7 +2242,7 @@ function renderLive(){
           <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.4rem;min-width:48px">${hg}:${ag}</span>
           <div style="display:flex;flex-direction:column;gap:3px"><button class="adj" onclick="adjLive('${id}','ag',1)" style="width:28px;height:22px">+</button><button class="adj" onclick="adjLive('${id}','ag',-1)" style="width:28px;height:22px">−</button></div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:9px"><button class="btn btn-green" style="flex:1;font-size:.72rem" onclick="endLive('${id}')">FULL TIME — SAVE</button>${hasScore?`<button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="cancelLive('${id}')">✕</button>`:''}</div>
+        <div style="display:flex;gap:8px;margin-top:9px"><button class="btn btn-green" style="flex:1;font-size:.72rem" onclick="endLive('${id}')">SAVE RESULT</button>${hasScore?`<button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="cancelLive('${id}')">✕</button>`:''}</div>
       </details>`:''}
     </div>`;
   }).join('')}
@@ -2267,7 +2265,7 @@ function renderLive(){
       }).join('')}
       ${prov.prov.length>10?`<div style="text-align:center;font-size:.68rem;color:var(--txm);padding-top:8px">+ ${prov.prov.length-10} more</div>`:''}
     </div>`;
-  })():`<div class="card" style="padding:13px 14px;font-size:.74rem;color:var(--txm);line-height:1.6">Live scores appear here automatically if available from the results feed. Final results always import on their own once each match finishes — the standings and bracket then update for everyone.</div>`}`;
+  })():`<div class="card" style="padding:13px 14px;font-size:.74rem;color:var(--txm);line-height:1.6">Live scores appear here automatically if available from the results feed. Final results always import on their own once each match finishes, and the standings and bracket then update for everyone.</div>`}`;
 }
 
 function renderDraw(){
@@ -2281,7 +2279,7 @@ function renderDraw(){
     <div><h2 class="ttl">The Draw${state.draw?.manual?' <span style="font-size:.7rem;color:var(--txm);font-weight:400">(Manual)</span>':''}</h2>
     <div style="font-size:.7rem;color:var(--txm)">${new Date(state.draw.drawnAt).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div></div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">
-      ${!anyPlayed?`<button class="btn btn-ghost" onclick="replayCeremony()" style="font-size:.7rem" title="Replay the draw reveal — teams stay the same">🎬 REPLAY</button>`:''}
+      ${!anyPlayed?`<button class="btn btn-ghost" onclick="replayCeremony()" style="font-size:.7rem" title="Replay the draw reveal, teams stay the same">🎬 REPLAY</button>`:''}
       <button class="btn btn-ghost" onclick="copyDraw()" style="font-size:.7rem">📋 COPY</button>
       <button class="btn btn-ghost" onclick="shareURL()" style="font-size:.7rem">🔗 SHARE</button>
       ${isAdmin()?`<button class="btn btn-ghost" onclick="exportDraw()" style="font-size:.7rem">💾 BACKUP</button><button class="btn btn-ghost" onclick="setTab('setup')" style="font-size:.7rem">✏ EDIT</button>`:''}
@@ -2426,7 +2424,7 @@ function renderKO(){
     </div>`;
   }).join('');
   return`<h2 class="ttl">Knockout Stage</h2>
-  <p style="font-size:.75rem;color:var(--txm);margin-bottom:14px">Teams fill in <b>automatically</b> from group results — no input needed. Dates, venues and UK kick-off times are from the official BBC schedule (all times BST).</p>
+  <p style="font-size:.75rem;color:var(--txm);margin-bottom:14px">Teams fill in <b>automatically</b> from group results, no input needed. Dates, venues and UK kick-off times are from the official BBC schedule (all times BST).</p>
   ${champ?`<div style="margin-bottom:16px;padding:9px 14px;background:linear-gradient(90deg,rgba(176,120,0,.1),transparent);border:1px solid rgba(176,120,0,.35);border-radius:8px;display:flex;align-items:center;gap:8px"><span style="color:var(--gold);font-family:'Oswald',sans-serif;letter-spacing:.05em">🏆 WORLD CHAMPIONS:</span><span style="font-size:1rem">${FLAGS[champ]}</span><span style="color:var(--tx);font-weight:600">${champ}</span></div>`:''}
   <div class="card" style="padding:12px 8px 12px;margin-bottom:22px;overflow:hidden">
     <div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin-bottom:9px;padding-left:6px">TOURNAMENT BRACKET</div>
@@ -2478,7 +2476,7 @@ function bonusAwardsHTML(){
     else{detail=aw[k].teams.map(t=>{const tt=ALL_TEAMS.find(x=>x.name===t);const fl=tt?tt.flag:'';const ow=teamOwner(t);return `${fl} <b style="color:var(--tx)">${esc(t)}</b>${ow?` <span style="color:var(--txm)">· ${esc(ow)}</span>`:''}`;}).join('&nbsp;&nbsp;');}
     return`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:var(--cardh);border-radius:7px"><span style="flex-shrink:0;font-size:.95rem">${BONUS_ICON[k]}</span><span style="flex:1;font-size:.78rem;line-height:1.5"><span style="color:var(--txd)">${BONUS_LBL[k].split(' (')[0]}</span><br>${detail}</span><span style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;color:var(--gr);font-size:.82rem">+${pts}</span></div>`;
   }).join('');
-  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${live?'Provisional — these settle when the tournament ends.':'Up for grabs · awarded automatically from results.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
+  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${live?'Provisional, settled when the tournament ends.':'Up for grabs · awarded automatically from results.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
 }
 function renderStandings(){
   const lb=calcLeaderboard();const{qual}=computeQual();
@@ -2531,7 +2529,7 @@ function renderStandings(){
       </div>
       ${!open?`<div class="pill-wrap">${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div class="pill" style="background:${QCOL[q]}10;border:1px solid ${QCOL[q]}28;opacity:${out?.6:1}"><span style="font-size:.85rem;filter:${out?'grayscale(.8)':'none'}">${b.flag}</span><span style="color:${out?'var(--txm)':'var(--tx)'};${out?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${b.name}</span>${b.pts>0?`<span style="font-size:.63rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700">+${b.pts}</span>`:''}</div>`;}).join('')}</div>`:''}
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
-        <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME — TAP TO UNPIN':'⭐ MARK AS ME'}</button>
+        <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
         ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span><span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span>${champ?`<span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:`<span style="font-size:.68rem;color:var(--txm)">awaiting Final</span>`}</div>`:''}
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="display:flex;gap:9px;padding:8px 9px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
           <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
@@ -2606,7 +2604,7 @@ function togglePaid(name){if(!adminSess)return;if(!state.paid)state.paid={};stat
 let _cdTimer=null;
 const KICKOFF_MS=Date.parse('2026-06-11T20:00:00+01:00'); // opener, BST
 function cdTarget(){
-  if(!state.draw&&state.drawTime){const t=Date.parse(state.drawTime);if(!isNaN(t)&&t>Date.now()-3600000)return{time:t,label:'The draw is in',done:'🎲 Draw time — stand by!'};}
+  if(!state.draw&&state.drawTime){const t=Date.parse(state.drawTime);if(!isNaN(t)&&t>Date.now()-3600000)return{time:t,label:'The draw is in',done:'🎲 Draw time, stand by!'};}
   if(Date.now()<KICKOFF_MS)return{time:KICKOFF_MS,label:'Tournament kicks off in',done:''};
   return null;
 }
@@ -2656,7 +2654,7 @@ function thermometerHTML(){
   return `<div class="card" style="padding:13px 15px;margin-bottom:14px;box-shadow:var(--shadow)">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px"><span style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.06em;color:var(--tx)">❤ ${esc(state.charity.name)||'CHARITY'} FUND</span><span style="font-size:.76rem;color:var(--txm)"><b style="color:var(--gold);font-family:'Oswald',sans-serif;font-size:.95rem">£${tot.toLocaleString()}</b> of £${goal.toLocaleString()}</span></div>
     <div style="height:12px;background:var(--cardh);border-radius:7px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,#00a838,#00e676);border-radius:7px;transition:width .6s ease"></div></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px"><span style="font-size:.68rem;color:var(--txm)">${pct}% of the way there${pct>=100?' — goal smashed! 🎉':''}</span>${donateShow('fund')?donateBtnHTML({label:'Donate'}):''}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px"><span style="font-size:.68rem;color:var(--txm)">${pct}% of the way there${pct>=100?', goal smashed! 🎉':''}</span>${donateShow('fund')?donateBtnHTML({label:'Donate'}):''}</div>
   </div>`;
 }
 
@@ -2667,10 +2665,10 @@ function render(){
   const liveCount=state.draw?liveMatchIds().length:0;
   if(liveCount>0)tabs.push({id:'live',l:`LIVE (${liveCount})`});
   tabs.push(
-    {id:'draw',l:'DRAW',d:!state.draw},
-    {id:'fixtures',l:'FIXTURES',d:!state.draw},
-    {id:'tables',l:'TABLES',d:!state.draw},
-    {id:'knockout',l:'KNOCKOUT',d:!state.draw},
+    {id:'draw',l:'DRAW'},
+    {id:'fixtures',l:'FIXTURES'},
+    {id:'tables',l:'TABLES'},
+    {id:'knockout',l:'KNOCKOUT'},
     {id:'standings',l:'STANDINGS',d:!state.draw}
   );
   // If current tab is no longer valid (e.g. signed out of setup, or no draw), redirect
@@ -2704,10 +2702,12 @@ function render(){
 }
 
 // ── MISC ─────────────────────────────────────────────────────────────────────
-async function doReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}await fbDel('wc2026/draw');await fbDel('wc2026/gr');await fbDel('wc2026/ko');state.draw=null;state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};pendingImports=[];state.tab='setup';render();showToast('Everything reset');}
+async function doReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}await fbDel('wc2026/draw');await fbDel('wc2026/gr');await fbDel('wc2026/ko');await fbDel('wc2026/live');state.draw=null;state.grR={};state.koR={};state.live={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};pendingImports=[];state.tab='setup';render();showToast('Draw and results cleared');}
+async function doResetResults(){if(!adminSess){showToast('Admin sign-in required','error');return;}await fbDel('wc2026/gr');await fbDel('wc2026/ko');await fbDel('wc2026/live');state.grR={};state.koR={};state.live={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];render();showToast('Results cleared, draw kept');}
+function protectedResetResults(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Clear all results?','Removes every group and knockout score, plus any live matches, but keeps the draw and sign-ups. Handy if a score went in wrong. This cannot be undone.','CLEAR RESULTS',doResetResults,true);}
 function protectedRunDraw(){requirePin(runDraw);}
-function protectedReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Reset everything?','This will permanently delete the draw and all results.','YES RESET',doReset,true);}
-async function copyDraw(){const lb=calcLeaderboard();const lines=[`🏆 ${CONFIG.title}`,'Drawn: '+new Date(state.draw.drawnAt).toLocaleString('en-GB'),''];lb.forEach((p,i)=>{lines.push(`${MEDAL[i]||(i+1)+'.'} ${p.name} — ${p.total} pts`);p.breakdown.forEach(t=>lines.push(`   ${t.flag} ${t.name} (Grp ${t.group})`));lines.push('');});try{await navigator.clipboard.writeText(lines.join('\n'));showToast('Copied!','gold');}catch{showToast('Copy failed','error');}}
+function protectedReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Reset the draw and results?','This clears the draw and every result so you can start fresh. Your sign-ups, charity total and settings are kept. This cannot be undone.','RESET',doReset,true);}
+async function copyDraw(){const lb=calcLeaderboard();const lines=[`🏆 ${CONFIG.title}`,'Drawn: '+new Date(state.draw.drawnAt).toLocaleString('en-GB'),''];lb.forEach((p,i)=>{lines.push(`${MEDAL[i]||(i+1)+'.'} ${p.name}: ${p.total} pts`);p.breakdown.forEach(t=>lines.push(`   ${t.flag} ${t.name} (Grp ${t.group})`));lines.push('');});try{await navigator.clipboard.writeText(lines.join('\n'));showToast('Copied!','gold');}catch{showToast('Copy failed','error');}}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // Register service worker for PWA / offline support
@@ -2794,12 +2794,12 @@ else if(DB){
     recentResults=Object.entries(state.grR).filter(([_,r])=>r.played).slice(-8).map(([id,r])=>{const f=GF[id];return f?{home:f.home,away:f.away,hg:r.hg,ag:r.ag}:null;}).filter(Boolean).reverse();
     render();
     maybePlayCeremony();
-  },err=>{console.error('Firebase error:',err);hideLoading();setConnDot('#ef4444','Firebase connection failed — using local storage');localInit();});
+  },err=>{console.error('Firebase error:',err);hideLoading();setConnDot('#ef4444','Firebase connection failed, using local storage');localInit();});
   DB.ref('.info/connected').on('value',s=>{setConnDot(s.val()?'#00e676':'#f59e0b',s.val()?'Connected · Live sync active':'Reconnecting…');});
   startPolling();
 } else {
   // ── LOCAL STORAGE MODE: single-device, no sync ────────────────────────────
-  setLoadMsg('Loading…');setConnDot('#f59e0b','Local mode — Firebase not configured');
+  setLoadMsg('Loading…');setConnDot('#f59e0b','Local mode, Firebase not configured');
   localInit();
 }
 
