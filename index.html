@@ -742,7 +742,7 @@ async function pollResults(){
           const ag=m.score?.fullTime?.away??m.score?.regularTime?.away;
           if(hg==null||ag==null)return;
           const gid=findGFId(normTeam(m.homeTeam?.name||''),normTeam(m.awayTeam?.name||''));
-          if(gid&&!state.grR[gid]?.played){const cur=state.live[gid];if(!cur||cur.hg!==hg||cur.ag!==ag){state.live[gid]={hg,ag};changed=true;}}
+          if(gid&&!state.grR[gid]?.played&&state.live[gid]){const cur=state.live[gid];if(cur.hg!==hg||cur.ag!==ag){state.live[gid]={hg,ag};changed=true;}}
         });
         if(changed){fbSave('wc2026/live',state.live);render();}
       }
@@ -1759,18 +1759,7 @@ function isTodayDt(dt){
     return n.getFullYear()===2026&&d.getMonth()===n.getMonth()&&d.getDate()===n.getDate();
   }catch{return false;}
 }
-function isLiveNow(id){
-  // Returns true if this fixture is likely in progress based on BST time
-  const f=GF[id];if(!f||state.grR[id]?.played)return false;
-  try{
-    const now=new Date();
-    const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    const[day,mon]=f.dt.split(' ');const[h,m]=f.tm.replace('✝','').split(':');
-    const ko=new Date(2026,months[mon],parseInt(day),parseInt(h),parseInt(m));
-    const diff=(now-ko)/60000;// minutes since KO
-    return diff>=0&&diff<=105;// 0–105 mins (90 + 15 extra time buffer)
-  }catch{return false;}
-}
+// (Live is a manual admin toggle now — there's no automatic time-based detection.)
 
 // ── CALCULATIONS ──────────────────────────────────────────────────────────────
 function groupTable(g){
@@ -1910,9 +1899,9 @@ function deptTableHTML(){
 // ── LIVE MATCHES ──────────────────────────────────────────────────────────────
 // Matches that are in their kickoff window OR have a live score entered.
 function liveMatchIds(){
+  // Live is admin-controlled only: a match is live if the admin has switched it on (state.live).
   const ids=new Set();
-  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.add(id);}); // only valid, unfinished fixtures
-  Object.keys(GF).forEach(id=>{if(isLiveNow(id)&&!state.grR[id]?.played)ids.add(id);});
+  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.add(id);});
   return [...ids];
 }
 // Provisional leaderboard: standings AS IF live scores counted right now.
@@ -1965,7 +1954,7 @@ function cancelLive(id){
   if(!adminSess)return;
   delete state.live[id];
   fbSave('wc2026/live',state.live);
-  render();
+  render();showToast('Live view turned off');
 }
 
 // ── SCORE ENTRY ───────────────────────────────────────────────────────────────
@@ -2143,7 +2132,7 @@ function showImportDraw(){
 function renderMC(id){
   const fix=GF[id],r=state.grR[id];
   const played=r?.played&&!editing.has(id);
-  const live=!played&&isLiveNow(id);
+  const live=!played&&!!state.live[id];
   if(!tempS[id])tempS[id]=r?.played?{hg:r.hg,ag:r.ag}:{hg:0,ag:0};
   const{hg,ag}=tempS[id];
   const hw=played&&r.hg>r.ag,aw=played&&r.ag>r.hg,dw=played&&r.hg===r.ag;
@@ -2668,7 +2657,7 @@ function rulesHTML(onWelcome){
 function renderLive(){
   const ids=liveMatchIds();
   if(!ids.length){
-    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6">When a match kicks off it'll show up here automatically, with the score, the channel, and which players have teams playing.</p></div>`;
+    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6">Switch a match to live from the Fixtures tab (the 🔴 LIVE button) and it'll appear here, with the score and which players have teams playing.</p></div>`;
   }
   ids.sort((a,b)=>{const la=state.live[a]?1:0,lb=state.live[b]?1:0;return lb-la;});
   const hasAnyScore=ids.some(id=>state.live[id]);
@@ -2682,7 +2671,7 @@ function renderLive(){
     <h2 class="ttl" style="margin:0">On Now</h2>
     <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length} match${ids.length>1?'es':''}</span>
   </div>
-  <p class="sub">Updates automatically as results come in.</p>
+  <p class="sub">Matches you've switched to live. Update the score by hand if you like.</p>
   ${ids.map(id=>{
     const f=GF[id];const s=state.live[id];const admin=isAdmin();
     const hasScore=!!s;const hg=s?.hg||0,ag=s?.ag||0;
@@ -2702,13 +2691,16 @@ function renderLive(){
         </div>
         <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.2rem;line-height:1">${f.flagA||FLAGS[f.away]||'⚽'}</div><div style="font-size:.82rem;font-weight:${aw?'700':'500'};color:${aw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.away}</div>${ownerLine(ownA,myA)}</div>
       </div>
-      ${admin?`<details style="margin-top:11px"><summary style="font-size:.64rem;color:var(--txm);cursor:pointer;list-style:none">⚙ Update score manually (optional)</summary>
+      ${admin?`<div style="display:flex;gap:8px;margin-top:11px">
+        <button class="btn btn-ghost" style="flex:1;font-size:.72rem;border-color:rgba(192,32,32,.35);color:var(--red)" onclick="cancelLive('${id}')">■ STOP LIVE</button>
+        <button class="btn btn-green" style="flex:1;font-size:.72rem" onclick="endLive('${id}')">SAVE AS RESULT</button>
+      </div>
+      <details style="margin-top:9px"><summary style="font-size:.64rem;color:var(--txm);cursor:pointer;list-style:none">⚙ Update score manually (optional)</summary>
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:9px">
           <div style="display:flex;flex-direction:column;gap:3px"><button class="adj" onclick="adjLive('${id}','hg',1)" style="width:28px;height:22px">+</button><button class="adj" onclick="adjLive('${id}','hg',-1)" style="width:28px;height:22px">−</button></div>
           <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.4rem;min-width:48px">${hg}:${ag}</span>
           <div style="display:flex;flex-direction:column;gap:3px"><button class="adj" onclick="adjLive('${id}','ag',1)" style="width:28px;height:22px">+</button><button class="adj" onclick="adjLive('${id}','ag',-1)" style="width:28px;height:22px">−</button></div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:9px"><button class="btn btn-green" style="flex:1;font-size:.72rem" onclick="endLive('${id}')">SAVE RESULT</button>${hasScore?`<button class="btn-sm" style="color:var(--red);border-color:rgba(192,32,32,.3)" onclick="cancelLive('${id}')">✕</button>`:''}</div>
       </details>`:''}
     </div>`;
   }).join('')}
