@@ -733,20 +733,6 @@ async function pollResults(){
   try{
     const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{headers:{'X-Auth-Token':apiKey()}});
     if(!res.ok)return;const data=await res.json();
-    // Also attempt live in-play scores (may require a paid tier; fails silently if not)
-    if(adminSess){try{
-      const lr=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=IN_PLAY,PAUSED',{headers:{'X-Auth-Token':apiKey()}});
-      if(lr.ok){const ld=await lr.json();let changed=false;
-        (ld.matches||[]).forEach(m=>{
-          const hg=m.score?.fullTime?.home??m.score?.regularTime?.home;
-          const ag=m.score?.fullTime?.away??m.score?.regularTime?.away;
-          if(hg==null||ag==null)return;
-          const gid=findGFId(normTeam(m.homeTeam?.name||''),normTeam(m.awayTeam?.name||''));
-          if(gid&&!state.grR[gid]?.played&&state.live[gid]){const cur=state.live[gid];if(cur.hg!==hg||cur.ag!==ag){state.live[gid]={hg,ag};changed=true;}}
-        });
-        if(changed){fbSave('wc2026/live',state.live);render();}
-      }
-    }catch(e){}}
     const bkRes=resolveBracket();const found=[];
     (data.matches||[]).forEach(m=>{
       try{
@@ -1041,7 +1027,8 @@ function tickerItems(){
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
     const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners happy"],3):"good for "+o.join(" & ");
-    liveMatchIds().forEach(id=>{const f=GF[id];if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
+    const _today=gamesToday().filter(id=>!state.grR[id]?.played);
+    if(_today.length){const _l=_today.slice(0,4).map(id=>`${GF[id].home} v ${GF[id].away}`).join(", ");a.push((`⚽ ON TODAY: ${_l}${_today.length>4?` +${_today.length-4} more`:""}`).replace(/ +/g," ").trim());}
     if(champ){
       a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
       a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`,`🏆 ${champ} lift the trophy, ${lb[0].name} lifts the office crown`]));
@@ -1190,16 +1177,29 @@ function setLoadMsg(m){const el=document.getElementById('load-msg');if(el)el.tex
 function setConnDot(color,title){const d=document.getElementById('conn-dot');if(d){d.style.background=color;d.title=title;}}
 
 // ── TODAY'S MATCHES ───────────────────────────────────────────────────────────
+// Returns today's fixture IDs (by UK / Europe-London date), sorted by kick-off time.
+function gamesToday(){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  // Today's date in UK time, so it's correct whatever timezone the device is in.
+  let td,tmo;
+  try{const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'numeric'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t)?.value;td=parseInt(g('day'));tmo=parseInt(g('month'))-1;}
+  catch{const n=new Date();td=n.getDate();tmo=n.getMonth();}
+  return Object.keys(GF)
+    .filter(id=>{const[day,mon]=(GF[id].dt||'').split(' ');return parseInt(day)===td&&months[mon]===tmo;})
+    .sort((a,b)=>parseInt((GF[a].tm||'').replace(/\D/g,'')||'0')-parseInt((GF[b].tm||'').replace(/\D/g,'')||'0'));
+}
 function todayMatchesHTML(){
   if(!state.draw)return'';
-  const td=new Date();const mons=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const str=`${td.getDate()} ${mons[td.getMonth()]}`;
-  const todayFix=Object.entries(GF).filter(([_,f])=>f.dt===str);if(!todayFix.length)return'';
-  const rel=state.draw.participants.map(p=>({...p,mx:todayFix.filter(([_,f])=>p.teams.some(t=>t.name===f.home||t.name===f.away))})).filter(p=>p.mx.length);
-  if(!rel.length)return'';
-  const _me=getMyName(),_mlc=_me.toLowerCase();const _mine=_me?rel.filter(p=>p.name.toLowerCase()===_mlc):[];const _list=_mine.length?_mine:rel;
-  return`<div class="card" style="padding:12px 14px;margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.72rem;color:var(--gr);letter-spacing:.1em;margin-bottom:10px">${_mine.length?"⚽ YOUR TEAMS IN ACTION TODAY":"⚽ TODAY'S MATCHES"}</div>
-  ${_list.map(p=>`<div style="margin-bottom:9px"><div style="font-family:'Oswald',sans-serif;font-size:.8rem;color:var(--tx);margin-bottom:5px">${p.name}</div>${p.mx.map(([_,f])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--cardh);border-radius:6px;margin-bottom:3px;font-size:.77rem"><span>${FLAGS[f.home]||'⚽'}</span><span>${f.home}</span><span style="font-family:'Oswald',sans-serif;color:var(--txm)">vs</span><span>${FLAGS[f.away]||'⚽'}</span><span>${f.away}</span><span style="margin-left:auto;font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--gr)">${f.tm} BST</span></div>`).join('')}</div>`).join('')}
+  const ids=gamesToday();
+  if(!ids.length)return'';
+  const myT=_myTeams||new Set();
+  return`<div class="card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--gr)">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+      <span style="font-size:1rem">⚽</span>
+      <span style="font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gr);letter-spacing:.1em;font-weight:700">ON TODAY</span>
+      <span style="font-size:.66rem;color:var(--txm);margin-left:auto">${ids.length} game${ids.length>1?'s':''}</span>
+    </div>
+    ${ids.map(id=>{const f=GF[id];const mine=myT.has(f.home)||myT.has(f.away);const done=state.grR[id]?.played;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:${done?'var(--gr)':'var(--txm)'};min-width:40px">${done?'FT':f.tm}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[f.home]||'⚽'} ${f.home} <span style="color:var(--txm)">v</span> ${f.away} ${FLAGS[f.away]||'⚽'}</span>${f.ch?`<span style="font-size:.62rem;color:var(--txm)">${f.ch}</span>`:''}</div>`;}).join('')}
   </div>`;
 }
 
@@ -1896,66 +1896,9 @@ function deptTableHTML(){
     </div></div>`;}).join('')}${noDept?`<div style="font-size:.68rem;color:var(--txm);text-align:center;margin-top:8px">${noDept} player${noDept>1?'s':''} not in a ${esc(label.toLowerCase().replace(/s$/,''))}</div>`:''}`;
 }
 
-// ── LIVE MATCHES ──────────────────────────────────────────────────────────────
-// Matches that are in their kickoff window OR have a live score entered.
-function liveMatchIds(){
-  // Live is admin-controlled only: a match is live if the admin has switched it on (state.live).
-  const ids=new Set();
-  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.add(id);});
-  return [...ids];
-}
-// Provisional leaderboard: standings AS IF live scores counted right now.
-// Returns {prov, base} so we can show movement. Mutates+restores state.grR.
-function calcProvisional(){
-  const live=state.live||{};
-  if(!Object.keys(live).length)return null;
-  const real=state.grR;
-  const merged={...real};
-  Object.entries(live).forEach(([id,s])=>{if(GF[id])merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
-  const base=calcLeaderboard();           // current official standings
-  state.grR=merged;
-  const prov=calcLeaderboard();            // standings with live overlaid
-  state.grR=real;                          // restore
-  return{prov,base};
-}
-// Admin: live score controls (write to state.live, sync instantly to all viewers)
-function adjLive(id,side,d){
-  if(!adminSess)return;
-  if(!GF[id]||state.grR[id]?.played)return;
-  if(!state.live[id])state.live[id]={hg:0,ag:0};
-  state.live[id][side]=Math.max(0,(state.live[id][side]||0)+d);
-  fbSave('wc2026/live',state.live);
-  try{if(d>0)SFX.goal();}catch{}
-  render();
-}
-function startLive(id){
-  if(!adminSess)return;
-  if(!GF[id]){showToast('Invalid match','error');return;}
-  if(state.grR[id]?.played){showToast('Match already has a result','error');return;}
-  if(!state.live[id])state.live[id]={hg:0,ag:0};
-  fbSave('wc2026/live',state.live);
-  state.tab='live';render();
-  showToast('Now tracking live ⚽','gold');
-}
-function endLive(id){
-  if(!adminSess)return;
-  const s=state.live[id];if(!s)return;
-  showMod('Full time?',`Save ${GF[id].home} ${s.hg}–${s.ag} ${GF[id].away} as the final result?`,'FULL TIME',()=>{
-    state.grR[id]={hg:s.hg||0,ag:s.ag||0,played:true};
-    delete state.live[id];
-    fbSave('wc2026/gr',state.grR);
-    fbSave('wc2026/live',state.live);
-    const f=GF[id];recentResults.unshift({home:f.home,away:f.away,hg:s.hg||0,ag:s.ag||0,ts:Date.now()});if(recentResults.length>8)recentResults.pop();
-    _snapRanks();checkMilestones(id,null);
-    state.tab='live';render();showToast('Full time, result saved','gold');
-  });
-}
-function cancelLive(id){
-  if(!adminSess)return;
-  delete state.live[id];
-  fbSave('wc2026/live',state.live);
-  render();showToast('Live view turned off');
-}
+// (Live match tracking has been removed — results import automatically after each game,
+//  and the "on today" strip lists the day's fixtures. See todayMatchesHTML.)
+
 
 // ── SCORE ENTRY ───────────────────────────────────────────────────────────────
 function adj(id,side,d){if(!tempS[id])tempS[id]={hg:0,ag:0};tempS[id][side]=Math.max(0,(tempS[id][side]||0)+d);const el=document.getElementById(`s${side}${id}`);if(el)el.textContent=tempS[id][side];}
@@ -2132,7 +2075,6 @@ function showImportDraw(){
 function renderMC(id){
   const fix=GF[id],r=state.grR[id];
   const played=r?.played&&!editing.has(id);
-  const live=!played&&!!state.live[id];
   if(!tempS[id])tempS[id]=r?.played?{hg:r.hg,ag:r.ag}:{hg:0,ag:0};
   const{hg,ag}=tempS[id];
   const hw=played&&r.hg>r.ag,aw=played&&r.ag>r.hg,dw=played&&r.hg===r.ag;
@@ -2149,10 +2091,10 @@ function renderMC(id){
           ?`<span class="mcr-ctrl"><button class="adj" onclick="adj('${id}','${side}',-1)">−</button><span class="sval" id="s${side}${id}">${side==='hg'?hg:ag}</span><button class="adj" onclick="adj('${id}','${side}',1)">+</button></span>`
           :''}
     </div>`;};
-  return`<div class="mc${played?' played':live?' live-now':''}" id="mc-${id}">
+  return`<div class="mc${played?' played':''}" id="mc-${id}">
   <div class="mc-meta">
     <span style="display:flex;align-items:center;gap:4px">
-      ${live?'<span class="live-dot"></span><span style="color:var(--amber);font-weight:600">LIVE NOW</span>':'<span>'+relDate(fix.dt)+' · '+fix.tm+' BST</span>'}
+      <span>${relDate(fix.dt)} · ${fix.tm} BST</span>
     </span>
     <div style="display:flex;align-items:center;gap:5px">
       ${fix.ch?`<span class="${chCls}">${fix.ch}</span>`:''}
@@ -2163,12 +2105,11 @@ function renderMC(id){
     ${teamRow(fix.home,hw,aw&&played,'hg')}
     ${teamRow(fix.away,aw,hw&&played,'ag')}
   </div>
-  ${(played||live||admin)?`<div class="mc-foot">
-    <span class="mc-lbl${hw||aw?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':live?'In progress':admin?'Enter result':''}</span>
+  ${(played||admin)?`<div class="mc-foot">
+    <span class="mc-lbl${hw||aw?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':admin?'Enter result':''}</span>
     <div style="display:flex;gap:5px">
       ${played&&admin?`<button class="btn-sm" onclick="editGr('${id}')">EDIT</button><button class="btn-sm" style="border-color:rgba(192,32,32,.3);color:var(--red)" onclick="clearGr('${id}')">✕</button>`:''}
-      ${!played&&admin&&!state.live[id]?`<button class="btn-sm" style="border-color:rgba(168,96,0,.4);color:var(--amber)" onclick="startLive('${id}')" title="Track live">🔴 LIVE</button><button class="btn btn-green" style="padding:5px 16px;font-size:.68rem" onclick="saveGr('${id}')">SAVE</button>`:''}
-      ${!played&&admin&&state.live[id]?`<button class="btn-sm" style="border-color:rgba(168,96,0,.4);color:var(--amber)" onclick="state.tab='live';render()">🔴 LIVE NOW →</button>`:''}
+      ${!played&&admin?`<button class="btn btn-green" style="padding:5px 16px;font-size:.68rem" onclick="saveGr('${id}')">SAVE</button>`:''}
     </div>
   </div>`:''}
 </div>`;
@@ -2654,78 +2595,6 @@ function rulesHTML(onWelcome){
   </div>`;
 }
 
-function renderLive(){
-  const ids=liveMatchIds();
-  if(!ids.length){
-    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6">Switch a match to live from the Fixtures tab (the 🔴 LIVE button) and it'll appear here, with the score and which players have teams playing.</p></div>`;
-  }
-  ids.sort((a,b)=>{const la=state.live[a]?1:0,lb=state.live[b]?1:0;return lb-la;});
-  const hasAnyScore=ids.some(id=>state.live[id]);
-  const prov=hasAnyScore?calcProvisional():null;
-  const myName=getMyName();
-  const liveTeams=new Set();ids.forEach(id=>{liveTeams.add(GF[id].home);liveTeams.add(GF[id].away);});
-  // who owns a given team (sweepstake players)
-  const owners=team=>!state.draw?[]:state.draw.participants.filter(p=>p.teams.some(t=>t.name===team)).map(p=>p.name);
-  return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-    <span class="live-dot" style="width:10px;height:10px"></span>
-    <h2 class="ttl" style="margin:0">On Now</h2>
-    <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length} match${ids.length>1?'es':''}</span>
-  </div>
-  <p class="sub">Matches you've switched to live. Update the score by hand if you like.</p>
-  ${ids.map(id=>{
-    const f=GF[id];const s=state.live[id];const admin=isAdmin();
-    const hasScore=!!s;const hg=s?.hg||0,ag=s?.ag||0;
-    const hw=hasScore&&hg>ag,aw=hasScore&&ag>hg;
-    const ownH=owners(f.home),ownA=owners(f.away);
-    const myH=myName&&ownH.includes(myName),myA=myName&&ownA.includes(myName);
-    const ownerLine=(names,mine)=>names.length?`<div style="font-size:.62rem;color:${mine?'var(--gr)':'var(--txm)'};margin-top:3px;font-weight:${mine?'700':'400'}">${mine?'⭐ ':''}${names.slice(0,3).join(', ')}${names.length>3?` +${names.length-3}`:''}</div>`:'<div style="font-size:.62rem;color:var(--txm);margin-top:3px;opacity:.5">no owner</div>';
-    return`<div class="card live-card" style="padding:14px;margin-bottom:12px;border-left:3px solid var(--amber)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="display:flex;align-items:center;gap:5px;font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:var(--amber);font-weight:700"><span class="live-dot"></span>${hasScore?'LIVE':'KICKS OFF '+f.tm}${f.ch?` · ${f.ch}`:''}</span>
-        <span style="font-size:.64rem;color:var(--txm);font-family:'Oswald',sans-serif">Grp ${f.group} · MD${f.matchday}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.2rem;line-height:1">${f.flagH||FLAGS[f.home]||'⚽'}</div><div style="font-size:.82rem;font-weight:${hw?'700':'500'};color:${hw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.home}</div>${ownerLine(ownH,myH)}</div>
-        <div style="text-align:center;flex-shrink:0">
-          ${hasScore?`<div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:2.6rem;color:var(--tx);line-height:1">${hg}<span style="color:var(--txm)">:</span>${ag}</div>`:`<div style="font-family:'Oswald',sans-serif;font-size:1.1rem;color:var(--txm);letter-spacing:.1em">v</div>`}
-        </div>
-        <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.2rem;line-height:1">${f.flagA||FLAGS[f.away]||'⚽'}</div><div style="font-size:.82rem;font-weight:${aw?'700':'500'};color:${aw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.away}</div>${ownerLine(ownA,myA)}</div>
-      </div>
-      ${admin?`<div style="display:flex;gap:8px;margin-top:11px">
-        <button class="btn btn-ghost" style="flex:1;font-size:.72rem;border-color:rgba(192,32,32,.35);color:var(--red)" onclick="cancelLive('${id}')">■ STOP LIVE</button>
-        <button class="btn btn-green" style="flex:1;font-size:.72rem" onclick="endLive('${id}')">SAVE AS RESULT</button>
-      </div>
-      <details style="margin-top:9px"><summary style="font-size:.64rem;color:var(--txm);cursor:pointer;list-style:none">⚙ Update score manually (optional)</summary>
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:9px">
-          <div style="display:flex;flex-direction:column;gap:3px"><button class="adj" onclick="adjLive('${id}','hg',1)" style="width:28px;height:22px">+</button><button class="adj" onclick="adjLive('${id}','hg',-1)" style="width:28px;height:22px">−</button></div>
-          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.4rem;min-width:48px">${hg}:${ag}</span>
-          <div style="display:flex;flex-direction:column;gap:3px"><button class="adj" onclick="adjLive('${id}','ag',1)" style="width:28px;height:22px">+</button><button class="adj" onclick="adjLive('${id}','ag',-1)" style="width:28px;height:22px">−</button></div>
-        </div>
-      </details>`:''}
-    </div>`;
-  }).join('')}
-  ${prov?(()=>{
-    const baseRank={};prov.base.forEach((p,i)=>baseRank[p.name]=i+1);
-    const affected=prov.prov.filter(p=>p.breakdown.some(b=>liveTeams.has(b.name)));
-    return`<div class="card" style="padding:14px;margin-top:4px">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><span class="live-dot"></span><div style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;color:var(--tx);letter-spacing:.03em">LIVE TABLE</div></div>
-      <p style="font-size:.7rem;color:var(--txm);margin-bottom:12px">Provisional standings if the live scores held right now. ${affected.length?`<b style="color:var(--amber)">${affected.length} player${affected.length>1?'s':''}</b> affected.`:''}</p>
-      ${prov.prov.slice(0,10).map((p,i)=>{
-        const provR=i+1,wasR=baseRank[p.name]||provR;const mv=wasR-provR;
-        const hasLiveTeam=p.breakdown.some(b=>liveTeams.has(b.name));
-        const isMe=myName&&p.name===myName;
-        return`<div style="display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid var(--b);border-bottom-width:.5px;${hasLiveTeam?'background:rgba(168,96,0,.05);border-radius:6px':''}">
-          <span style="font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:700;color:var(--txm);width:18px;text-align:center">${provR}</span>
-          ${mv!==0?`<span class="rank-chg ${mv>0?'rank-up':'rank-dn'}" style="width:26px">${mv>0?'▲'+mv:'▼'+Math.abs(mv)}</span>`:'<span style="width:26px;text-align:center;color:var(--txm);font-size:.6rem">–</span>'}
-          <span style="flex:1;font-size:.85rem;color:var(--tx);font-weight:${isMe?'700':'500'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}${isMe?' <span style="font-size:.5rem;background:var(--gr);color:var(--btn-tx);padding:1px 5px;border-radius:8px;font-weight:700">YOU</span>':''}${hasLiveTeam?' <span class="live-dot" style="margin-left:2px"></span>':''}</span>
-          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;color:var(--gr)">${p.total}</span>
-        </div>`;
-      }).join('')}
-      ${prov.prov.length>10?`<div style="text-align:center;font-size:.68rem;color:var(--txm);padding-top:8px">+ ${prov.prov.length-10} more</div>`:''}
-    </div>`;
-  })():`<div class="card" style="padding:13px 14px;font-size:.74rem;color:var(--txm);line-height:1.6">Live scores appear here automatically if available from the results feed. Final results always import on their own once each match finishes, and the standings and bracket then update for everyone.</div>`}`;
-}
-
 function renderDraw(){
   if(!state.draw){
     // No draw yet — public welcome / join screen
@@ -3131,8 +3000,7 @@ function render(){
   // Setup tab ONLY appears for signed-in admins — completely hidden otherwise
   const tabs=[];
   if(adminSess)tabs.push({id:'setup',l:'ADMIN'});
-  const liveCount=state.draw?liveMatchIds().length:0;
-  if(liveCount>0)tabs.push({id:'live',l:`LIVE (${liveCount})`});
+  const liveCount=0;
   tabs.push(
     {id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')},
     {id:'fixtures',l:'FIXTURES'},
@@ -3154,7 +3022,6 @@ function render(){
   const c=document.getElementById('content');
   if(state.tab==='setup'&&adminSess){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
   else if(state.tab==='setup'){c.innerHTML=renderDraw();}
-  else if(state.tab==='live'){c.innerHTML=renderLive();}
   else if(state.tab==='draw')c.innerHTML=renderDraw();
   else if(state.tab==='fixtures')c.innerHTML=renderFixtures();
   else if(state.tab==='tables')c.innerHTML=renderTables();
