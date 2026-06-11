@@ -1811,6 +1811,7 @@ function calcLeaderboard(){
   if(!state.draw)return[];
   const{qual}=computeQual();const koArr=Object.values(state.koR).filter(m=>m.played);
   const champ=state.koR['m104']&&state.koR['m104'].played?state.koR['m104'].winner:null;
+  const bonusFinal=!!(state.koR['m104']&&state.koR['m104'].played); // bonus awards are whole-tournament superlatives — only count them once the final is played (as the app says), so one early game can't let a heavy defeat outscore a win
   const predMap={};if(state.predict.on)Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.prediction)predMap[s.name.toLowerCase()]=s.prediction;});
   const _bonus=calcBonusAwards();const awardByTeam={};
   if(_bonus){['most_goals','fewest_goals','best_def','worst_def'].forEach(k=>{const pp=(state.bonus&&state.bonus[k])||0;if(pp<=0||!_bonus[k])return;_bonus[k].teams.forEach(t=>{(awardByTeam[t]=awardByTeam[t]||[]).push({key:k,pts:pp});});});}
@@ -1828,7 +1829,7 @@ function calcLeaderboard(){
       if(qv==='top2'){pts+=state.scoring.qualify_top2;items.push(`Qual +${state.scoring.qualify_top2}`);}
       else if(qv==='best3rd'){pts+=state.scoring.qualify_3rd;items.push(`Best 3rd +${state.scoring.qualify_3rd}`);}
       const wins=koArr.filter(m=>m.winner===team.name);wins.forEach(m=>{const p2=state.scoring[`win_${m.round}`]||0;pts+=p2;items.push(`${KO_LABEL[m.round]} win +${p2}`);});
-      if(awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push(`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]} +${a.pts}`);});}
+      if(bonusFinal&&awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push(`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]} +${a.pts}`);});}
       pKoWins+=wins.length;pGoals+=goals;
       total+=pts;
       return{name:team.name,flag:team.flag,group:team.group,pts:Math.round(pts*10)/10,items,qual:qv};
@@ -1850,8 +1851,9 @@ function deptStandings(){
   if(!state.depts||!state.depts.on)return[];
   const lb=calcLeaderboard();if(!lb.length)return[];
   const dm=deptMap();const agg={};
-  lb.forEach(p=>{const d=dm[p.name.toLowerCase()];if(!d)return;if(!agg[d])agg[d]={name:d,total:0,count:0};agg[d].total+=p.total;agg[d].count++;});
-  return Object.values(agg).map(x=>({name:x.name,count:x.count,total:Math.round(x.total*10)/10,avg:x.count?Math.round(x.total/x.count*10)/10:0}))
+  const hasPlayed=name=>{for(const id in GF){if((GF[id].home===name||GF[id].away===name)&&state.grR[id]&&state.grR[id].played)return true;}for(const k in (state.koR||{})){const m=state.koR[k];if(m&&m.played&&(m.home===name||m.away===name))return true;}return false;};
+  lb.forEach(p=>{const d=dm[p.name.toLowerCase()];if(!d)return;if(!agg[d])agg[d]={name:d,total:0,count:0,tN:0,tP:0};agg[d].total+=p.total;agg[d].count++;(p.teams||[]).forEach(t=>{agg[d].tN++;if(hasPlayed(t.name))agg[d].tP++;});});
+  return Object.values(agg).map(x=>({name:x.name,count:x.count,total:Math.round(x.total*10)/10,avg:x.count?Math.round(x.total/x.count*10)/10:0,teamsPlayed:x.tP,teamsN:x.tN}))
     .sort((a,b)=>b.avg-a.avg||b.total-a.total||a.name.localeCompare(b.name));
 }
 function deptTableHTML(){
@@ -1860,7 +1862,7 @@ function deptTableHTML(){
   if(!ds.length)return`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} have players yet.</div>`;
   const maxAvg=Math.max(1,...ds.map(d=>d.avg));
   const dm=deptMap();const lb=calcLeaderboard();const noDept=lb.filter(p=>!dm[p.name.toLowerCase()]).length;
-  return`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px">Ranked by average points per person, so team size doesn't matter.</div>${ds.map((d,rank)=>{
+  return`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px">Ranked by average points per person, so team size doesn't matter. Early on it's only a few games in, so it'll settle as more are played.</div>${ds.map((d,rank)=>{
     const lead=rank===0&&d.avg>0;
     const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
     const pctW=Math.round((d.avg/maxAvg)*100);
@@ -1868,7 +1870,7 @@ function deptTableHTML(){
       <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&d.avg>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:${rank<3&&d.avg>0?'#3a2a00':'var(--txm)'};border:1px solid ${rank<3&&d.avg>0?'transparent':'var(--b)'}">${rank+1}</div>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx)">${esc(d.name)}</div>
-        <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${d.count} player${d.count>1?'s':''} · ${d.total} pts total</div>
+        <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${d.count} player${d.count>1?'s':''} · ${d.total} pts${d.teamsN?` · ${d.teamsPlayed}/${d.teamsN} teams played`:''}</div>
         <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${lead?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
       </div>
       <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${lead?'var(--gold)':d.avg>0?'var(--gr)':'var(--txm)'}">${d.avg}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">AVG / PERSON</div></div>
@@ -2892,7 +2894,8 @@ function bonusAwardsHTML(){
     else{detail=aw[k].teams.map(t=>{const tt=ALL_TEAMS.find(x=>x.name===t);const fl=tt?tt.flag:'';const ow=teamOwner(t);return `${fl} <b style="color:var(--tx)">${esc(t)}</b>${ow?` <span style="color:var(--txm)">· ${esc(ow)}</span>`:''}`;}).join('&nbsp;&nbsp;');}
     return`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:var(--cardh);border-radius:7px"><span style="flex-shrink:0;font-size:.95rem">${BONUS_ICON[k]}</span><span style="flex:1;font-size:.78rem;line-height:1.5"><span style="color:var(--txd)">${BONUS_LBL[k].split(' (')[0]}</span><br>${detail}</span><span style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;color:var(--gr);font-size:.82rem">+${pts}</span></div>`;
   }).join('');
-  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${live?'Provisional, settled when the tournament ends.':'Up for grabs · awarded automatically from results.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
+  const done=!!(state.koR['m104']&&state.koR['m104'].played);
+  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${done?'✓ Now added to everyone\'s totals.':live?'Provisional — these don\'t change the table yet. They\'re added to totals when the tournament ends, so a single early game can\'t outweigh a win.':'Up for grabs · worked out automatically from results, and added at the very end.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
 }
 function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
