@@ -648,7 +648,7 @@ const FB_OK = CONFIG.firebase.apiKey !== 'PASTE_FIREBASE_API_KEY';
 let DB = null;
 if (FB_OK) { try { firebase.initializeApp(CONFIG.firebase); DB = firebase.database(); } catch(e) { console.warn('Firebase init error:', e); } }
 
-// football-data.org team name normalisation (their names → ours)
+// team name normalisation (provider names → ours)
 const NMAP={'Czech Republic':'Czechia','Ivory Coast':"Côte d'Ivoire","Cote d'Ivoire":"Côte d'Ivoire",'Bosnia and Herzegovina':'Bosnia & Herz.','Bosnia & Herzegovina':'Bosnia & Herz.','Korea Republic':'South Korea','Republic of Korea':'South Korea','Cape Verde':'Cabo Verde','Congo DR':'DR Congo','Congo, DR':'DR Congo','Democratic Republic of Congo':'DR Congo','United States':'USA','Curacao':'Curaçao','United States of America':'USA','Türkiye':'Turkey','Turkiye':'Turkey','IR Iran':'Iran','Korea DPR':'North Korea'};
 function normTeam(n){return NMAP[n]||n;}
 function findGFId(h,a){const hn=normTeam(h),an=normTeam(a);return Object.keys(GF).find(id=>(GF[id].home===hn&&GF[id].away===an)||(GF[id].home===an&&GF[id].away===hn));}
@@ -727,32 +727,10 @@ async function fbDel(path){
 let pollTimer=null;
 function apiKey(){const k=(state.footballApiKey||'').trim();return k||CONFIG.footballApiKey;}
 async function pollResults(){
-  if(!adminSess)return; // ONLY the organiser's signed-in browser polls the API. football-data's free limit is 10 calls/min PER KEY (shared by everyone), so we never let every viewer call it — viewers get results via Firebase sync instead.
-  if(!apiKey()||apiKey()==='PASTE_FOOTBALL_API_KEY')return;
-  if(!state.draw)return; // no draw yet, nothing to update
-  try{
-    const res=await fetch('https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED',{headers:{'X-Auth-Token':apiKey()}});
-    if(!res.ok)return;const data=await res.json();
-    const bkRes=resolveBracket();const found=[];
-    (data.matches||[]).forEach(m=>{
-      try{
-        const hg=m.score?.fullTime?.home,ag=m.score?.fullTime?.away;if(hg==null||ag==null)return;
-        const hn=normTeam(m.homeTeam?.name||''),an=normTeam(m.awayTeam?.name||'');if(!hn||!an)return;
-        const gid=findGFId(hn,an);
-        if(gid&&!state.grR[gid]?.played){found.push({type:'group',id:gid,hg,ag});return;}
-        const kid=findKOId(hn,an,bkRes);
-        if(kid&&!state.koR[kid]?.played){const w=m.score?.winner==='HOME_TEAM'?hn:m.score?.winner==='AWAY_TEAM'?an:null;if(w)found.push({type:'ko',id:kid,hg,ag,winner:w,home:hn,away:an});}
-      }catch(e){/* skip a single malformed match, keep importing the rest */}
-    });
-    if(!found.length)return;
-    if(adminSess){
-      // Admin is signed in — auto-import silently and notify
-      await _autoImport(found);
-    } else {
-      // Queue for when admin next signs in
-      pendingImports=found;
-    }
-  }catch(e){console.warn('Auto-results poll failed:',e);}
+  // Disabled on purpose: results + live scores now come from the Google Apps Script
+  // (server-side, around game times) writing into Firebase, which syncs to every device.
+  // Kept as a no-op so nothing else needs changing and the API key never sits in the page.
+  return;
 }
 async function _autoImport(results){
   let count=0;
@@ -777,7 +755,7 @@ async function importAll(){
   await _autoImport(pendingImports);
   pendingImports=[];updateResultsBanner();
 }
-function startPolling(){clearInterval(pollTimer);pollTimer=setInterval(pollResults,3*60*1000);setTimeout(pollResults,2000);}
+function startPolling(){clearInterval(pollTimer);/* Results + live scores now come from the Google Apps Script (server-side, ~every 10 min around game times) writing into Firebase, which syncs to every device. The in-app poll is left off so the API key never has to sit in the public page. */}
 
 // ── TEAMS WEBHOOK ─────────────────────────────────────────────────────────────
 async function notifyTeams(matchId,hg,ag){
@@ -1027,6 +1005,7 @@ function tickerItems(){
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
     const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners happy"],3):"good for "+o.join(" & ");
+    liveMatchIds().forEach(id=>{const f=GF[id],s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
     const _today=gamesToday().filter(id=>!state.grR[id]?.played);
     if(_today.length){const _l=_today.slice(0,4).map(id=>`${GF[id].home} v ${GF[id].away}`).join(", ");a.push((`⚽ ON TODAY: ${_l}${_today.length>4?` +${_today.length-4} more`:""}`).replace(/ +/g," ").trim());}
     if(champ){
@@ -1264,10 +1243,10 @@ async function copyInvite(){
 }
 function setApiKey(){
   if(!adminSess)return;
-  _modInput('football-data.org API key','SAVE',state.footballApiKey||'','Paste key, or leave blank for built-in',v=>{
+  _modInput('Results API key (optional)','SAVE',state.footballApiKey||'','Leave blank — the Apps Script holds the live key',v=>{
     state.footballApiKey=(v||'').trim();
     saveSetup();render();
-    showToast(state.footballApiKey?'Custom API key saved 🔑':'Reverted to built-in key','gold');
+    showToast(state.footballApiKey?'API key saved 🔑':'Cleared — using the Apps Script feed','gold');
   });
 }
 function removeAccessCode(){
@@ -1896,8 +1875,82 @@ function deptTableHTML(){
     </div></div>`;}).join('')}${noDept?`<div style="font-size:.68rem;color:var(--txm);text-align:center;margin-top:8px">${noDept} player${noDept>1?'s':''} not in a ${esc(label.toLowerCase().replace(/s$/,''))}</div>`:''}`;
 }
 
-// (Live match tracking has been removed — results import automatically after each game,
-//  and the "on today" strip lists the day's fixtures. See todayMatchesHTML.)
+// ── LIVE (read-only) ───────────────────────────────────────────────────────────
+// The Google Apps Script writes in-play scores to wc2026/live (→ state.live) whenever
+// the API reports a WC game live, and clears them when it finishes. The app just shows
+// them — no manual controls. Final results land in state.grR automatically.
+function liveMatchIds(){
+  const ids=[];
+  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.push(id);});
+  return ids.sort((a,b)=>(GF[a].tm||'').localeCompare(GF[b].tm||''));
+}
+function calcProvisional(){
+  const live=state.live||{};
+  const ids=liveMatchIds();
+  if(!ids.length)return null;
+  const real=state.grR;
+  const base=calcLeaderboard();
+  const merged={...real};
+  ids.forEach(id=>{const s=live[id]||{};merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
+  state.grR=merged;
+  const prov=calcLeaderboard();
+  state.grR=real;
+  return{prov,base};
+}
+function renderLive(){
+  const ids=liveMatchIds();
+  if(!ids.length){
+    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📺</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NOTHING ON RIGHT NOW</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6;max-width:340px;margin:0 auto">When a World Cup game kicks off it shows up here on its own, with the score and which players have a team playing.</p></div>`;
+  }
+  const myName=getMyName();
+  const lb=calcLeaderboard();
+  const ownersOf=team=>lb.filter(p=>p.breakdown.some(b=>b.name===team)).map(p=>p.name);
+  const liveTeams=new Set();ids.forEach(id=>{liveTeams.add(GF[id].home);liveTeams.add(GF[id].away);});
+  const prov=calcProvisional();
+  const ownerLine=(names,mine)=>names.length?`<div style="font-size:.62rem;color:${mine?'var(--gr)':'var(--txm)'};margin-top:3px;font-weight:${mine?'700':'400'}">${mine?'⭐ ':''}${names.slice(0,3).join(', ')}${names.length>3?` +${names.length-3}`:''}</div>`:'<div style="font-size:.62rem;color:var(--txm);margin-top:3px;opacity:.5">no owner</div>';
+  return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+    <span class="live-dot" style="width:10px;height:10px;margin:0"></span>
+    <h2 class="ttl" style="margin:0">On Now</h2>
+    <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length} match${ids.length>1?'es':''}</span>
+  </div>
+  <p class="sub">Straight from the live feed — scores refresh about every 10 minutes, so they can lag the telly slightly.</p>
+  ${ids.map(id=>{
+    const f=GF[id];const s=state.live[id]||{};const hg=s.hg||0,ag=s.ag||0;
+    const hw=hg>ag,aw=ag>hg;
+    const ownH=ownersOf(f.home),ownA=ownersOf(f.away);
+    const myH=myName&&ownH.some(n=>n.toLowerCase()===myName.toLowerCase()),myA=myName&&ownA.some(n=>n.toLowerCase()===myName.toLowerCase());
+    return`<div class="card live-card" style="padding:14px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="display:flex;align-items:center;gap:5px;font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:var(--amber);font-weight:700"><span class="live-dot" style="margin:0"></span>LIVE${s.st==='HT'?' · HT':s.st==='BT'?' · ET':(s.min?` · ${s.min}'`:'')}${f.ch?` · ${f.ch}`:''}</span>
+        <span style="font-size:.64rem;color:var(--txm);font-family:'Oswald',sans-serif">Grp ${f.group} · MD${f.matchday}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.1rem;line-height:1">${FLAGS[f.home]||'⚽'}</div><div style="font-size:.82rem;font-weight:${hw?'700':'500'};color:${hw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.home}</div>${ownerLine(ownH,myH)}</div>
+        <div style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:2.5rem;color:var(--tx);line-height:1">${hg}<span style="color:var(--txm)">:</span>${ag}</div>
+        <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.1rem;line-height:1">${FLAGS[f.away]||'⚽'}</div><div style="font-size:.82rem;font-weight:${aw?'700':'500'};color:${aw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.away}</div>${ownerLine(ownA,myA)}</div>
+      </div>
+    </div>`;
+  }).join('')}
+  ${prov?(()=>{
+    const baseRank={};prov.base.forEach((p,i)=>baseRank[p.name]=i+1);
+    return`<div class="card" style="padding:14px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span class="live-dot" style="margin:0"></span><div style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;color:var(--tx);letter-spacing:.03em">LIVE TABLE</div></div>
+      <p style="font-size:.7rem;color:var(--txm);margin-bottom:12px">Provisional standings if the live scores held as they are now.</p>
+      ${prov.prov.slice(0,10).map((p,i)=>{
+        const provR=i+1,wasR=baseRank[p.name]||provR,mv=wasR-provR;
+        const hasLiveTeam=p.breakdown.some(b=>liveTeams.has(b.name));
+        const isMe=myName&&p.name.toLowerCase()===myName.toLowerCase();
+        return`<div style="display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:.5px solid var(--b);${hasLiveTeam?'background:rgba(168,96,0,.05);border-radius:6px':''}">
+          <span style="font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:700;color:var(--txm);width:18px;text-align:center">${provR}</span>
+          ${mv!==0?`<span class="rank-chg ${mv>0?'rank-up':'rank-dn'}" style="width:26px">${mv>0?'▲'+mv:'▼'+Math.abs(mv)}</span>`:'<span style="width:26px;text-align:center;color:var(--txm);font-size:.6rem">–</span>'}
+          <span style="flex:1;font-size:.85rem;color:var(--tx);font-weight:${isMe?'700':'500'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}${isMe?' <span style="font-size:.5rem;background:var(--gr);color:var(--btn-tx);padding:1px 5px;border-radius:8px;font-weight:700;vertical-align:middle">YOU</span>':''}${hasLiveTeam?' <span class="live-dot" style="margin:0 0 0 2px"></span>':''}</span>
+          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;color:var(--gr)">${p.total}</span>
+        </div>`;
+      }).join('')}
+      ${prov.prov.length>10?`<div style="text-align:center;font-size:.68rem;color:var(--txm);padding-top:8px">+ ${prov.prov.length-10} more</div>`:''}
+    </div>`;
+  })():''}`;
+}
 
 
 // ── SCORE ENTRY ───────────────────────────────────────────────────────────────
@@ -2080,21 +2133,26 @@ function renderMC(id){
   const hw=played&&r.hg>r.ag,aw=played&&r.ag>r.hg,dw=played&&r.hg===r.ag;
   const chCls=fix.ch?.startsWith('BBC')?'ch-bbc':'ch-itv';
   const admin=isAdmin();
-  // Vertical row per team — full-width names, score control on the right
+  const ls=(!played&&state.live[id])?state.live[id]:null;
+  const live=!!ls;
+  const lhw=live&&(ls.hg||0)>(ls.ag||0), law=live&&(ls.ag||0)>(ls.hg||0);
+  // Vertical row per team — full-width names; final score, or live score, or admin control on the right
   const teamRow=(name,isWin,isLose,side)=>{const mine=_myTeams.has(name);return`
     <div class="mcr${isWin?' win':isLose?' lose':''}"${mine?' style="background:var(--pill-gr);border-radius:7px"':''}>
       <span class="mcr-flag">${FLAGS[name]||'⚽'}</span>
       <span class="mcr-name">${mine?'⭐ ':''}${name}</span>
       ${played
         ?`<span class="mcr-score${isWin?' win':''}">${side==='hg'?r.hg:r.ag}</span>`
-        :admin
-          ?`<span class="mcr-ctrl"><button class="adj" onclick="adj('${id}','${side}',-1)">−</button><span class="sval" id="s${side}${id}">${side==='hg'?hg:ag}</span><button class="adj" onclick="adj('${id}','${side}',1)">+</button></span>`
-          :''}
+        :live
+          ?`<span class="mcr-score${isWin?' win':''}">${side==='hg'?(ls.hg||0):(ls.ag||0)}</span>`
+          :admin
+            ?`<span class="mcr-ctrl"><button class="adj" onclick="adj('${id}','${side}',-1)">−</button><span class="sval" id="s${side}${id}">${side==='hg'?hg:ag}</span><button class="adj" onclick="adj('${id}','${side}',1)">+</button></span>`
+            :''}
     </div>`;};
-  return`<div class="mc${played?' played':''}" id="mc-${id}">
+  return`<div class="mc${played?' played':live?' live-now':''}" id="mc-${id}">
   <div class="mc-meta">
     <span style="display:flex;align-items:center;gap:4px">
-      <span>${relDate(fix.dt)} · ${fix.tm} BST</span>
+      ${live?`<span class="live-dot" style="margin:0 2px 0 0"></span><span style="color:var(--amber);font-weight:700;font-family:'Oswald',sans-serif;font-size:.64rem;letter-spacing:.06em">${ls.st==='HT'?'HT':ls.st==='BT'?'ET':(ls.min?ls.min+"'":'LIVE')}</span>`:`<span>${relDate(fix.dt)} · ${fix.tm} BST</span>`}
     </span>
     <div style="display:flex;align-items:center;gap:5px">
       ${fix.ch?`<span class="${chCls}">${fix.ch}</span>`:''}
@@ -2102,14 +2160,15 @@ function renderMC(id){
     </div>
   </div>
   <div class="mc-rows">
-    ${teamRow(fix.home,hw,aw&&played,'hg')}
-    ${teamRow(fix.away,aw,hw&&played,'ag')}
+    ${teamRow(fix.home,hw||lhw,(aw||law),'hg')}
+    ${teamRow(fix.away,aw||law,(hw||lhw),'ag')}
   </div>
-  ${(played||admin)?`<div class="mc-foot">
-    <span class="mc-lbl${hw||aw?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':admin?'Enter result':''}</span>
+  ${(played||live||admin)?`<div class="mc-foot">
+    <span class="mc-lbl${hw||aw||lhw||law?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':live?'In progress':admin?'Enter result':''}</span>
     <div style="display:flex;gap:5px">
+      ${live?`<button class="btn-sm" style="border-color:rgba(168,96,0,.4);color:var(--amber)" onclick="setTab('live')">🔴 LIVE →</button>`:''}
       ${played&&admin?`<button class="btn-sm" onclick="editGr('${id}')">EDIT</button><button class="btn-sm" style="border-color:rgba(192,32,32,.3);color:var(--red)" onclick="clearGr('${id}')">✕</button>`:''}
-      ${!played&&admin?`<button class="btn btn-green" style="padding:5px 16px;font-size:.68rem" onclick="saveGr('${id}')">SAVE</button>`:''}
+      ${!played&&admin&&!live?`<button class="btn btn-green" style="padding:5px 16px;font-size:.68rem" onclick="saveGr('${id}')">SAVE</button>`:''}
     </div>
   </div>`:''}
 </div>`;
@@ -2312,12 +2371,22 @@ async function runDiagnostics(){
     const snap=await DB.ref('_worker').once('value');const hb=snap.val();
     if(!hb||!hb.lastRun){set(i,'fail','Not running. The background poller (Google Apps Script) hasn\'t checked in. Just set it up? Give it ~5 minutes, then re-check. Otherwise open the Apps Script editor and run the "install" function once.');}
     else{const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
-      if(hb.ok===false)set(i,'fail','The poller ran '+ageTxt+' but hit an error: '+(hb.error||'unknown')+'. Fix it in the Apps Script editor \u2014 usually the football-data key or the Firebase login.');
+      if(hb.ok===false)set(i,'fail','The poller ran '+ageTxt+' but hit an error: '+(hb.error||'unknown')+'. Fix it in the Apps Script editor \u2014 usually the API-Football key or the Firebase login.');
       else if(ageMin>13)set(i,'warn','Last successful check was '+ageTxt+', but it runs every 5 minutes. The timer may have stopped \u2014 open the Apps Script Triggers page and confirm the "poll" trigger is still listed.');
-      else if(hb.totalMatches===0)set(i,'warn','Working \u2014 last checked '+ageTxt+', but football-data has no World Cup fixtures loaded yet. Normal before kick-off; they appear closer to the first game.');
+      else if(hb.totalMatches===0)set(i,'ok','Working \u2014 last checked '+ageTxt+', and there are no World Cup games on today (normal between match days). It steps up automatically when a game is on.');
       else if(hb.unmatchedCount>0)set(i,'warn','Working (last checked '+ageTxt+'), but '+hb.unmatchedCount+' finished fixture'+(hb.unmatchedCount>1?'s':'')+" couldn't be matched to your teams, so "+(hb.unmatchedCount>1?'they won':'it won')+"'t auto-score: "+(hb.unmatched||[]).join(', ')+'. Enter '+(hb.unmatchedCount>1?'those':'that')+' result'+(hb.unmatchedCount>1?'s':'')+' by hand in Fixtures.');
-      else set(i,'ok','Working \u2014 last checked '+ageTxt+(hb.totalMatches!=null?', reaching football-data and seeing '+hb.totalMatches+' fixtures':'')+'. Results update automatically, even with nobody online.');}
+      else set(i,'ok','Working \u2014 last checked '+ageTxt+(hb.totalMatches!=null?', reaching API-Football and seeing '+hb.totalMatches+' World Cup game'+(hb.totalMatches>1?'s':'')+' today'+(hb.callsToday!=null?' ('+hb.callsToday+'/95 daily calls used)':''):'')+'. Results + live scores update automatically, even with nobody online.');}
   }catch(e){set(i,'warn','Couldn\'t read the feed status: '+((e&&e.message)||e)+'.');}}
+
+  i=add('Country names (feed \u2192 your teams)');
+  if(!DB){set(i,'warn','No database connection.');}
+  else{try{
+    const snap=await DB.ref('_worker').once('value');const hb=snap.val();
+    if(!hb||!hb.lastRun)set(i,'run','Waiting for the first feed run.');
+    else if(!hb.teamsSeen)set(i,'ok','Nothing to check yet \u2014 no World Cup teams have appeared in the feed (normal before kick-off).');
+    else if((hb.teamsUnmatched||[]).length)set(i,'warn',hb.teamsUnmatched.length+' name'+(hb.teamsUnmatched.length>1?'s':'')+' the feed uses '+(hb.teamsUnmatched.length>1?"don't":"doesn't")+' match your teams: '+hb.teamsUnmatched.join(', ')+". Those games won't auto-score until mapped \u2014 send me the list and I'll add "+(hb.teamsUnmatched.length>1?'them':'it')+'.');
+    else set(i,'ok','All '+hb.teamsSeen+' team name'+(hb.teamsSeen>1?'s':'')+' the feed has used match your teams \u2014 results will auto-score.');
+  }catch(e){set(i,'warn','Could not read the team-name status.');}}
 
   i=add('Donation link');
   if(!state.charity||!state.charity.on)set(i,'ok','Charity is off \u2014 no link needed.');
@@ -2352,7 +2421,7 @@ async function testFeed(){
     }
     const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
     if(hb.ok===false){
-      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor, usually the football-data key or Firebase login.</span></div>';
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor, usually the API-Football key or Firebase login.</span></div>';
       if(sEl)sEl.innerHTML='Last check: error';return;
     }
     if(ageMin>13){
@@ -2361,9 +2430,15 @@ async function testFeed(){
     }
     rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(0,128,42,.07);border:1px solid rgba(0,128,42,.3);border-radius:7px;font-size:.76rem;color:var(--gr);line-height:1.7">'+
       '✓ <b>Auto-feed working</b><br>'+
-      '<span style="color:var(--txd)">Last checked: '+ageTxt+(hb.totalMatches!=null?'<br>Fixtures seen: '+hb.totalMatches:'')+(hb.wrote!=null?'<br>Results written this run: '+hb.wrote:'')+'</span>'+
-      (hb.unmatchedCount>0?'<br><span style="color:var(--amber)">⚠ '+hb.unmatchedCount+" fixture(s) couldn't be matched and won't auto-score: "+esc((hb.unmatched||[]).join(', '))+'. Enter by hand in Fixtures.</span>':'')+
-      (hb.totalMatches===0?'<br><span style="color:var(--amber)">No WC fixtures loaded by the provider yet, normal before kick-off.</span>':'')+
+      '<span style="color:var(--txd)">Last checked: '+ageTxt+
+        '<br>World Cup games today: '+(hb.totalMatches!=null?hb.totalMatches:'\u2014')+
+        (hb.callsToday!=null?'<br>API calls used today: '+hb.callsToday+' / 95':'')+
+        (hb.wrote!=null?'<br>Results written last run: '+hb.wrote:'')+
+        (hb.teamsSeen?'<br>Country names checked: '+hb.teamsSeen+((hb.teamsUnmatched||[]).length?' \u2014 '+hb.teamsUnmatched.length+' need attention':' \u2014 all recognised \u2713'):'')+
+      '</span>'+
+      ((hb.teamsUnmatched||[]).length?'<br><span style="color:var(--amber)">\u26a0 Not recognised: '+esc(hb.teamsUnmatched.join(', '))+". Send me "+(hb.teamsUnmatched.length>1?'these':'this')+" and I'll map "+(hb.teamsUnmatched.length>1?'them':'it')+'.</span>':'')+
+      (hb.unmatchedCount>0?'<br><span style="color:var(--amber)">⚠ '+hb.unmatchedCount+" finished fixture(s) couldn't be matched and won't auto-score: "+esc((hb.unmatched||[]).join(', '))+'. Enter by hand in Fixtures.</span>':'')+
+      (hb.totalMatches===0?'<br><span style="color:var(--txm)">No World Cup games on today (normal between match days).</span>':'')+
       '</div>';
     if(sEl)sEl.innerHTML='Last tested: '+new Date().toLocaleTimeString('en-GB')+' · working ✓';
   }catch(e){
@@ -2713,10 +2788,17 @@ function renderTablesContent(qual){
 }
 
 function renderTables(){
+  const liveIds=state.draw?liveMatchIds():[];
+  const liveOn=liveIds.length>0;
+  const _realGr=state.grR;
+  if(liveOn){const _m={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};_m[id]={hg:s.hg||0,ag:s.ag||0,played:true};});state.grR=_m;}
+  try{
   const{qual}=computeQual();
-  return`<h2 class="ttl">Group Tables</h2>
+  return`<h2 class="ttl">Group Tables${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2>
+  ${liveOn?`<div style="font-size:.72rem;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:5px"><span class="live-dot"></span>Provisional — includes the live game${liveIds.length>1?'s':''} as ${liveIds.length>1?'they stand':'it stands'}.</div>`:''}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:.7rem">${[['#007a3d','Qualified top 2'],['var(--amber)','Possible best 3rd'],['#607080','Eliminated']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span><span style="color:var(--txd)">${l}</span></span>`).join('')}</div>
   ${renderTablesContent(qual)}`;
+  }finally{ if(liveOn) state.grR=_realGr; }
 }
 
 function renderKO(){
@@ -2813,6 +2895,18 @@ function bonusAwardsHTML(){
   return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${live?'Provisional, settled when the tournament ends.':'Up for grabs · awarded automatically from results.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
 }
 function renderStandings(){
+  const liveIds=state.draw?liveMatchIds():[];
+  const liveOn=liveIds.length>0;
+  const _realGr=state.grR;
+  let _confRank=null;const _liveTeams=new Set();
+  if(liveOn){
+    _confRank={};calcLeaderboard().forEach((p,i)=>{_confRank[p.name]=i+1;});           // ranks on confirmed results, before merging live
+    const _merged={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};_merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
+    state.grR=_merged;                                                                  // provisional state for the whole render
+    liveIds.forEach(id=>{if(GF[id]){_liveTeams.add(GF[id].home);_liveTeams.add(GF[id].away);}});
+  }
+  const ownsLive=p=>liveOn&&p.breakdown.some(b=>_liveTeams.has(b.name));
+  try{
   const lb=calcLeaderboard();const{qual}=computeQual();
   const np=state.draw?state.draw.participantCount:state.pc;
   const pot=state.prize.on?np*state.prize.buyin:0;
@@ -2826,7 +2920,7 @@ function renderStandings(){
   const showDeptView=deptsActive&&state.standView==='depts';
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
   return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div><h2 class="ttl">Standings</h2><div style="font-size:.72rem;color:var(--txm)">Tap a player for the breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
+    <div><h2 class="ttl">Standings${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2><div style="font-size:.72rem;color:var(--txm)">Tap a player for the breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
     ${state.prize.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${collected.toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</div></div>`:state.charity.on?`<div style="text-align:right"><div style="font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1">£${(state.charity.total||0).toLocaleString()}</div><div style="font-size:.62rem;color:var(--txm);margin-top:1px">raised${state.charity.name?' for '+state.charity.name:' for charity'} ❤</div>${donateShow('standings')?`<div style="margin-top:7px">${donateBtnHTML({label:'Donate'})}</div>`:''}</div>`:donateShow('standings')?`<div style="text-align:right">${donateBtnHTML({label:'Donate'})}</div>`:''}
   </div>
   ${deptsActive?`<div style="display:flex;gap:4px;margin-bottom:14px;background:var(--inp);border-radius:9px;padding:3px;width:fit-content">
@@ -2844,6 +2938,15 @@ function renderStandings(){
   </div>`:''}
   ${!showDeptView?`${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">TOURNAMENT STARTS 11 JUNE 2026</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">Enter match results in Fixtures and points update here.</div></div>`:''}${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}`:''}
   ${thermometerHTML()}
+  ${liveOn&&!showDeptView?(()=>{
+    const moves=lb.map((p,i)=>({name:p.name,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d);
+    const top=moves[0];
+    return`<div class="card live-card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--amber)">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">table below includes the live score${liveIds.length>1?'s':''}</span></div>
+      ${liveIds.map(id=>{const f=GF[id],s=state.live[id]||{};const ml=s.st==='HT'?'HT':s.st==='BT'?'ET':(s.min?s.min+"'":'');return`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem;padding:3px 0"><span>${FLAGS[f.home]||'⚽'}</span><span style="flex:1;text-align:right;color:var(--tx)">${f.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--tx);min-width:42px;text-align:center">${s.hg||0}–${s.ag||0}</span><span style="flex:1;color:var(--tx)">${f.away}</span><span>${FLAGS[f.away]||'⚽'}</span>${ml?`<span style="font-size:.6rem;color:var(--amber);font-family:'Oswald',sans-serif;min-width:24px;text-align:right">${ml}</span>`:''}</div>`;}).join('')}
+      ${top?`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--b);font-size:.72rem;color:var(--gr)">📈 <b>${esc(top.name)}</b> ${top.d===1?'climbs a place':'climbs '+top.d+' places'} on the live score${liveIds.length>1?'s':''}</div>`:''}
+    </div>`;
+  })():''}
   ${(()=>{if(showDeptView)return deptTableHTML();const maxPts=Math.max(1,...lb.map(p=>p.total));return lbFiltered.map((p)=>{
     const rank=lb.indexOf(p);
     const isF=rank===0&&p.total>0;const prz=prizeAt(rank);const open=state.expanded===p.name;
@@ -2851,14 +2954,14 @@ function renderStandings(){
     const safeName=p.name.replace(/'/g,"\\'");
     const pctW=Math.round((p.total/maxPts)*100);
     const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
-    return`<div class="sc${isF?' gold':''}${isMe?' me':''}${rank<3&&p.total>0?' podium':''}">
+    return`<div class="sc${isF?' gold':''}${isMe?' me':''}${rank<3&&p.total>0?' podium':''}"${ownsLive(p)?' style="box-shadow:0 0 0 1.5px rgba(168,96,0,.5)"':''}>
       <div class="sc-hdr" onclick="state.expanded=state.expanded===p.name?null:'${safeName}';render()">
         <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&p.total>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:${rank<3?'.78rem':'.82rem'};color:${rank<3&&p.total>0?'#3a2a00':'var(--txm)'};box-shadow:${rank<3&&p.total>0?'0 2px 8px rgba(224,168,46,.35)':'none'};border:1px solid ${rank<3&&p.total>0?'transparent':'var(--b)'}">${rank<3&&p.total>0?['1','2','3'][rank]:rank+1}</div>
         <div style="display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0">
-        ${(()=>{const prev=(_baseRanks||{})[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
+        ${(()=>{const base=liveOn?_confRank:(_baseRanks||{});const prev=base&&base[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
       </div>
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
+          <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${ownsLive(p)?' <span class="live-dot" title="Has a team playing now"></span>':''}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
           <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length}/${p.teams.length} qualified${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
           <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${isF?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
         </div>
@@ -2882,6 +2985,7 @@ function renderStandings(){
   }).join('')})()}
   ${bonusAwardsHTML()}
   <div style="margin-top:16px">${rulesHTML()}</div>`;
+  }finally{ if(liveOn) state.grR=_realGr; }
 }
 
 // ── MAIN RENDER ───────────────────────────────────────────────────────────────
@@ -3000,9 +3104,10 @@ function render(){
   // Setup tab ONLY appears for signed-in admins — completely hidden otherwise
   const tabs=[];
   if(adminSess)tabs.push({id:'setup',l:'ADMIN'});
-  const liveCount=0;
+  const liveCount=state.draw?liveMatchIds().length:0;
+  tabs.push({id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')});
+  if(liveCount)tabs.push({id:'live',l:'🔴 LIVE'});
   tabs.push(
-    {id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')},
     {id:'fixtures',l:'FIXTURES'},
     {id:'tables',l:'TABLES'},
     {id:'knockout',l:'KNOCKOUT'},
@@ -3023,6 +3128,7 @@ function render(){
   if(state.tab==='setup'&&adminSess){c.innerHTML=renderSetup();if(state.sOpen.manual)renderManualPanel();}
   else if(state.tab==='setup'){c.innerHTML=renderDraw();}
   else if(state.tab==='draw')c.innerHTML=renderDraw();
+  else if(state.tab==='live')c.innerHTML=renderLive();
   else if(state.tab==='fixtures')c.innerHTML=renderFixtures();
   else if(state.tab==='tables')c.innerHTML=renderTables();
   else if(state.tab==='knockout')c.innerHTML=renderKO();
