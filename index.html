@@ -10,6 +10,18 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <title>Carlyle London Office Sweepstake</title>
+<!-- Link preview (Open Graph + Twitter) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roblor-boop.github.io/wc2026/">
+<meta property="og:title" content="Carlyle London Office Sweepstake">
+<meta property="og:description" content="World Cup 2026 office sweepstake. Get your teams, climb the leaderboard, win the bragging rights. Free to enter.">
+<meta property="og:image" content="https://roblor-boop.github.io/wc2026/share.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Carlyle London Office Sweepstake">
+<meta name="twitter:description" content="World Cup 2026 office sweepstake. Get your teams, climb the leaderboard, win the bragging rights. Free to enter.">
+<meta name="twitter:image" content="https://roblor-boop.github.io/wc2026/share.png">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- Firebase SDK for real-time sync -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -119,7 +131,7 @@ input,select,button{font-family:'Barlow',sans-serif;outline:none}
 .hdr-sub{font-family:'Oswald',sans-serif;font-size:.57rem;letter-spacing:.25em;color:var(--hdr-accent);margin-top:1px;opacity:.9}
 .hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .hdr-info{text-align:right;font-size:.64rem;line-height:1.4}
-@media(max-width:480px){.hdr-info{display:none}}
+@media(max-width:480px){.hdr-info{display:none}.hdr-title{white-space:normal;overflow:visible;text-overflow:clip}}
 .hbtn{width:30px;height:30px;border-radius:7px;background:var(--hdr-btn);border:1px solid var(--hdr-btnbr);color:var(--hdr-tx);font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
 .hbtn:hover{background:var(--hdr-btnbr)}
 .hbtn.dim{opacity:.38}
@@ -636,7 +648,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=400;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[]},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',drawCountdown:60,muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',drawCountdown:60,muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -1082,11 +1094,22 @@ function tickerItems(){
     if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;const dc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.dept)dc[s.dept]=(dc[s.dept]||0)+1;});const ranked=Object.entries(dc).sort((x,y)=>y[1]-x[1]);if(ranked.length&&ranked[0][1]>0)a.push(`🏢 ${ranked[0][0]} turning out in force, ${ranked[0][1]} name${ranked[0][1]>1?'s':''} in`);a.push(DEPT_HYPE[n%DEPT_HYPE.length].replace('{D}',dn[n%dn.length]));a.push(DEPT_HYPE[(n+5)%DEPT_HYPE.length].replace('{D}',dn[(n+3)%dn.length]));}
   }
   if(state.charity.on){
-    if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
-    else a.push(`❤ Free to enter${state.charity.name?", in aid of "+state.charity.name:" — played for charity"}`);
-    if(donateLink()&&donateShow("ticker"))a.push(DN);
+    // How much the charity shows in the ticker ONCE the draw has happened (admin choice). Before the draw it
+    // always stays normal, to help drive sign-ups and early donations.
+    const pol=state.draw?((state.charity.tickerAfterDraw)||'same'):'same';
+    if(pol!=='off'){
+      const full=pol!=='less';   // 'less' keeps the running total + Donate link but drops the extra chatter
+      if((state.charity.total||0)>0){a.push(`❤ £${state.charity.total.toLocaleString()} raised${state.charity.name?" for "+state.charity.name:""}`);if(full&&state.charity.goal>0){const pct=Math.min(100,Math.round(state.charity.total/state.charity.goal*100));a.push(`🎯 ${pct}% of the way to the £${state.charity.goal.toLocaleString()} goal`);}}
+      else if(full)a.push(`❤ Free to enter${state.charity.name?", in aid of "+state.charity.name:" — played for charity"}`);
+      if(donateLink()&&donateShow("ticker"))a.push(DN);
+    }
   }
-  const out=[];const mx=Math.max(a.length,custom.length);
+  // How prominent your own custom lines are in the mix (admin choice).
+  const emph=(state.ticker&&state.ticker.customEmphasis)||'balanced';
+  if(!custom.length)return a;
+  if(emph==='prominent')return [...custom,...a];                 // your lines lead every loop
+  if(emph==='subtle'){const out=[];let ci=0;a.forEach((item,i)=>{out.push(item);if((i+1)%5===0&&ci<custom.length)out.push(custom[ci++]);});while(ci<custom.length)out.push(custom[ci++]);return out;}
+  const out=[];const mx=Math.max(a.length,custom.length);        // balanced (default): alternate 1:1, as before
   for(let i=0;i<mx;i++){if(i<a.length)out.push(a[i]);if(i<custom.length)out.push(custom[i]);}
   return out;
 }
@@ -1118,7 +1141,30 @@ function addTickerMsg(){
   state.ticker.messages.push(v);el.value='';saveSetup();render();
   setTimeout(()=>{const e=document.getElementById('ticker-input');if(e)e.focus();},50);
 }
-function removeTickerMsg(i){if(state.ticker.messages){state.ticker.messages.splice(i,1);saveSetup();render();}}
+// Bulk add / replace the custom ticker lines: paste or edit a whole list, one line per message. Lives in a
+// modal (separate from the page) so a background refresh can't wipe what's being typed. Reducing or clearing
+// the list asks for confirmation first; adding is frictionless.
+function bulkEditTicker(){
+  if(!adminSess)return;
+  const msgs=state.ticker.messages||[];
+  const current=msgs.join('\n');const oldCount=msgs.length;
+  showMod('Edit ticker lines','One line per message. Paste a whole list, reword them, or drag-select and replace. Up to 20 lines.','SAVE LINES',()=>{
+    const ta=document.getElementById('_mod-ta');if(!ta)return;
+    let lines=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    let trimmed=false;if(lines.length>20){lines=lines.slice(0,20);trimmed=true;}
+    const apply=()=>{state.ticker.messages=lines;saveSetup();render();showToast(lines.length?`${lines.length} ticker line${lines.length>1?'s':''} saved${trimmed?', kept the first 20':''}`:'Custom lines cleared');};
+    if(lines.length<oldCount)setTimeout(()=>showMod('Replace your ticker lines?',`This will leave ${lines.length} line${lines.length===1?'':'s'} (you have ${oldCount} now). Anything removed would need typing in again.`,'REPLACE',apply,true),60);
+    else apply();
+  });
+  setTimeout(()=>{
+    const box=document.getElementById('modal-box');if(!box)return;
+    const ta=document.createElement('textarea');
+    ta.id='_mod-ta';ta.value=current;ta.rows=8;ta.placeholder='Office final on the big screen Fri 5pm!\nWinner buys the teas\nGet your predictions in by Friday';
+    ta.style.cssText='width:100%;padding:10px 12px;background:var(--inp);border:1px solid var(--b);border-radius:8px;color:var(--tx);font-size:.9rem;line-height:1.5;margin-bottom:14px;resize:vertical;font-family:inherit;box-sizing:border-box';
+    const btnRow=box.querySelector('div');box.insertBefore(ta,btnRow);ta.focus();
+  },50);
+}
+function removeTickerMsg(i){if(!adminSess)return;const msgs=state.ticker.messages||[];const m=msgs[i];if(m==null)return;showMod('Remove this ticker line?',`“${esc(m)}” will be taken off the ticker. You can always add it again.`,'REMOVE',()=>{state.ticker.messages.splice(i,1);saveSetup();render();showToast('Message removed');},true);}
 function addDept(){
   const el=document.getElementById('dept-input');if(!el)return;
   const v=el.value.trim();if(!v)return;
@@ -1127,7 +1173,7 @@ function addDept(){
   if(state.depts.names.some(d=>d.toLowerCase()===v.toLowerCase())){showToast('Already added','error');return;}
   state.depts.names.push(v);state.depts.names.sort((a,b)=>a.localeCompare(b));el.value='';saveSetup();render();
 }
-function removeDept(i){if(state.depts.names){state.depts.names.splice(i,1);saveSetup();render();}}
+function removeDept(i){if(!adminSess)return;const names=state.depts.names||[];const d=names[i];if(d==null)return;const unit=(state.depts.label||'squad').toLowerCase().replace(/s$/,'');showMod(`Remove this ${esc(unit)}?`,`“${esc(d)}” will be removed from the list. Anyone who already picked it keeps their pick unless you change it on their sign-up.`,'REMOVE',()=>{state.depts.names.splice(i,1);saveSetup();render();showToast('Removed');},true);}
 function setSignupDept(key,val){if(!adminSess)return;const s=state.signups&&state.signups[key];if(!s)return;if(val)s.dept=val;else delete s.dept;if(DB)DB.ref('wc2026/signups/'+key).set(s);render();}
 
 // ── LOADING SCREEN ────────────────────────────────────────────────────────────
@@ -1657,9 +1703,16 @@ function isLiveNow(id){
 // ── CALCULATIONS ──────────────────────────────────────────────────────────────
 function groupTable(g){
   const s={};GD[g].forEach(t=>{s[t.n]={name:t.n,flag:t.f,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};});
-  let played=0;
-  GF_IDS[g].forEach(id=>{const r=state.grR[id];if(!r?.played)return;played++;const{hg,ag}=r,f=GF[id];s[f.home].P++;s[f.away].P++;s[f.home].GF+=hg;s[f.home].GA+=ag;s[f.home].GD+=hg-ag;s[f.away].GF+=ag;s[f.away].GA+=hg;s[f.away].GD+=ag-hg;if(hg>ag){s[f.home].W++;s[f.home].Pts+=3;s[f.away].L++;}else if(hg<ag){s[f.away].W++;s[f.away].Pts+=3;s[f.home].L++;}else{s[f.home].D++;s[f.away].D++;s[f.home].Pts++;s[f.away].Pts++;}});
-  return{complete:played===6,played,rows:Object.values(s).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name))};
+  let played=0;const matches=[];
+  GF_IDS[g].forEach(id=>{const r=state.grR[id];if(!r?.played)return;played++;const{hg,ag}=r,f=GF[id];matches.push({home:f.home,away:f.away,hg,ag});s[f.home].P++;s[f.away].P++;s[f.home].GF+=hg;s[f.home].GA+=ag;s[f.home].GD+=hg-ag;s[f.away].GF+=ag;s[f.away].GA+=hg;s[f.away].GD+=ag-hg;if(hg>ag){s[f.home].W++;s[f.home].Pts+=3;s[f.away].L++;}else if(hg<ag){s[f.away].W++;s[f.away].Pts+=3;s[f.home].L++;}else{s[f.home].D++;s[f.away].D++;s[f.home].Pts++;s[f.away].Pts++;}});
+  // FIFA tiebreak order: overall points, then goal difference, then goals scored. For teams STILL level on
+  // all three, FIFA looks at the matches played between only those teams (head-to-head points, then GD, then
+  // goals), and finally a deterministic fallback. Head-to-head only changes things in an exact three-way tie,
+  // but when it does it can flip who finishes 1st/2nd/3rd, so it's worth getting right.
+  const rows=Object.values(s).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
+  const h2h=names=>{const set=new Set(names);const m={};names.forEach(n=>m[n]={Pts:0,GD:0,GF:0});matches.forEach(x=>{if(!set.has(x.home)||!set.has(x.away))return;m[x.home].GF+=x.hg;m[x.away].GF+=x.ag;m[x.home].GD+=x.hg-x.ag;m[x.away].GD+=x.ag-x.hg;if(x.hg>x.ag)m[x.home].Pts+=3;else if(x.hg<x.ag)m[x.away].Pts+=3;else{m[x.home].Pts++;m[x.away].Pts++;}});return m;};
+  for(let i=0;i<rows.length;){let j=i+1;while(j<rows.length&&rows[j].Pts===rows[i].Pts&&rows[j].GD===rows[i].GD&&rows[j].GF===rows[i].GF)j++;if(j-i>1){const tied=rows.slice(i,j),names=tied.map(t=>t.name),m=h2h(names);tied.sort((a,b)=>m[b.name].Pts-m[a.name].Pts||m[b.name].GD-m[a.name].GD||m[b.name].GF-m[a.name].GF||a.name.localeCompare(b.name));for(let k=i;k<j;k++)rows[k]=tied[k-i];}i=j;}
+  return{complete:played===6,played,rows};
 }
 function computeQual(){
   const tables={};let allDone=true;
@@ -1672,14 +1725,23 @@ function computeQual(){
 // Assign the 8 qualifying 3rd-place teams to the 8 best-3rd R32 slots so each
 // slot gets a DISTINCT eligible team (a perfect matching respecting FIFA's
 // per-slot group eligibility). Prevents the same 3rd-placed team appearing twice.
-function bestThirdAssignment(tables,thirds){
+function bestThirdAssignment(tables,thirds,pinned){
+  pinned=pinned||{};
   const q8=thirds.slice(0,8);
   if(q8.length<8)return null;                 // groups not all finished yet
   const slots=[];
   Object.keys(BRACKET).forEach(id=>{['sA','sB'].forEach(side=>{const sl=BRACKET[id][side];if(sl&&sl.t==='best3rd')slots.push({key:id+'_'+side,gs:sl.gs});});});
   const assign={},used=new Set();
-  const bt=i=>{if(i===slots.length)return true;const s=slots[i];for(const t of q8){if(used.has(t.name))continue;if(!s.gs.includes(t.group))continue;assign[s.key]=t.name;used.add(t.name);if(bt(i+1))return true;used.delete(t.name);delete assign[s.key];}return false;};
-  return bt(0)?assign:null;
+  // Manual overrides win first. They deliberately bypass the coded group-eligibility, because the whole point
+  // of an override is to correct the coded allocation to match FIFA's official last-32. Only accept a pin that
+  // is one of the eight qualified third-placed teams (so a stale pin self-heals if results change).
+  slots.forEach(s=>{const pv=pinned[s.key];if(pv&&q8.some(t=>t.name===pv)&&!used.has(pv)){assign[s.key]=pv;used.add(pv);}});
+  const open=slots.filter(s=>!assign[s.key]);
+  const bt=i=>{if(i===open.length)return true;const s=open[i];for(const t of q8){if(used.has(t.name))continue;if(!s.gs.includes(t.group))continue;assign[s.key]=t.name;used.add(t.name);if(bt(i+1))return true;used.delete(t.name);delete assign[s.key];}return false;};
+  if(!bt(0)){ // overrides made an eligibility-respecting fill impossible: fill the rest greedily so no slot is blank and no team repeats
+    open.forEach(s=>{if(assign[s.key])return;const t=q8.find(x=>!used.has(x.name));if(t){assign[s.key]=t.name;used.add(t.name);}});
+  }
+  return assign;
 }
 function resolveSlot(sl,tables,thirds,assign,key){
   if(sl.t==='winner')return tables[sl.g]?.complete?tables[sl.g].rows[0].name:null;
@@ -1689,7 +1751,7 @@ function resolveSlot(sl,tables,thirds,assign,key){
   if(sl.t==='loser'){const m=state.koR[sl.m];if(!m?.played)return null;return m.home===m.winner?m.away:m.home;}
   return null;
 }
-function resolveBracket(){const{tables,thirds}=computeQual();const assign=bestThirdAssignment(tables,thirds);const res={};Object.keys(BRACKET).forEach(id=>{const b=BRACKET[id];res[id]={teamA:resolveSlot(b.sA,tables,thirds,assign,id+'_sA'),teamB:resolveSlot(b.sB,tables,thirds,assign,id+'_sB')};});return res;}
+function resolveBracket(){const{tables,thirds}=computeQual();const assign=bestThirdAssignment(tables,thirds,state.koOverride||{});const res={};Object.keys(BRACKET).forEach(id=>{const b=BRACKET[id];res[id]={teamA:resolveSlot(b.sA,tables,thirds,assign,id+'_sA'),teamB:resolveSlot(b.sB,tables,thirds,assign,id+'_sB')};});return res;}
 function slotDesc(sl){if(sl.t==='winner')return`Winner Grp ${sl.g}`;if(sl.t==='runnerup')return`Runner-up Grp ${sl.g}`;if(sl.t==='best3rd')return`Best 3rd`;if(sl.t==='prev')return`W ${BRACKET[sl.m]?.l||sl.m}`;if(sl.t==='loser')return`L ${BRACKET[sl.m]?.l||sl.m}`;return'TBD';}
 // Bonus awards: results-only consolation prizes (most/fewest goals, best/worst defence).
 // Computed from played group + knockout results. Ties share the award. Settles at the tournament's end.
@@ -1882,6 +1944,47 @@ function saveKo(mId){
   render();
 }
 function clearKo(mId){if(!adminSess){showToast('Admin sign-in required','error');return;}delete state.koR[mId];fbSave('wc2026/ko',state.koR);showToast('Result removed');render();}
+// ── BEST-THIRD KNOCKOUT OVERRIDE (admin) ──────────────────────────────────────
+// The auto bracket fills the eight "best third-placed" Round-of-32 slots by finding a valid arrangement,
+// which won't always match FIFA's official last-32. This lets the organiser pin the correct team into any of
+// those slots by hand. Stored at wc2026/koov; empty (the default) means fully automatic, exactly as before.
+function setKoOverride(slotKey,name){
+  if(!adminSess){showToast('Admin sign-in required','error');return;}
+  if(!state.koOverride)state.koOverride={};
+  if(name)state.koOverride[slotKey]=name;else delete state.koOverride[slotKey];
+  fbSave('wc2026/koov',state.koOverride);render();
+}
+function clearKoOverrides(){
+  if(!adminSess)return;
+  state.koOverride={};fbSave('wc2026/koov',{});showToast('Best-third slots back to automatic');render();
+}
+function koOverridePanelHTML(){
+  if(!adminSess)return'';
+  const{thirds}=computeQual();const q8=thirds.slice(0,8);
+  const head=`<div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.08em;color:var(--amber);margin-bottom:6px">🛠️ BEST-THIRD SLOTS (ADMIN)</div>`;
+  if(q8.length<8){
+    return`<div class="card" style="padding:12px 14px;margin-bottom:18px;border:1px solid rgba(168,96,0,.3)">${head}<div style="font-size:.76rem;color:var(--txm);line-height:1.6">Available once all 12 groups finish. The eight best third-placed teams drop into these Round-of-32 slots automatically. If any matchup doesn't match FIFA's official last-32, you'll be able to fix it here by hand.</div></div>`;
+  }
+  const res=resolveBracket();
+  const slots=[];Object.keys(BRACKET).forEach(id=>{['sA','sB'].forEach(side=>{const sl=BRACKET[id][side];if(sl&&sl.t==='best3rd')slots.push({id,side,key:id+'_'+side});});});
+  const hasOv=Object.keys(state.koOverride||{}).length>0;
+  const opts=cur=>`<option value="">Automatic</option>`+q8.map(t=>`<option value="${esc(t.name)}"${cur===t.name?' selected':''}>${FLAGS[t.name]||''} ${esc(t.name)}</option>`).join('');
+  const rows=slots.map(s=>{
+    const cur=res[s.id]?(s.side==='sA'?res[s.id].teamA:res[s.id].teamB):null;
+    const ov=(state.koOverride||{})[s.key]||'';
+    const played=state.koR[s.id]?.played;
+    const lbl=BRACKET[s.id].l+' · '+(s.side==='sA'?'top':'bottom');
+    return`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--b)">
+      <div style="flex:1;min-width:0"><div style="font-size:.7rem;color:var(--txd);font-family:'Oswald',sans-serif;letter-spacing:.03em">${lbl}</div><div style="font-size:.82rem;color:var(--tx)">${cur?(FLAGS[cur]||'')+' '+esc(cur):'<span style=\"color:var(--txm)\">TBD</span>'}${ov?' <span style="font-size:.6rem;color:var(--amber)">· manual</span>':''}</div></div>
+      ${played?`<span style="font-size:.66rem;color:var(--txm);flex-shrink:0">result entered</span>`:`<select onchange="setKoOverride('${s.key}',this.value)" style="flex-shrink:0;max-width:165px;padding:6px 8px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.8rem">${opts(ov)}</select>`}
+    </div>`;
+  }).join('');
+  return`<div class="card" style="padding:12px 14px;margin-bottom:18px;border:1px solid rgba(168,96,0,.3)">${head}
+    <div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:2px">Leave these on Automatic unless a Round-of-32 matchup doesn't match FIFA's official last-32. Set one slot and the rest rearrange so no team appears twice. Once you enter a match's score that slot locks (clear the result to change it).</div>
+    ${rows}
+    ${hasOv?`<button class="btn-sm" style="margin-top:9px" onclick="clearKoOverrides()">↺ Reset all to automatic</button>`:''}
+  </div>`;
+}
 
 // ── MANUAL ASSIGNMENT ─────────────────────────────────────────────────────────
 function setAssignTarget(name){
@@ -2367,6 +2470,12 @@ function renderSetup(){
           <div style="display:flex;gap:6px">${['subtle','balanced','full'].map(lvl=>`<button onclick="state.charity.emphasis='${lvl}';saveSetup();render()" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid ${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--b)'};background:${((state.charity.emphasis||'balanced')===lvl)?'var(--pill-gr)':'transparent'};color:${((state.charity.emphasis||'balanced')===lvl)?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.03em;cursor:pointer;text-transform:capitalize">${lvl}</button>`).join('')}</div>
           <div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({subtle:'Quietest. Just a Donate button on the fund bar, and the total still shows.',balanced:'Recommended. Donate on the welcome screen and fund bar, with a gentle ticker nudge. Fun stays front and centre.',full:'Maximum. Donate buttons on every screen and more frequent nudges, good for a final push near your goal.'})[state.charity.emphasis||'balanced']}</div>
         </div>
+        <div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px">
+          <div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:3px">❤ CHARITY IN TICKER · AFTER THE DRAW</div>
+          <div style="font-size:.7rem;color:var(--txm);margin-bottom:7px">Before the draw it always shows normally to help drive donations. Once the draw's done, dial it down here.</div>
+          <div style="display:flex;gap:6px">${[['same','Same'],['less','Less'],['off','Hide']].map(([lvl,lbl])=>`<button onclick="state.charity.tickerAfterDraw='${lvl}';saveSetup();render()" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid ${((state.charity.tickerAfterDraw||'same')===lvl)?'var(--gr)':'var(--b)'};background:${((state.charity.tickerAfterDraw||'same')===lvl)?'var(--pill-gr)':'transparent'};color:${((state.charity.tickerAfterDraw||'same')===lvl)?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.03em;cursor:pointer">${lbl}</button>`).join('')}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({same:'No change. The total, goal and Donate link keep appearing in the ticker.',less:'Quieter. Keeps the running total and Donate link, drops the extra charity lines.',off:'The charity drops out of the ticker entirely once the draw has happened.'})[state.charity.tickerAfterDraw||'same']}</div>
+        </div>
         </div>
         <div style="border-top:1px solid var(--b);padding-top:11px;margin-top:11px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${state.podium.on?'checked':''} onchange="state.podium.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd)">🏆 TOP-3 PRIZES (non-cash)</span></label>
@@ -2383,7 +2492,7 @@ function renderSetup(){
     :key==='depts'?
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.depts.on?'checked':''} onchange="state.depts.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Pit office teams against each other (the individual board stays the main event)</span></label>${state.depts.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Add your teams below, then players pick one when they sign up. They're ranked by <b>average points per person</b>, so a big team can't win on numbers alone. <b>Set these up before you open sign-up</b> — renaming a team later won't move people who already picked the old name.</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:.74rem;color:var(--txd);white-space:nowrap">Label on screen</span><input type="text" maxlength="20" value="${esc(state.depts.label||'Squads')}" oninput="state.depts.label=this.value;saveSetup()" placeholder="Squads" style="flex:1;padding:6px 9px;background:var(--inp);border:1px solid var(--b);border-radius:6px;color:var(--tx);font-size:.8rem"/></div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="dept-input" type="text" maxlength="30" placeholder="e.g. Deals, Finance, Floor 3…" onkeydown="if(event.key==='Enter')addDept()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addDept()">Add</button></div>${(state.depts.names||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.depts.names.map((d,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">🏢 ${esc(d)}</span><button onclick="removeDept(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No teams yet. Add at least two.</div>`}`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Turn on to add office teams (departments, floors, whatever) that compete on average points, with a pick added to the sign-up form and a team view on the standings.</div>`}`
     :
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion and wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet. The automatic ones still show.</div>`}`:''}`;
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.ticker.on?'checked':''} onchange="state.ticker.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Show the scrolling ticker on the standings</span></label>${state.ticker.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Automatic updates are mixed in: who's leading, the title race, live scores, match stats, the charity total, countdown, champion and wooden spoon. Add your own one-liners below.</div><div style="display:flex;gap:6px;margin-bottom:10px"><input id="ticker-input" type="text" maxlength="120" placeholder="e.g. Office final on the big screen Fri 5pm!" onkeydown="if(event.key==='Enter')addTickerMsg()" style="flex:1;padding:8px 11px;background:var(--inp);border:1px solid var(--b);border-radius:7px;color:var(--tx);font-size:.83rem"/><button class="btn-sm" onclick="addTickerMsg()">Add</button><button class="btn-sm" onclick="bulkEditTicker()" title="Paste or edit the whole list at once">✎ List</button></div>${(state.ticker.messages||[]).length?`<div style="display:flex;flex-direction:column;gap:5px">${state.ticker.messages.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--cardh);border-radius:7px"><span style="flex:1;font-size:.8rem;color:var(--tx)">📢 ${esc(m)}</span><button onclick="removeTickerMsg(${i})" title="Remove" style="background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.1rem;line-height:1;padding:0 2px">×</button></div>`).join('')}</div>`:`<div style="font-size:.72rem;color:var(--txm)">No custom messages yet. The automatic ones still show.</div>`}<div style="margin-top:12px;border-top:1px solid var(--b);padding-top:11px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.08em;color:var(--txd);margin-bottom:3px">📢 YOUR MESSAGES · HOW OFTEN</div><div style="font-size:.7rem;color:var(--txm);margin-bottom:7px">How prominent your own lines are next to the automatic ones.</div><div style="display:flex;gap:6px">${[['subtle','Subtle'],['balanced','Balanced'],['prominent','Prominent']].map(lvl=>`<button onclick="state.ticker.customEmphasis='${lvl[0]}';saveSetup();render()" style="flex:1;padding:7px 4px;border-radius:8px;border:1px solid ${((state.ticker.customEmphasis||'balanced')===lvl[0])?'var(--gr)':'var(--b)'};background:${((state.ticker.customEmphasis||'balanced')===lvl[0])?'var(--pill-gr)':'transparent'};color:${((state.ticker.customEmphasis||'balanced')===lvl[0])?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.03em;cursor:pointer">${lvl[1]}</button>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">${({subtle:'Your lines appear now and then, sprinkled between the automatic updates.',balanced:'Recommended. Your lines alternate evenly with the automatic ones.',prominent:'Your lines lead the ticker every time it loops round, then the automatic ones follow.'})[state.ticker.customEmphasis||'balanced']}</div></div>`:''}`;
     const title=key==='charity'?`❤ CHARITY${state.charity.on&&state.charity.total?` · <b style="color:var(--gold)">£${state.charity.total}</b>`:''}`:key==='scoring'?'🎯 SCORING':key==='bonus'?`🏅 BONUS AWARDS${state.bonus.on?'':' · off'}`:key==='predict'?'🔮 PREDICT THE CHAMPION':key==='depts'?('🏢 '+(state.depts.label||'DEPARTMENTS').toUpperCase()+(state.depts.on?'':' · off')):key==='ticker'?'📢 TICKER & MESSAGES':'';
     return`<div class="card" style="margin-bottom:10px;overflow:hidden"><button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen['${key}']=!state.sOpen['${key}'];render()"><span>${title}</span><span style="color:var(--txm)">${open?'▲':'▼'}</span></button>${open?`<div style="padding:4px 13px 13px;border-top:1px solid var(--b)">${inner}</div>`:''}</div>`;
   }).join('')}
@@ -2721,6 +2830,7 @@ function renderKO(){
     <div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin-bottom:9px;padding-left:6px">TOURNAMENT BRACKET</div>
     <div class="bk-wrap"><div class="bk-inner" id="bk-inner" style="min-width:max-content">${bkHtml}</div></div>
   </div>
+  ${koOverridePanelHTML()}
   ${KO_ROUNDS.map(round=>{
     const mIds=koByRound[round];if(!mIds?.length)return'';const rc=KO_COL[round];const done=mIds.filter(id=>state.koR[id]?.played).length;
     return`<div style="margin-bottom:20px">
@@ -3061,6 +3171,7 @@ else if(DB){
     state.grR=data.gr||{};
     state.live=data.live||{};
     state.koR=data.ko||{};
+    state.koOverride=data.koov||{};
     _accessHash=data.accessHash||null;
     state.paid=data.paid||{};
     state.signups=data.signups||{};
@@ -3068,11 +3179,11 @@ else if(DB){
     if(data.cfg){
       if(data.cfg.scoring)state.scoring={...DEF_SCR,...data.cfg.scoring};
       if(data.cfg.prize)state.prize={...{on:false,buyin:5,pay:[60,30,10]},...data.cfg.prize};
-      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced'},...data.cfg.charity};
+      if(data.cfg.charity)state.charity={...{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},...data.cfg.charity};
       if(data.cfg.podium)state.podium={...{on:false,prizes:['','','']},...data.cfg.podium};
       if(data.cfg.predict)state.predict={...{on:false,bonus:10},...data.cfg.predict};
       if(data.cfg.bonus)state.bonus={...DEF_BONUS,...data.cfg.bonus};
-      if(data.cfg.ticker)state.ticker={...{on:true,messages:[]},...data.cfg.ticker};
+      if(data.cfg.ticker)state.ticker={...{on:true,messages:[],customEmphasis:'balanced'},...data.cfg.ticker};
       if(data.cfg.depts){state.depts={...{on:false,names:[],label:'Squads'},...data.cfg.depts};if(Array.isArray(state.depts.names))state.depts.names.sort((a,b)=>a.localeCompare(b));}
       state.gateSignupOnly=data.cfg.gateSignupOnly!==false;
       state.footballApiKey=data.cfg.footballApiKey||'';
