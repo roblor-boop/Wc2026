@@ -1414,24 +1414,33 @@ function hideOv(){document.getElementById('ov').style.display='none';drawSkip=fa
 function ovFeedReset(){const f=document.getElementById('ov-feed');if(f)f.innerHTML='';}
 function ovFeedAdd(html,mine){const f=document.getElementById('ov-feed');if(!f)return;let l=document.getElementById('ov-feed-list');if(!l){f.innerHTML='<div class="ovf-hd">DRAWN SO FAR</div><div class="ovf-list" id="ov-feed-list"></div>';l=document.getElementById('ov-feed-list');}const prev=l.querySelector('.ovf-row.new');if(prev)prev.classList.remove('new');const row=document.createElement('div');row.className='ovf-row new'+(mine?' ovf-mine':'');row.innerHTML=html;l.insertBefore(row,l.firstChild);}
 
+// Guards against a draw firing twice at once (a double-tap, or both admins on the same device).
+let _drawFiring=false;
 async function doDraw(vn){
+  if(_drawFiring)return;
   vn=(vn||[]).map(n=>cleanName(n)).filter(n=>n.length>=1);
   const n=vn.length;
-  const parts=distributeTeams(vn);
-  // Clear previous results + close registration
-  state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};
-  if(state.signupOpen){state.signupOpen=false;await fbSave('wc2026/signupOpen',false);}
-  await fbDel('wc2026/gr');await fbDel('wc2026/ko');
-  // Write the draw WITH a ceremony timestamp — every browser on the page
-  // detects this and plays the SAME reveal live (see maybePlayCeremony).
-  const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:n,ceremonyAt:Date.now()};
-  await fbSave('wc2026/draw',data);
-  if(!DB){ // local mode has no live listener — play it directly here
-    state.draw=data;try{localStorage.setItem('wc26cer',String(data.ceremonyAt));}catch{}
-    await playCeremony(parts,n);
+  if(n<2){showToast('Need at least 2 players','error');return;}
+  _drawFiring=true;
+  try{
+    const parts=distributeTeams(vn);
+    // Clear previous results + close registration
+    state.grR={};state.koR={};Object.keys(tempS).forEach(k=>delete tempS[k]);editing.clear();recentResults=[];manualMap={};
+    if(state.signupOpen){state.signupOpen=false;await fbSave('wc2026/signupOpen',false);}
+    await fbDel('wc2026/gr');await fbDel('wc2026/ko');
+    // Write the draw WITH a ceremony timestamp — every browser on the page
+    // detects this and plays the SAME reveal live (see maybePlayCeremony).
+    const data={participants:parts,drawnAt:new Date().toISOString(),participantCount:n,ceremonyAt:Date.now()};
+    await fbSave('wc2026/draw',data);
+    if(!DB){ // local mode has no live listener — play it directly here
+      state.draw=data;try{localStorage.setItem('wc26cer',String(data.ceremonyAt));}catch{}
+      await playCeremony(parts,n);
+    }
+    // Firebase mode: the realtime listener fires for everyone (admin included)
+    // and triggers the ceremony, so the draw plays live on all open browsers.
+  }finally{
+    _drawFiring=false;
   }
-  // Firebase mode: the realtime listener fires for everyone (admin included)
-  // and triggers the ceremony, so the draw plays live on all open browsers.
 }
 // Pool comes from self-sign-ups automatically if any exist; otherwise the manual list.
 function drawPool(){
@@ -1440,10 +1449,16 @@ function drawPool(){
 }
 async function runDraw(){
   if(!adminSess){_si();return;} // always require Firebase Auth sign-in
+  if(_drawFiring)return;        // a draw is already being started
   const {names:valid,fromSignups}=drawPool();
   if(valid.length<2){showToast('Need at least 2 players','error');return;}
-  if(!fromSignups&&valid.length!==state.pc){showMod('Empty slots',`${state.pc} slots, ${valid.length} named. Continue with ${valid.length}?`,'CONTINUE',()=>doDraw(valid));}
-  else doDraw(valid);
+  const slotsNote=(!fromSignups&&valid.length!==state.pc)?`Only ${valid.length} of your ${state.pc} slots are filled. `:'';
+  const proceed=()=>doDraw(valid);
+  if(state.draw){
+    showMod('Run the draw again?',`${slotsNote}This replaces the current draw and clears all results, then plays live for everyone on the page. ${valid.length} players are in. This can\u2019t be undone.`,'YES, DRAW AGAIN',proceed,true);
+  }else{
+    showMod('Start the draw?',`${slotsNote}This runs the draw live for everyone on the page right now and closes sign-up. ${valid.length} players are in.`,'START THE DRAW',proceed);
+  }
 }
 // Auto-draw: if enabled and the scheduled time has passed, run it once (admin browser only).
 let _autoDrawFired=false;
@@ -1501,6 +1516,31 @@ async function playCeremony(parts,n){
       await skipableDelay(1000);
     }
     try{stopBuildup();}catch(e){}
+  }
+  // ── CEREMONY INTRO: a few welcome beats so the draw opens like an event, not a jump-cut ──
+  if(!drawSkip){
+    const myFirst=(getMyName()||'').trim().split(/\s+/)[0];
+    const funLines=[
+      ['JUST SO YOU KNOW','NO SKILL REQUIRED','PURE, GLORIOUS LUCK'],
+      ['REMEMBER','EVERY TEAM\u2019S IN THE HAT','FAVOURITES AND MINNOWS'],
+      ['RIGHT THEN','TIME TO MEET YOUR TEAMS','NO TAKEBACKS'],
+      ['ONE LAST THING','BRAGGING RIGHTS ARE LIVE','CHOOSE WISELY']
+    ];
+    const fun=funLines[Math.floor(Math.random()*funLines.length)];
+    const intro=[
+      {k:'',big:'WELCOME TO THE DRAW',sub:'',snd:'ding',hold:1900},
+      {k:'WHAT\u2019S AT STAKE',big:'48 TEAMS UP FOR GRABS',sub:n+(n===1?' PLAYER':' PLAYERS')+', ONE CHAMPION',snd:'tick',hold:1800},
+      {k:fun[0],big:fun[1],sub:fun[2],snd:'tick',hold:1800},
+      myFirst
+        ? {k:'',big:'GOOD LUCK, '+esc(myFirst.toUpperCase())+'!',sub:'HERE COME THE TEAMS',gold:true,snd:'ding',hold:1900}
+        : {k:'',big:'GOOD LUCK, EVERYONE!',sub:'HERE COME THE TEAMS',snd:'ding',hold:1900}
+    ];
+    for(const m of intro){
+      if(drawSkip)break;
+      setOv(`<div class="ov-phase-name">${m.k?`<div class="ov-counter">${m.k}</div>`:''}<div class="ov-spotlight${m.gold?' ov-spotlight-me':''}">${m.big}</div>${m.sub?`<div class="ov-sub">${m.sub}</div>`:''}</div>`);
+      flashOv();try{m.snd==='ding'?SFX.ding():SFX.tick();}catch(e){}
+      await skipableDelay(m.hold);
+    }
   }
   // ── INTRO: flags swirl (drumroll); the short 3·2·1 only runs when there was no long build-up ──
   drawCycleInterval=setInterval(()=>{const t=F();setOv(`<div class="ov-phase-shuffle"><div class="ov-label">THE DRAW</div><div class="ov-flag">${t.flag}</div><div class="ov-name-big">${t.name}</div><div class="ov-dots"><span></span><span></span><span></span></div></div>`);},80);
@@ -1594,6 +1634,22 @@ function replayCeremony(){
   if(!state.draw||!state.draw.participants||!state.draw.participants.length){showToast('No draw to replay yet','error');return;}
   if(_cerPlaying)return;
   playCeremony(state.draw.participants,state.draw.participantCount||state.draw.participants.length);
+}
+// Admin-only DRESS REHEARSAL. Plays the full ceremony on THIS screen only, using the real
+// sign-up names but a THROWAWAY sample allocation. It writes nothing to Firebase, never sets
+// state.draw, doesn't close sign-up or clear results, and isn't seen by anyone else — so it can
+// be run as many times as you like before the real draw. The actual draw stays un-run.
+async function rehearseDraw(){
+  if(!adminSess){_si();return;}
+  if(_cerPlaying||_drawFiring)return;                 // don't overlap a real draw or another rehearsal
+  const {names:pool}=drawPool();
+  const cleaned=pool.map(cleanName).filter(n=>n.length>=1);
+  if(cleaned.length<2){showToast('Need at least 2 players to rehearse','error');return;}
+  const parts=distributeTeams(cleaned);               // sample only — never saved or shared
+  showToast('Rehearsal — nothing is saved or shared','gold');
+  const prevTab=state.tab;
+  await playCeremony(parts,cleaned.length);           // purely visual on this device
+  state.tab=prevTab;render();                          // return to where you were (the Admin tab)
 }
 // Called from the realtime listener: if a fresh draw just arrived, play the
 // reveal live on this browser (once). Old draws / refreshes are skipped.
@@ -2142,8 +2198,7 @@ function renderWelcome(){
   const open=state.signupOpen;
   const signups=state.signups||{};
   const names=Object.values(signups).map(s=>s.name).filter(Boolean);
-  return`<div style="text-align:center;padding:28px 18px 32px;max-width:460px;margin:0 auto">
-    <div style="width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(135deg,#00e676,#00a838);display:flex;align-items:center;justify-content:center;font-size:2.6rem;box-shadow:0 8px 32px rgba(0,168,56,.35),inset 0 2px 0 rgba(255,255,255,.25)">⚽</div>
+  return`<div style="text-align:center;padding:14px 18px 32px;max-width:460px;margin:0 auto">
     <div style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;background:linear-gradient(135deg,var(--tx),var(--gr));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.01em;line-height:1.05;margin-bottom:10px">${CONFIG.title.toUpperCase()}</div>
     <p style="font-size:.86rem;color:var(--txd);line-height:1.65;margin-bottom:20px">FIFA World Cup 2026 · 11 June to 19 July<br>Sign up and you'll be drawn one or more of the 48 teams at random. They rack up points as they win, and whoever has the most at the end takes the bragging rights. Free to enter.</p>
     ${countdownHTML()}
@@ -2554,6 +2609,7 @@ function renderSetup(){
   })():''}
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <button class="btn-draw" onclick="protectedRunDraw()">🎲 RUN THE DRAW</button>
+    ${!state.draw?`<button class="btn btn-ghost" onclick="rehearseDraw()" title="Play the full ceremony on this screen only — nothing is saved or shown to anyone else">👁 REHEARSE</button>`:''}
     ${state.draw?`<button class="btn btn-ghost" onclick="protectedResetResults()">RESET RESULTS</button><button class="btn btn-ghost" style="border-color:rgba(192,32,32,.3);color:var(--red)" onclick="protectedReset()">RESET DRAW &amp; RESULTS</button>`:''}
     <span style="font-size:.75rem;color:var(--txm);margin-left:auto">${names.slice(0,pc).filter(x=>x.trim()).length}/${pc} named</span>
   </div>`;
