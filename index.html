@@ -1763,6 +1763,7 @@ function computeQual(){
   if(allDone){thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);thirds.forEach((t,i)=>{q[t.name]=i<8?'best3rd':'eliminated';});}
   return{qual:q,thirds,tables};
 }
+function groupStageDone(){const t=computeQual().tables;const ks=Object.keys(t);return ks.length>0&&ks.every(g=>t[g]&&t[g].complete);}
 // Assign the 8 qualifying 3rd-place teams to the 8 best-3rd R32 slots so each
 // slot gets a DISTINCT eligible team (a perfect matching respecting FIFA's
 // per-slot group eligibility). Prevents the same 3rd-placed team appearing twice.
@@ -3123,14 +3124,17 @@ function render(){
   const tabs=[];
   if(adminSess)tabs.push({id:'setup',l:'ADMIN'});
   const liveCount=state.draw?liveMatchIds().length:0;
-  tabs.push({id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')});
+  const underway=hasResults();
+  const drawTab={id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')};
+  if(!underway)tabs.push(drawTab);
   tabs.push({id:'standings',l:'STANDINGS',d:!state.draw});
   if(liveCount)tabs.push({id:'live',l:'🔴 LIVE'});
   tabs.push(
     {id:'fixtures',l:'FIXTURES'},
-    {id:'tables',l:'TABLES'},
-    {id:'knockout',l:'KNOCKOUT'}
+    {id:'tables',l:'GROUPS'}
   );
+  if(adminSess||groupStageDone()||Object.values(state.koR||{}).some(m=>m&&m.played))tabs.push({id:'knockout',l:'KNOCKOUT'});
+  if(underway)tabs.push(drawTab);
   // If current tab is no longer valid (e.g. signed out of setup, or no draw), redirect
   const validTab=tabs.find(t=>t.id===state.tab&&!t.d);
   if(!validTab){
