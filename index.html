@@ -2969,7 +2969,7 @@ function renderStandings(){
     const pctW=Math.round((p.total/maxPts)*100);
     const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
     return`<div class="sc${isF?' gold':''}${isMe?' me':''}${rank<3&&p.total>0?' podium':''}"${ownsLive(p)?' style="box-shadow:0 0 0 1.5px rgba(168,96,0,.5)"':''}>
-      <div class="sc-hdr" onclick="state.expanded=state.expanded===p.name?null:'${safeName}';render()">
+      <div class="sc-hdr" onclick="state.expanded=state.expanded==='${safeName}'?null:'${safeName}';render()">
         <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&p.total>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:${rank<3?'.78rem':'.82rem'};color:${rank<3&&p.total>0?'#3a2a00':'var(--txm)'};box-shadow:${rank<3&&p.total>0?'0 2px 8px rgba(224,168,46,.35)':'none'};border:1px solid ${rank<3&&p.total>0?'transparent':'var(--b)'}">${rank<3&&p.total>0?['1','2','3'][rank]:rank+1}</div>
         <div style="display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0">
         ${(()=>{const base=liveOn?_confRank:(_baseRanks||{});const prev=base&&base[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
