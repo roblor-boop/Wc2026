@@ -1895,7 +1895,7 @@ function calcProvisional(){
   const real=state.grR;
   const base=calcLeaderboard();
   const merged={...real};
-  ids.forEach(id=>{const s=live[id]||{};merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
+  ids.forEach(id=>{const s=live[id]||{};if(!((s.hg||0)>0||(s.ag||0)>0))return;merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
   state.grR=merged;
   const prov=calcLeaderboard();
   state.grR=real;
@@ -2805,7 +2805,7 @@ function renderTables(){
   const liveIds=state.draw?liveMatchIds():[];
   const liveOn=liveIds.length>0;
   const _realGr=state.grR;
-  if(liveOn){const _m={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};_m[id]={hg:s.hg||0,ag:s.ag||0,played:true};});state.grR=_m;}
+  if(liveOn){const _m={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};if(!((s.hg||0)>0||(s.ag||0)>0))return;_m[id]={hg:s.hg||0,ag:s.ag||0,played:true};});state.grR=_m;}
   try{
   const{qual}=computeQual();
   return`<h2 class="ttl">Group Tables${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2>
@@ -2916,7 +2916,7 @@ function renderStandings(){
   let _confRank=null;const _liveTeams=new Set();
   if(liveOn){
     _confRank={};calcLeaderboard().forEach((p,i)=>{_confRank[p.name]=i+1;});           // ranks on confirmed results, before merging live
-    const _merged={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};_merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
+    const _merged={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};if(!((s.hg||0)>0||(s.ag||0)>0))return;_merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
     state.grR=_merged;                                                                  // provisional state for the whole render
     liveIds.forEach(id=>{if(GF[id]){_liveTeams.add(GF[id].home);_liveTeams.add(GF[id].away);}});
   }
@@ -2956,7 +2956,7 @@ function renderStandings(){
     const moves=lb.map((p,i)=>({name:p.name,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d);
     const top=moves[0];
     return`<div class="card live-card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--amber)">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">table below includes the live score${liveIds.length>1?'s':''}</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">table updates as goals go in</span></div>
       ${liveIds.map(id=>{const f=GF[id],s=state.live[id]||{};const ml=s.st==='HT'?'HT':s.st==='BT'?'ET':(s.min?s.min+"'":'');return`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem;padding:3px 0"><span>${FLAGS[f.home]||'⚽'}</span><span style="flex:1;text-align:right;color:var(--tx)">${f.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--tx);min-width:42px;text-align:center">${s.hg||0}–${s.ag||0}</span><span style="flex:1;color:var(--tx)">${f.away}</span><span>${FLAGS[f.away]||'⚽'}</span>${ml?`<span style="font-size:.6rem;color:var(--amber);font-family:'Oswald',sans-serif;min-width:24px;text-align:right">${ml}</span>`:''}</div>`;}).join('')}
       ${top?`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--b);font-size:.72rem;color:var(--gr)">📈 <b>${esc(top.name)}</b> ${top.d===1?'climbs a place':'climbs '+top.d+' places'} on the live score${liveIds.length>1?'s':''}</div>`:''}
     </div>`;
