@@ -1901,6 +1901,16 @@ function calcProvisional(){
   state.grR=real;
   return{prov,base};
 }
+function _ukTime(ms){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});}catch(e){const d=new Date(ms||Date.now());return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}}
+function liveFeedStatusHTML(){
+  const hb=state.workerHb,cad='refreshes about every 5 min while games are on';
+  if(hb&&hb.lastRun){
+    const ageMin=Math.floor((Date.now()-hb.lastRun)/60000),t=_ukTime(hb.lastRun);
+    if(ageMin>15)return`<p class="sub" style="color:var(--amber)">\u26a0 Scores may be running behind \u2014 the feed was last checked at ${t}. It catches up on its own in a few minutes.</p>`;
+    return`<p class="sub"><span class="live-dot" style="margin:0 5px 0 0"></span>Last updated ${t} \u00b7 ${cad}, so it can lag the telly slightly.</p>`;
+  }
+  return`<p class="sub">Straight from the live feed \u2014 ${cad}, so it can lag the telly slightly.</p>`;
+}
 function renderLive(){
   const ids=liveMatchIds();
   if(!ids.length){
@@ -1917,7 +1927,7 @@ function renderLive(){
     <h2 class="ttl" style="margin:0">On Now</h2>
     <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length} match${ids.length>1?'es':''}</span>
   </div>
-  <p class="sub">Straight from the live feed — scores refresh about every 10 minutes, so they can lag the telly slightly.</p>
+  ${liveFeedStatusHTML()}
   ${ids.map(id=>{
     const f=GF[id];const s=state.live[id]||{};const hg=s.hg||0,ag=s.ag||0;
     const hw=hg>ag,aw=ag>hg;
@@ -2956,7 +2966,7 @@ function renderStandings(){
     const moves=lb.map((p,i)=>({name:p.name,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d);
     const top=moves[0];
     return`<div class="card live-card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--amber)">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">table updates as goals go in</span></div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">${state.workerHb&&state.workerHb.lastRun?('updated '+_ukTime(state.workerHb.lastRun)):'table updates as goals go in'}</span></div>
       ${liveIds.map(id=>{const f=GF[id],s=state.live[id]||{};const ml=s.st==='HT'?'HT':s.st==='BT'?'ET':(s.min?s.min+"'":'');return`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem;padding:3px 0"><span>${FLAGS[f.home]||'⚽'}</span><span style="flex:1;text-align:right;color:var(--tx)">${f.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--tx);min-width:42px;text-align:center">${s.hg||0}–${s.ag||0}</span><span style="flex:1;color:var(--tx)">${f.away}</span><span>${FLAGS[f.away]||'⚽'}</span>${ml?`<span style="font-size:.6rem;color:var(--amber);font-family:'Oswald',sans-serif;min-width:24px;text-align:right">${ml}</span>`:''}</div>`;}).join('')}
       ${top?`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--b);font-size:.72rem;color:var(--gr)">📈 <b>${esc(top.name)}</b> ${top.d===1?'climbs a place':'climbs '+top.d+' places'} on the live score${liveIds.length>1?'s':''}</div>`:''}
     </div>`;
@@ -3264,6 +3274,7 @@ else if(DB){
     maybePlayCeremony();
   },err=>{console.error('Firebase error:',err);hideLoading();setConnDot('#ef4444','Firebase connection failed, using local storage');localInit();});
   DB.ref('.info/connected').on('value',s=>{setConnDot(s.val()?'#00e676':'#f59e0b',s.val()?'Connected · Live sync active':'Reconnecting…');});
+  DB.ref('_worker').on('value',s=>{state.workerHb=s.val()||null;if(!first)render();});
   startPolling();
 } else {
   // ── LOCAL STORAGE MODE: single-device, no sync ────────────────────────────
