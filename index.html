@@ -3165,7 +3165,7 @@ function render(){
     {id:'tables',l:'GROUPS'}
   );
   if(adminSess||groupStageDone()||Object.values(state.koR||{}).some(m=>m&&m.played))tabs.push({id:'knockout',l:'KNOCKOUT'});
-  if(underway)tabs.push(drawTab);
+  if(underway&&adminSess)tabs.push(drawTab);
   // If current tab is no longer valid (e.g. signed out of setup, or no draw), redirect
   const validTab=tabs.find(t=>t.id===state.tab&&!t.d);
   if(!validTab){
