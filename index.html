@@ -656,7 +656,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=400;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,sOpen:{},standQ:'',drawQ:'',drawCountdown:60,muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,expandedDept:null,sOpen:{},standQ:'',deptQ:'',drawQ:'',drawCountdown:60,muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -1178,7 +1178,7 @@ function todayMatchesHTML(){
       <span style="font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gr);letter-spacing:.1em;font-weight:700">ON TODAY</span>
       <span style="font-size:.66rem;color:var(--txm);margin-left:auto">${ids.length} game${ids.length>1?'s':''}</span>
     </div>
-    ${ids.map(id=>{const f=GF[id];const mine=myT.has(f.home)||myT.has(f.away);const done=state.grR[id]?.played;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:${done?'var(--gr)':'var(--txm)'};min-width:40px">${done?'FT':f.tm}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[f.home]||'⚽'} ${f.home} <span style="color:var(--txm)">v</span> ${f.away} ${FLAGS[f.away]||'⚽'}</span>${f.ch?`<span style="font-size:.62rem;color:var(--txm)">${f.ch}</span>`:''}</div>`;}).join('')}
+    ${ids.map(id=>{const f=GF[id];const mine=myT.has(f.home)||myT.has(f.away);const done=state.grR[id]?.played;const ls=(!done&&state.live[id])?state.live[id]:null;const statTxt=ls?(ls.st==='HT'?'HT':ls.st==='BT'?'ET':(ls.min?ls.min+"'":'LIVE')):(done?'FT':f.tm);const statCol=ls?'var(--amber)':(done?'var(--gr)':'var(--txm)');const mid=ls?`${f.home} <span style="color:var(--amber);font-weight:700">${ls.hg||0}-${ls.ag||0}</span> ${f.away}`:`${f.home} <span style="color:var(--txm)">v</span> ${f.away}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:${statCol};min-width:40px;font-weight:${ls?'700':'400'}">${statTxt}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[f.home]||'⚽'} ${mid} ${FLAGS[f.away]||'⚽'}</span>${f.ch?`<span style="font-size:.62rem;color:var(--txm)">${f.ch}</span>`:''}</div>`;}).join('')}
   </div>`;
 }
 
@@ -1859,16 +1859,25 @@ function deptStandings(){
     .sort((a,b)=>b.avg-a.avg||b.total-a.total||a.name.localeCompare(b.name));
 }
 function deptTableHTML(){
-  const ds=deptStandings();
   const label=(state.depts&&state.depts.label)||'Squads';
-  if(!ds.length)return`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} have players yet.</div>`;
-  const maxAvg=Math.max(1,...ds.map(d=>d.avg));
+  const sing=label.toLowerCase().replace(/s$/,'');
+  const all=deptStandings();
+  if(!all.length)return`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} have players yet.</div>`;
+  const q=(state.deptQ||'').toLowerCase();
+  const ds=q?all.filter(d=>d.name.toLowerCase().includes(q)):all;
+  const maxAvg=Math.max(1,...all.map(d=>d.avg));
   const dm=deptMap();const lb=calcLeaderboard();const noDept=lb.filter(p=>!dm[p.name.toLowerCase()]).length;
-  return`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px">Ranked by average points per person, so team size doesn't matter. Early on it's only a few games in, so it'll settle as more are played.</div>${ds.map((d,rank)=>{
+  const intro=`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px">Ranked by average points per person, so team size doesn't matter. Tap a ${esc(sing)} to see who's in it.</div>`;
+  if(!ds.length)return`${intro}<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} match "${esc(state.deptQ)}"</div>`;
+  return`${intro}${ds.map((d)=>{
+    const rank=all.indexOf(d);
     const lead=rank===0&&d.avg>0;
+    const open=state.expandedDept===d.name;
+    const safeDept=d.name.replace(/'/g,"\\'");
+    const members=lb.filter(p=>dm[p.name.toLowerCase()]===d.name);
     const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
     const pctW=Math.round((d.avg/maxAvg)*100);
-    return`<div class="sc${lead?' gold':''}${rank<3&&d.avg>0?' podium':''}" style="margin-bottom:8px"><div class="sc-hdr" style="cursor:default">
+    return`<div class="sc${lead?' gold':''}${rank<3&&d.avg>0?' podium':''}" style="margin-bottom:8px"><div class="sc-hdr" onclick="state.expandedDept=state.expandedDept==='${safeDept}'?null:'${safeDept}';render()" style="cursor:pointer">
       <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&d.avg>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:${rank<3&&d.avg>0?'#3a2a00':'var(--txm)'};border:1px solid ${rank<3&&d.avg>0?'transparent':'var(--b)'}">${rank+1}</div>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx)">${esc(d.name)}</div>
@@ -1876,7 +1885,8 @@ function deptTableHTML(){
         <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${lead?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
       </div>
       <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${lead?'var(--gold)':d.avg>0?'var(--gr)':'var(--txm)'}">${d.avg}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">AVG / PERSON</div></div>
-    </div></div>`;}).join('')}${noDept?`<div style="font-size:.68rem;color:var(--txm);text-align:center;margin-top:8px">${noDept} player${noDept>1?'s':''} not in a ${esc(label.toLowerCase().replace(/s$/,''))}</div>`:''}`;
+      <span style="color:var(--txm);font-size:.68rem;flex-shrink:0;margin-left:2px">${open?'▲':'▼'}</span>
+    </div>${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">${members.length?members.map(p=>`<div style="display:flex;gap:9px;align-items:center;padding:7px 9px;background:var(--card);border-radius:7px;margin-bottom:6px;box-shadow:var(--shadow)"><div style="flex:1;min-width:0"><div style="font-family:'Oswald',sans-serif;font-size:.84rem;font-weight:600;color:var(--tx)">${esc(p.name)}</div><div style="font-size:.66rem;color:var(--txm);margin-top:2px">${p.breakdown.map(b=>{const out=(b.qual||'pending')==='eliminated';return`<span style="opacity:${out?'.55':'1'}">${b.flag} ${esc(b.name)}${b.pts>0?` <b style="color:var(--gr)">+${b.pts}</b>`:''}</span>`;}).join(' · ')||'No team yet'}</div></div><span style="font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:${p.total>0?'var(--gr)':'var(--txm)'};flex-shrink:0">${p.total}</span></div>`).join(''):`<div style="font-size:.7rem;color:var(--txm);text-align:center;padding:4px">No players in this ${esc(sing)} yet.</div>`}</div>`:''}</div>`;}).join('')}${noDept&&!q?`<div style="font-size:.68rem;color:var(--txm);text-align:center;margin-top:8px">${noDept} player${noDept>1?'s':''} not in a ${esc(sing)}</div>`:''}`;
 }
 
 // ── LIVE (read-only) ───────────────────────────────────────────────────────────
@@ -2923,6 +2933,7 @@ function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
   const liveOn=liveIds.length>0;
   const _realGr=state.grR;
+  const _todayHTML=todayMatchesHTML();
   let _confRank=null;const _liveTeams=new Set();
   if(liveOn){
     _confRank={};calcLeaderboard().forEach((p,i)=>{_confRank[p.name]=i+1;});           // ranks on confirmed results, before merging live
@@ -2943,6 +2954,7 @@ function renderStandings(){
   const myName=getMyName();
   const dmap=deptMap();const deptsActive=!!(state.depts&&state.depts.on&&(state.depts.names||[]).length&&lb.length);
   const showDeptView=deptsActive&&state.standView==='depts';
+  const dsCount=showDeptView?deptStandings().length:0;const _deptSing=((state.depts&&state.depts.label)||'Squad').toLowerCase().replace(/s$/,'');
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
   return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
     <div><h2 class="ttl">Standings${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2><div style="font-size:.72rem;color:var(--txm)">Tap a player for the breakdown</div><button onclick="shareStandings()" style="margin-top:7px;padding:4px 11px;background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txd);font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.06em;cursor:pointer">↗ SHARE</button></div>
@@ -2952,7 +2964,7 @@ function renderStandings(){
     <button onclick="state.standView='players';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView!=='depts'?'var(--card)':'transparent'};color:${state.standView!=='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView!=='depts'?'var(--shadow)':'none'}">PLAYERS</button>
     <button onclick="state.standView='depts';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView==='depts'?'var(--card)':'transparent'};color:${state.standView==='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView==='depts'?'var(--shadow)':'none'}">${esc((state.depts.label||'DEPARTMENTS').toUpperCase())}</button>
   </div>`:''}
-  ${!showDeptView?`${lb.length>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}${todayMatchesHTML()}`:''}
+  ${!showDeptView?`${lb.length>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}${_todayHTML}`:`${dsCount>6?`<div style="position:relative;margin-bottom:14px"><input type="text" placeholder="🔍 Find a ${esc(_deptSing)}…" value="${(state.deptQ||'').replace(/"/g,'&quot;')}" oninput="state.deptQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${(state.deptQ||'')?`<button onclick="state.deptQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}`}
   ${champ&&champP?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
     <div style="font-size:2rem;margin-bottom:6px">🏆</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:.04em">${champ} ARE WORLD CHAMPIONS</div>
