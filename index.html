@@ -906,7 +906,18 @@ const OFFICE_BANTER=[
   "📵 Out of office: emotionally, since the group stage started",
   "🧮 No reconciliation required. The table doesn't lie",
   "✅ This one always balances: someone wins, someone comes last",
-  "📑 Everyone's pitching their team like it's a live deal"
+  "📑 Everyone's pitching their team like it's a live deal",
+  "📊 Mark-to-market says you're winning. Enjoy it while it lasts",
+  "🧮 Only month-end that counts is July",
+  "📒 Off-balance-sheet emotions running high in here",
+  "☕ Coffee machine's hosting more tactical debate than the boardroom",
+  "📧 Reply-all discipline out the window the second a goal goes in",
+  "⚽ VAR can't overturn this league table",
+  "🧤 Clean sheets paying better than the savings account this week",
+  "🫖 No kettle in this office, so the teas are on the loser regardless",
+  "📉 Bought the dip on a team nobody wanted. Bold call",
+  "🚶 Suspicious number of trips past the kitchen screen today",
+  "🖊️ Minutes of the meeting: who's top of the sweepstake"
 ];
 const OFFICE_BANTER_PRE=[
   "📝 Get your name in before the draw",
@@ -987,11 +998,24 @@ const SQUAD_LINES={
 const _SQN=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const _SQUAD_NORM={};Object.keys(SQUAD_LINES).forEach(k=>{_SQUAD_NORM[_SQN(k)]=SQUAD_LINES[k];});
 const squadLinesFor=name=>_SQUAD_NORM[_SQN(name)]||null;
+// One pass over every played result → accurate per-team and per-player stats for the ticker.
+// goals for/against, wins/draws/losses, clean sheets, and how many of a player's teams are still alive.
+function tickerStats(lb,qual){
+  const team={};
+  const bump=(name,gf,ga)=>{const t=team[name]||(team[name]={p:0,w:0,d:0,l:0,gf:0,ga:0,cs:0});t.p++;t.gf+=gf;t.ga+=ga;if(gf>ga)t.w++;else if(gf===ga)t.d++;else t.l++;if(ga===0)t.cs++;};
+  Object.entries(GF).forEach(([id,f])=>{const r=state.grR[id];if(!r||!r.played)return;bump(f.home,r.hg||0,r.ag||0);bump(f.away,r.ag||0,r.hg||0);});
+  Object.values(state.koR||{}).forEach(m=>{if(m&&m.played&&m.home&&m.away){bump(m.home,m.hg||0,m.ag||0);bump(m.away,m.ag||0,m.hg||0);}});
+  const koOut=new Set();Object.values(state.koR||{}).forEach(m=>{if(m&&m.played){if(m.home&&m.home!==m.winner)koOut.add(m.home);if(m.away&&m.away!==m.winner)koOut.add(m.away);}});
+  const alive=name=>!((qual[name]==='eliminated')||koOut.has(name));
+  const players=lb.map(p=>{let gf=0,ga=0,cs=0,w=0,d=0,l=0,aliveN=0;p.breakdown.forEach(b=>{const t=team[b.name];if(t){gf+=t.gf;ga+=t.ga;cs+=t.cs;w+=t.w;d+=t.d;l+=t.l;}if(alive(b.name))aliveN++;});return{name:p.name,total:p.total,teamsN:p.breakdown.length,aliveN,gf,ga,cs,w,d,l};});
+  return{team,players,alive,koOut};
+}
 function tickerItems(){
   const custom=((state.ticker&&state.ticker.messages)||[]).filter(m=>m&&String(m).trim()).map(m=>"📢 "+String(m).trim());
   const a=[];
   if(state.draw){
     const lb=calcLeaderboard();
+    const {qual}=computeQual();
     const champ=(state.koR["m104"]&&state.koR["m104"].played)?state.koR["m104"].winner:null;
     const started=lb.some(p=>p.total>0);
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
@@ -1016,7 +1040,10 @@ function tickerItems(){
       if(callers.length)a.push(`🔮 ${pick(["Called it.","Take a bow."])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the start`);
       if(lb.length>3){const last=lb[lb.length-1];a.push(pick([`🥄 ${last.name} finishes bottom. There's always next year`,`🥄 Wooden spoon goes to ${last.name}. Chin up`]));}
     } else if(started){
-      const L=lb[0],margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
+      const L=lb[0];
+      const topTies=lb.filter(p=>p.total===L.total).length, shaped=topTies<3;
+      const margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
+      if(shaped){
       a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table the office actually reads, ${L.total} pts`,`🧤 ${L.name} keeping it tight at the top, ${L.total}`]));
       if(lb.length>1){
         if(margin===0)a.push(pick([`🤝 ${L.name} and ${lb[1].name} level at the top`,`😤 Nothing between ${L.name} and ${lb[1].name}`,`⚖️ Dead level up top: ${L.name} and ${lb[1].name}`]));
@@ -1027,19 +1054,46 @@ function tickerItems(){
         if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🍿 ${within} in the mix at the top, grab the popcorn`,`🎢 ${within} of them covered by 5 pts`]));
         for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} and ${lb[i+1].name} tied on ${lb[i].total}`);break;}}
       }
+      } else {
+        a.push(pk([`🤷 ${topTies} locked together at the top on ${L.total}, wide open`,`🍿 ${topTies} sharing top spot on ${L.total}, all to play for`,`⚖️ ${L.total} the number to beat and ${topTies} of you are on it`,`😮 ${topTies} can call themselves top on ${L.total}. Nobody's pulling clear yet`,`🎢 Right old logjam up top, ${topTies} level on ${L.total}`,`📊 ${topTies}-way tie for top on ${L.total}, too early to call`],1));
+      }
       const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
       if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`,`⚽ ${form.flag} ${form.name} can't stop scoring, ${form.pts} pts, ${ownTxt(o)}`,`🚀 ${form.flag} ${form.name} the form team of the tournament, ${form.pts} pts`],2).replace(/ +/g," ").trim());}
       const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the final"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
       if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${o.length>2?o.length+" owners buzzing":"good for "+o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
       if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`,`🍗 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} put ${bigWin.ws} past ${bigWin.l}, get the cricket scorer in`],1).replace(/ +/g," ").trim());
-      if(lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
-      if(lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
-      if(me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
+      const st=tickerStats(lb,qual);
+      const anyOut=st.players.some(x=>x.aliveN<x.teamsN);
+      const _sc=st.players.filter(x=>x.gf>0).sort((x,y)=>y.gf-x.gf)[0];
+      if(_sc)a.push(pk([`⚽ ${_sc.name}'s teams lead the scoring with ${_sc.gf} goal${_sc.gf>1?'s':''}`,`🎯 Nobody's outscoring ${_sc.name}, ${_sc.gf} goal${_sc.gf>1?'s':''} and counting`,`🥅 ${_sc.name} top of the goal charts, ${_sc.gf} banged in`],8));
+      const _cs=st.players.filter(x=>x.cs>0).sort((x,y)=>y.cs-x.cs)[0];
+      if(_cs)a.push(pk([`🧤 ${_cs.name}'s defences have kept ${_cs.cs} clean sheet${_cs.cs>1?'s':''}`,`🛡️ ${_cs.cs} clean sheet${_cs.cs>1?'s':''} for ${_cs.name}, watertight`,`🚫 ${_cs.name} not conceding for fun, ${_cs.cs} shut-out${_cs.cs>1?'s':''}`],12));
+      const _lk=st.players.filter(x=>(x.w+x.d+x.l)>0).sort((x,y)=>y.ga-x.ga)[0];
+      if(_lk&&_lk.ga>=4)a.push(pk([`🥴 ${_lk.name}'s lot have shipped ${_lk.ga}. Get a keeper in`,`🚨 ${_lk.ga} conceded by ${_lk.name}'s teams, leaky at the back`,`🕳️ ${_lk.name} leaking goals, ${_lk.ga} in already`],16));
+      if(anyOut){
+        const _ai=st.players.filter(x=>x.teamsN>0&&x.aliveN===x.teamsN);if(_ai.length){const p2=pk(_ai,seed);a.push(pk([`🛡️ ${p2.name} still has ${p2.teamsN>1?`all ${p2.teamsN} teams`:'a team'} standing`,`💪 Not a single casualty for ${p2.name} yet`,`✅ ${p2.name} ${p2.teamsN>1?'fully intact':'still in it'}, nothing eliminated`],20));}
+        const _ao=st.players.filter(x=>x.teamsN>0&&x.aliveN===0);if(_ao.length){const p3=pk(_ao,seed+3);a.push(pk([`🪦 ${p3.name}'s ${p3.teamsN>1?'teams are all':'team is'} out, playing for pride now`,`💔 Tough on ${p3.name}, ${p3.teamsN>1?'every team':'their team'} gone`,`🫡 ${p3.name} down to nothing but bragging is free`],24));}
+      }
+      const _sh=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,owners:d.owners})).filter(t=>t.pts>0&&t.owners.length>=2).sort((x,y)=>y.pts-x.pts)[0];
+      if(_sh)a.push(pk([`🤝 ${_sh.name} banking points for all ${_sh.owners.length} who share them`,`👬 ${_sh.owners.slice(0,2).join(' & ')}${_sh.owners.length>2?` +${_sh.owners.length-2}`:''} all riding ${_sh.name}`,`🪢 ${_sh.owners.length} owners pinned to ${_sh.name}, ${_sh.pts} pts apiece`],28));
+      if(lb.length>=4){const _pp=[];for(let i=1;i<lb.length-1;i++){const g=Math.round((lb[i].total-lb[i+1].total)*10)/10;if(g>=0&&g<=3&&lb[i].total>0)_pp.push({a:lb[i],b:lb[i+1],g,r:i+1});}if(_pp.length){const d2=pk(_pp,seed+5);a.push(pk([`⚔️ Desk derby: ${d2.a.name} v ${d2.b.name}, ${d2.g===0?'level':d2.g+' in it'} for ${ordinal(d2.r)}`,`🥊 ${d2.a.name} v ${d2.b.name} scrapping over ${ordinal(d2.r)}, ${d2.g===0?'nothing in it':d2.g+' between them'}`,`👀 ${d2.b.name} breathing down ${d2.a.name}'s neck, ${d2.g===0?'level':d2.g+' back'}`],32));}}
+      const _dm=deptMap();
+      if(state.depts&&state.depts.on&&Object.keys(_dm).length){
+        const _sg={},_sc2={};st.players.forEach(x=>{const d=_dm[x.name.toLowerCase()];if(!d)return;_sg[d]=(_sg[d]||0)+x.gf;_sc2[d]=(_sc2[d]||0)+x.cs;});
+        const _sgT=Object.entries(_sg).filter(([_,v])=>v>0).sort((x,y)=>y[1]-x[1])[0];
+        if(_sgT)a.push(pk([`🏢 ${_sgT[0]}'s teams have scored the most across the office, ${_sgT[1]}`,`⚽ ${_sgT[0]} banging them in as a squad, ${_sgT[1]} goals`],36));
+        const _scT=Object.entries(_sc2).filter(([_,v])=>v>0).sort((x,y)=>y[1]-x[1])[0];
+        if(_scT)a.push(pk([`🧤 ${_scT[0]} the meanest squad at the back, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`,`🛡️ ${_scT[0]} keeping it tight as a squad, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`],40));
+      }
+      if(shaped&&lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
+      if(shaped&&lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
+      if(shaped&&me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
         if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`,`🧤 Clean sheet at the top, ${me}. Don't let it slip`]));
         else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`,`🥁 On the podium, ${me}, ${gapTop} to the summit`]));
         else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`]));
         else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
+      if(!shaped&&me){const _ip=lb.some(p=>p.name.toLowerCase()===myLc&&p.total===L.total);if(_ip)a.push(pk([`👀 Right in the mix at the top, ${me}`,`🙌 Up there with the leaders, ${me}, nothing in it`,`😏 Top of the pile jointly, ${me}. Go and make it yours`],2));}
       // ── Department race (optional; the individual board still leads the ticker) ──
       const ds=(state.depts&&state.depts.on)?deptStandings():[];
       if(ds.length>=2){
@@ -2622,6 +2676,11 @@ function renderSetup(){
       </div>
     </div>`:''}
   </div>
+  <div class="card" style="margin-bottom:16px;padding:13px">
+    <div style="font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;color:var(--tx);margin-bottom:4px">📧 EXPORT FOR EMAILS</div>
+    <p style="font-size:.78rem;color:var(--txd);margin:0 0 11px;line-height:1.5">Copies a snapshot of the current standings, squads and charity total. Paste it into a chat with Claude to write a round-up email.</p>
+    <button class="btn btn-ghost" onclick="exportSnapshot()" style="font-size:.72rem">📋 COPY STANDINGS SNAPSHOT</button>
+  </div>
   <div class="card" style="margin-bottom:16px;overflow:hidden">
     <button style="width:100%;padding:10px 13px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.76rem;letter-spacing:.05em;text-align:left" onclick="state.sOpen.diag=!state.sOpen.diag;render()">
       <span>🩺 SYSTEM CHECK <span style="font-size:.64rem;color:var(--txm);font-family:'Barlow',sans-serif;font-weight:400;letter-spacing:0"> · test the feed, database and poller</span></span>
@@ -3206,6 +3265,37 @@ function protectedResetResults(){if(!adminSess){showToast('Admin sign-in require
 function protectedRunDraw(){requirePin(runDraw);}
 function protectedReset(){if(!adminSess){showToast('Admin sign-in required','error');return;}showMod('Reset the draw and results?','This clears the draw and every result so you can start fresh. Your sign-ups, charity total and settings are kept. This cannot be undone.','RESET',doReset,true);}
 async function copyDraw(){const lb=calcLeaderboard();const lines=[`🏆 ${CONFIG.title}`,'Drawn: '+new Date(state.draw.drawnAt).toLocaleString('en-GB'),''];lb.forEach((p,i)=>{lines.push(`${MEDAL[i]||(i+1)+'.'} ${p.name}: ${p.total} pts`);p.breakdown.forEach(t=>lines.push(`   ${t.flag} ${t.name} (Grp ${t.group})`));lines.push('');});try{await navigator.clipboard.writeText(lines.join('\n'));showToast('Copied!','gold');}catch{showToast('Copy failed','error');}}
+
+// Plain-text snapshot of the current state for pasting into a chat to help write round-up emails.
+function buildSnapshot(){
+  const lb=calcLeaderboard();const{qual}=computeQual();
+  const koOut=new Set();Object.values(state.koR||{}).forEach(m=>{if(m&&m.played){if(m.home&&m.home!==m.winner)koOut.add(m.home);if(m.away&&m.away!==m.winner)koOut.add(m.away);}});
+  const stat=t=>{const q=qual[t.name]||t.qual;if(q==='eliminated'||koOut.has(t.name))return'OUT';if(q==='top2'||q==='best3rd')return'through';return'';};
+  const now=new Date().toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const fin=!!(state.koR&&state.koR['m104']&&state.koR['m104'].played);
+  const phase=fin?'Tournament finished':groupStageDone()?'Knockouts':'Group stage';
+  const np=(state.draw&&state.draw.participantCount)||lb.length;
+  const playedG=Object.values(state.grR||{}).filter(r=>r&&r.played).length;
+  const L=[];
+  L.push(`WC2026 SWEEPSTAKE — SNAPSHOT (${now})`);
+  L.push(`Phase: ${phase}${phase==='Group stage'?` · ${playedG}/72 group games played`:''} · ${np} players`);
+  if(state.prize&&state.prize.on){const paid=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;L.push(`Pot: £${(paid*state.prize.buyin).toLocaleString()} of £${(np*state.prize.buyin).toLocaleString()} (${paid}/${np} paid)`);}
+  if(state.charity&&state.charity.on)L.push(`Charity raised: £${(state.charity.total||0).toLocaleString()}${state.charity.name?' for '+state.charity.name:''}`);
+  L.push('');L.push('STANDINGS  (rank. name — points | teams [status] (team pts))');
+  lb.forEach((p,i)=>{const ts=p.breakdown.map(t=>{const s=stat(t);return`${t.name}${s?' ['+s+']':''} (${t.pts})`;}).join(', ');L.push(`${i+1}. ${p.name} — ${p.total} | ${ts}`);});
+  const dp=state.depts;
+  if(dp&&dp.on&&(dp.names||[]).length){const ds=deptStandings();if(ds&&ds.length){L.push('');L.push(`${(dp.label||'SQUADS').toUpperCase()}  (by average points)`);ds.forEach((d,i)=>L.push(`${i+1}. ${d.name} — ${d.avg} avg (${d.total} total, ${d.count} player${d.count===1?'':'s'})`));}}
+  const out=[];lb.forEach(p=>p.breakdown.forEach(t=>{if(stat(t)==='OUT')out.push(`${t.name} (${p.name})`);}));
+  if(out.length){L.push('');L.push('TEAMS OUT: '+out.join(', '));}
+  return L.join('\n');
+}
+function exportSnapshot(){
+  if(!adminSess){showToast('Admin sign-in required','error');return;}
+  if(!state.draw){showToast('No draw yet','error');return;}
+  const txt=buildSnapshot();
+  showMod('Export for emails','A snapshot of where things stand. Tap copy, then paste it into a chat with Claude.','CLOSE',()=>{});
+  setTimeout(()=>{const box=document.getElementById('modal-box');if(!box)return;const ta=document.createElement('textarea');ta.value=txt;ta.readOnly=true;ta.style.cssText='width:100%;height:200px;font-size:.7rem;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);padding:8px;margin-bottom:10px;font-family:monospace;resize:vertical';box.insertBefore(ta,box.querySelector('.btn').parentElement);const cp=document.createElement('button');cp.className='btn btn-ghost';cp.style.marginRight='8px';cp.textContent='📋 COPY';cp.onclick=()=>{navigator.clipboard.writeText(txt).then(()=>showToast('Copied — paste it to Claude','gold')).catch(()=>{ta.select();try{document.execCommand('copy');showToast('Copied!','gold');}catch{showToast('Select the text and copy','error');}});};box.querySelector('.btn').parentElement.prepend(cp);},50);
+}
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // Register service worker for PWA / offline support
