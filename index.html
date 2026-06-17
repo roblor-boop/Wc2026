@@ -656,7 +656,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=400;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,expandedDept:null,sOpen:{},standQ:'',deptQ:'',drawQ:'',drawCountdown:60,muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},odds:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,expandedDept:null,sOpen:{},standQ:'',deptQ:'',drawQ:'',drawCountdown:60,muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -850,74 +850,61 @@ const TK_CD='\uE000';  // placeholder swapped for a live-updating countdown span
 const DN='\uE001';  // placeholder → a real tappable Donate link in the ticker
 function ordinal(n){const s=["th","st","nd","rd"],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
 const OFFICE_BANTER=[
-  "💬 More talked about than the Monday meeting",
-  "☕ Loser buys the teas?",
-  "📺 Goals on in the kitchen",
-  "🤫 No spoilers by the coffee machine",
-  "📸 Someone's already put this in the group chat",
-  "🏅 Bragging rights are the only prize that counts",
-  "📅 Half the office checking this more than their emails",
-  "🤝 No hard feelings till the whistle goes",
-  "🗣️ Plenty of talk in the kitchen. Let the table sort it out",
-  "⚽ No football knowledge needed. Strong opinions, essential",
-  "🙌 Cheer two desks over? Someone's team just scored",
-  "🎧 Headphones in, scores up, work… ongoing",
-  "📵 'In a meeting' = watching with the sound off",
-  "😅 Pretending to read emails, actually checking scores",
-  "🫣 One eye on the spreadsheet, one eye on the score",
-  "🏆 A year of bragging rights on the line",
   "😬 Nobody remembers who won. Everybody remembers who came last",
-  "😎 Big talk over by the lifts this morning",
-  "📤 That result's already in three group chats",
-  "🙃 Lost your match? Blame the printer",
-  "😏 Quietly confident is the office way. Loudly confident is more fun",
-  "🛗 Sweepstake chat in the lift queue from here on",
-  "🫡 Respect to whoever drew the favourites. Pure luck, mind",
-  "🧠 Tactics being argued like it's the actual World Cup",
-  "🔥 Form is temporary, the sweepstake table is forever",
-  "🚀 Early points mean nothing… unless they're yours",
-  "⏳ Long way to go. Don't celebrate the group stage too hard",
-  "🧾 Only spreadsheet anyone's refreshing today is this one",
-  "💹 Strong fundamentals, shame about the defending",
-  "💼 Diversified? You've got one team. Concentrated risk it is",
-  "💸 Bragging rights: tax-free, fully yours, no clawback",
-  "🐌 Slow start? Call it a J-curve and hold your nerve",
-  "🥅 Penalty shootout: maximum risk, minimum sleep",
-  "📉 Group-stage form is not indicative of future results",
-  "⚠️ Past performance is no guarantee of future trophies",
-  "📜 Capital at risk. So are your bragging rights",
-  "🔍 No due diligence done, full conviction declared",
-  "🔍 Did the DD on your team only after you drew it, didn't you",
-  "🍀 High conviction on a team you'd never heard of yesterday",
-  "💪 Suddenly a lifelong supporter. Conviction's a wonderful thing",
-  "💼 Assets under management: one team and a lot of hope",
-  "📒 Whole book riding on eleven blokes you didn't pick",
-  "🎯 Beating the desk next to you is the only benchmark today",
-  "📊 This table's had more screen time than Bloomberg today",
-  "🖥️ Four monitors, all of them on the score",
-  "🚪 A few teams eyeing an early exit. Not the lucrative kind",
-  "🔚 A couple of portfolios heading for an early write-off",
-  "📈 Show me a better risk-adjusted return than this one",
-  "⏳ It's a long hold to July. One win isn't an exit",
-  "📉 Don't panic-sell after one bad result. Long-term hold, this",
-  "🧾 Fairly sure this one doesn't need compliance pre-clearance",
-  "💸 Two-and-twenty? No chance. This one's a freeroll",
+  "😅 Pretending to read emails, actually checking scores",
+  "📵 'In a meeting' = watching with the sound off",
+  "🎧 Headphones in, scores up, work… ongoing",
   "📆 'Hard stop at 3' — funny how that's also kickoff",
-  "📵 Out of office: emotionally, since the group stage started",
-  "🧮 No reconciliation required. The table doesn't lie",
-  "✅ This one always balances: someone wins, someone comes last",
-  "📑 Everyone's pitching their team like it's a live deal",
-  "📊 Mark-to-market says you're winning. Enjoy it while it lasts",
-  "🧮 Only month-end that counts is July",
-  "📒 Off-balance-sheet emotions running high in here",
-  "☕ Coffee machine's hosting more tactical debate than the boardroom",
-  "📧 Reply-all discipline out the window the second a goal goes in",
-  "⚽ VAR can't overturn this league table",
-  "🧤 Clean sheets paying better than the savings account this week",
-  "🫖 No kettle in this office, so the teas are on the loser regardless",
-  "📉 Bought the dip on a team nobody wanted. Bold call",
+  "🖥️ Four monitors, all of them on the score",
   "🚶 Suspicious number of trips past the kitchen screen today",
-  "🖊️ Minutes of the meeting: who's top of the sweepstake"
+  "🎯 Beating the desk next to you is the only benchmark today",
+  "🖨️ The printer's free all afternoon. Everyone's otherwise engaged",
+  "📊 There's a shadow spreadsheet tracking all this. Of course there is",
+  "📧 Out-of-office replies are getting suspiciously specific about 'calls'",
+  "💺 Hot-desking near the screen has never been this competitive",
+  "📱 The standings have now been checked from at least three toilets",
+  "🗣️ Everyone's suddenly an expert on a squad they couldn't name last week",
+  "📣 The trash talk has comfortably outpaced the actual football",
+  "⏱️ A late goal is coming for someone. It always is",
+  "🥅 No lead is safe. Ask anyone sitting on 1-0",
+  "😴 The favourites are flattering to deceive, as ever",
+  "🚩 Somewhere an offside flag is about to ruin a perfectly good celebration",
+  "📺 VAR is checking. The office is holding its breath and its coffee",
+  "🥉 Reminder: the third-place playoff still pays exactly nothing",
+  "🧤 Clean sheets win nothing and decide everything",
+  "🫠 Somewhere, a banker bet is quietly collapsing",
+  "⚽ A goalless draw is somehow ruining four people's day",
+  "🏳️ Goal difference is about to matter to people who can't define it",
+  "🎲 No skill was involved in any of this. That's the appeal",
+  "🍀 The draw owes nobody an explanation",
+  "🤷 You didn't pick the team. The team picked the fight",
+  "🙊 Two co-owners of one team are reportedly no longer on speaking terms",
+  "🎰 Somebody's about to get lucky and take full credit",
+  "🙃 Fierce loyalty to a team you were handed ninety seconds ago",
+  "🃏 The draw is being called rigged, exclusively by those it didn't favour",
+  "💬 'I always had a good feeling about them', heard only from the winning",
+  "🌙 Games this side of the Atlantic are a strictly late-night commitment now",
+  "🕐 Nothing says rigorous analysis like a 1am group game",
+  "🌎 Five time zones between you and your team's bedtime",
+  "☕ The coffee machine is bracing for the morning after",
+  "💼 Diversified? You've got one team. Concentrated risk it is",
+  "🐌 Slow start? Call it a J-curve and hold your nerve",
+  "💸 Bragging rights: tax-free, fully yours, no clawback",
+  "📜 Capital at risk. So are your bragging rights",
+  "🔍 Did the DD on your team only after you drew it, didn't you",
+  "🏛️ The investment committee would not have signed off most of these teams",
+  "🛢️ Plenty of dry powder, no clue where to deploy it",
+  "♾️ TVPI on a free entry is technically infinite. Make the most of it",
+  "🔒 Concentrated, illiquid and emotionally leveraged. Textbook",
+  "📑 No term sheet, no warranties, no recourse. Just the draw",
+  "🧾 Fairly sure this one doesn't need compliance pre-clearance",
+  "💷 No prize money on offer, which has deterred precisely no one",
+  "🤝 The LPs would like a word about this allocation",
+  "🔄 The table reshuffles every ninety minutes. Plan accordingly",
+  "📊 The leaderboard updates in real time and forgives nothing",
+  "🤡 Tactical masterminds at every desk, not one of them consulted",
+  "❤️ Every result nudges a good cause along, and that bit actually counts",
+  "🏁 It's wide open, which is the polite way of saying nobody's convincing anyone",
 ];
 const OFFICE_BANTER_PRE=[
   "📝 Get your name in before the draw",
@@ -1020,16 +1007,17 @@ function tickerItems(){
     const started=lb.some(p=>p.total>0);
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
     let goals=0,bigWin=null;
-    const scan=(home,away,hg,ag)=>{goals+=(hg||0)+(ag||0);const mar=Math.abs((hg||0)-(ag||0));if(mar>=2&&(!bigWin||mar>bigWin.mar))bigWin=(hg>=ag)?{w:home,l:away,ws:hg,ls:ag,mar}:{w:away,l:home,ws:ag,ls:hg,mar};};
-    Object.entries(state.grR).forEach(([id,r])=>{if(r&&r.played){const f=GF[id];if(f)scan(f.home,f.away,r.hg,r.ag);}});
-    Object.values(state.koR).forEach(m=>{if(m&&m.played&&m.home&&m.away)scan(m.home,m.away,m.hg,m.ag);});
+    const RECENT_DAYS=2;   // result-flavoured ticker lines only celebrate the last couple of days, never stale games
+    const scan=(home,away,hg,ag,dt)=>{goals+=(hg||0)+(ag||0);const mar=Math.abs((hg||0)-(ag||0));if(mar>=2&&daysAgoDt(dt)<=RECENT_DAYS&&(!bigWin||mar>bigWin.mar))bigWin=(hg>=ag)?{w:home,l:away,ws:hg,ls:ag,mar}:{w:away,l:home,ws:ag,ls:hg,mar};};
+    Object.entries(state.grR).forEach(([id,r])=>{if(r&&r.played){const f=GF[id];if(f)scan(f.home,f.away,r.hg,r.ag,f.dt);}});
+    Object.entries(state.koR).forEach(([id,m])=>{if(m&&m.played&&m.home&&m.away)scan(m.home,m.away,m.hg,m.ag,(KO_SCHED[id]||{}).dt);});
     const seed=(gp+kp)*7+(lb[0]?Math.round(lb[0].total):0)*3+goals+lb.length;
     const pk=(arr,o)=>arr[((((seed+(o||0))%arr.length)+arr.length)%arr.length)];
     const pick=arr=>pk(arr,0);
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
     const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners happy"],3):"good for "+o.join(" & ");
-    liveMatchIds().forEach(id=>{const f=GF[id],s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());});
+    liveAllIds().forEach(id=>{const f=liveFix(id);if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());if(s.sc&&s.sc.length){const e=s.sc[s.sc.length-1];const who=e.s==='h'?f.home:f.away;if(e.n)a.push((`⚽ ${e.m?e.m+' ':''}${e.n}${e.og?' (OG)':e.pk?' (pen)':''} — ${who}`).replace(/ +/g," ").trim());}});
     const _today=gamesToday().filter(id=>!state.grR[id]?.played);
     if(_today.length){const _l=_today.slice(0,4).map(id=>`${GF[id].home} v ${GF[id].away}`).join(", ");a.push((`⚽ ON TODAY: ${_l}${_today.length>4?` +${_today.length-4} more`:""}`).replace(/ +/g," ").trim());}
     if(champ){
@@ -1044,25 +1032,35 @@ function tickerItems(){
       const topTies=lb.filter(p=>p.total===L.total).length, shaped=topTies<3;
       const margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
       if(shaped){
-      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table that counts, ${L.total} pts`,`🧤 ${L.name} keeping it tight at the top, ${L.total}`]));
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table that counts, ${L.total} pts`,`📈 ${L.name} ahead of the pack, ${L.total} pts`,`👀 ${L.name} has entered the "please stop scoring" phase`]));
       if(lb.length>1){
         if(margin===0)a.push(pick([`🤝 ${L.name} and ${lb[1].name} level at the top`,`😤 Nothing between ${L.name} and ${lb[1].name}`,`⚖️ Dead level up top: ${L.name} and ${lb[1].name}`]));
         else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top`,`📸 Photo finish, ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} right on ${L.name}'s tail, ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`,`🍿 ${margin} pt${margin>1?"s":""} in it, proper squeaky-bum time`]));
-        else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`,`🎯 Whole office marking ${L.name} man-to-man now`,`🛋️ ${L.name} cruising at the top, someone fetch a deckchair`],7));
-        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`🔪 ${lb[1].name} sharpening up, ${margin} behind`,`🏃 ${lb[1].name} in hot pursuit, ${margin} off the summit`],4));
+        else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`,`🎯 ${L.name} the one everyone wants to beat now`,`😌 ${L.name} cruising at the top`],7));
+        if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`👀 ${lb[1].name} not far off, ${margin} behind`,`🏃 ${lb[1].name} in hot pursuit, ${margin} off the top`],4));
         const within=lb.filter(p=>L.total-p.total<=5).length;
-        if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🍿 ${within} in the mix at the top, grab the popcorn`,`🎢 ${within} of them covered by 5 pts`]));
+        if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🔥 ${within} still in the hunt at the top`,`🎢 ${within} of them covered by 5 pts`]));
         for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} and ${lb[i+1].name} tied on ${lb[i].total}`);break;}}
       }
       } else {
-        a.push(pk([`🤷 ${topTies} locked together at the top on ${L.total}, wide open`,`🍿 ${topTies} sharing top spot on ${L.total}, all to play for`,`⚖️ ${L.total} the number to beat and ${topTies} of you are on it`,`😮 ${topTies} can call themselves top on ${L.total}. Nobody's pulling clear yet`,`🎢 Right old logjam up top, ${topTies} level on ${L.total}`,`📊 ${topTies}-way tie for top on ${L.total}, too early to call`],1));
+        a.push(pk([`🤷 ${topTies} locked together at the top on ${L.total}, wide open`,`🍿 ${topTies} sharing top spot on ${L.total}, all to play for`,`⚖️ ${L.total} the number to beat and ${topTies} of you are on it`,`😮 ${topTies} can call themselves top on ${L.total}. Nobody's pulling clear yet`,`🎢 Logjam at the top, ${topTies} level on ${L.total}`,`📊 ${topTies}-way tie for top on ${L.total}, too early to call`],1));
       }
       const form=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,flag:d.flag,owners:d.owners})).filter(t=>t.pts>0).sort((x,y)=>y.pts-x.pts)[0];
       if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`,`⚽ ${form.flag} ${form.name} can't stop scoring, ${form.pts} pts, ${ownTxt(o)}`,`🚀 ${form.flag} ${form.name} the form team of the tournament, ${form.pts} pts`],2).replace(/ +/g," ").trim());}
       const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the final"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
       if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${o.length>2?o.length+" owners buzzing":"good for "+o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
-      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win so far: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`,`🍗 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} put ${bigWin.ws} past ${bigWin.l}, get the cricket scorer in`],1).replace(/ +/g," ").trim());
+      if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win lately: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`,`🥅 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} stuck ${bigWin.ws} past ${bigWin.l}`,`🫣 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, that escalated quickly`],1).replace(/ +/g," ").trim());
+      // Feature 4: market odds as banter only (no card UI). Recent upsets where a clear favourite slipped up.
+      const upsets=[];
+      Object.entries(state.grR).forEach(([id,r])=>{if(!(r&&r.played))return;const o=state.odds[id];if(!o||!o.fav||o.fav==='Draw'||(o.p||0)<55)return;const f=GF[id];if(!f||daysAgoDt(f.dt)>RECENT_DAYS)return;const win=r.hg>r.ag?f.home:r.ag>r.hg?f.away:'Draw';if(win!==o.fav)upsets.push({fav:o.fav,p:o.p,win,draw:win==='Draw'});});
+      Object.entries(state.koR).forEach(([id,m])=>{if(!(m&&m.played&&m.home&&m.away))return;const o=state.odds[id];if(!o||!o.fav||o.fav==='Draw'||(o.p||0)<55)return;if(daysAgoDt((KO_SCHED[id]||{}).dt)>RECENT_DAYS)return;const win=m.winner||(m.hg>m.ag?m.home:m.ag>m.hg?m.away:'Draw');if(win!==o.fav)upsets.push({fav:o.fav,p:o.p,win,draw:false});});
+      if(upsets.length){const u=upsets[Math.abs(seed)%upsets.length];const fw=FLAGS[u.win]||'',ff=FLAGS[u.fav]||'';
+        if(u.draw)a.push(pk([`📊 Against the odds: ${ff} ${u.fav} (${u.p}% favourites) only drew`,`🤷 So much for the form book — ${ff} ${u.fav} held to a draw`],5).replace(/ +/g," ").trim());
+        else a.push(pk([`🐏 Against all odds: ${fw} ${u.win} beat the favourites ${ff} ${u.fav}`,`😱 Upset! ${fw} ${u.win} saw off ${ff} ${u.fav}, who the market had at ${u.p}%`,`📊 Form book in the bin — ${fw} ${u.win} downed ${ff} ${u.fav}`,`🎲 ${fw} ${u.win} ignored the ${u.p}% odds and beat ${ff} ${u.fav}`],5).replace(/ +/g," ").trim());}
+      // A light pre-match nod for a game coming up today.
+      const upc=gamesToday().filter(id=>!state.grR[id]?.played&&!state.live[id]&&state.odds[id]&&state.odds[id].fav&&state.odds[id].fav!=='Draw');
+      if(upc.length){const o=state.odds[upc[Math.abs(seed)%upc.length]];a.push(pk([`📊 Market makes ${FLAGS[o.fav]||''} ${o.fav} favourites today (${o.p}%)`,`📈 ${FLAGS[o.fav]||''} ${o.fav} the ones to beat today, per the odds`,`🎟️ Form book fancies ${FLAGS[o.fav]||''} ${o.fav} later — ${o.p}% says the market`],6).replace(/ +/g," ").trim());}
       const st=tickerStats(lb,qual);
       const anyOut=st.players.some(x=>x.aliveN<x.teamsN);
       const _sc=st.players.filter(x=>x.gf>0).sort((x,y)=>y.gf-x.gf)[0];
@@ -1086,12 +1084,12 @@ function tickerItems(){
         const _scT=Object.entries(_sc2).filter(([_,v])=>v>0).sort((x,y)=>y[1]-x[1])[0];
         if(_scT)a.push(pk([`🧤 ${_scT[0]} have the tightest defence, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`,`🛡️ ${_scT[0]} keeping it tight as a squad, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`],40));
       }
-      if(shaped&&lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} keeping it humble on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
+      if(shaped&&lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} bottom for now on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
       if(shaped&&lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
       if(shaped&&me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
-        if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`,`🧤 Clean sheet at the top, ${me}. Don't let it slip`]));
+        if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`,`🔒 Top spot's yours, ${me}. Don't let it slip`,`👑 You're top, ${me}. Try not to mention it every 12 minutes`]));
         else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`,`🥁 On the podium, ${me}, ${gapTop} to the summit`]));
-        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`]));
+        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`,`🥄 Character-building tournament so far, ${me}`]));
         else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
       if(!shaped&&me){const _ip=lb.some(p=>p.name.toLowerCase()===myLc&&p.total===L.total);if(_ip)a.push(pk([`👀 Right in the mix at the top, ${me}`,`🙌 Up there with the leaders, ${me}, nothing in it`,`😏 Top of the pile jointly, ${me}. Go and make it yours`],2));}
       // ── Department race (optional; the individual board still leads the ticker) ──
@@ -1221,6 +1219,20 @@ function gamesToday(){
     .filter(id=>{const[day,mon]=(GF[id].dt||'').split(' ');return parseInt(day)===td&&months[mon]===tmo;})
     .sort((a,b)=>parseInt((GF[a].tm||'').replace(/\D/g,'')||'0')-parseInt((GF[b].tm||'').replace(/\D/g,'')||'0'));
 }
+function koGamesToday(){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  let td,tmo;
+  try{const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',day:'numeric',month:'numeric'}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t)?.value;td=parseInt(g('day'));tmo=parseInt(g('month'))-1;}
+  catch{const n=new Date();td=n.getDate();tmo=n.getMonth();}
+  const res=resolveBracket();
+  return Object.keys(KO_SCHED).filter(id=>{
+    const sch=KO_SCHED[id];if(!sch)return false;
+    const[day,mon]=(sch.dt||'').split(' ');
+    if(!(parseInt(day)===td&&months[mon]===tmo))return false;
+    const rv=res[id]||{};
+    return rv.teamA&&rv.teamB&&!state.live[id]&&!(state.koR[id]&&state.koR[id].played);   // resolved teams, not live, not played
+  }).sort((a,b)=>parseInt((KO_SCHED[a].tm||'').replace(/\D/g,'')||'0')-parseInt((KO_SCHED[b].tm||'').replace(/\D/g,'')||'0'));
+}
 function todayMatchesHTML(){
   if(!state.draw)return'';
   const ids=gamesToday();
@@ -1245,7 +1257,7 @@ function shareURL(){try{const p={d:state.draw,g:state.grR,k:state.koR,s:state.sc
 function loadFromURL(){try{const p=new URLSearchParams(location.search).get('s');if(!p)return false;const d=JSON.parse(decodeURIComponent(escape(atob(p))));
   const dr=d.d?sanitizeDraw(d.d):null;if(dr)state.draw=dr;
   if(d.g&&typeof d.g==='object'){const g={};Object.keys(d.g).forEach(id=>{if(GF[id]){const r=d.g[id]||{};g[id]={hg:Math.max(0,parseInt(r.hg)||0),ag:Math.max(0,parseInt(r.ag)||0),played:!!r.played};}});state.grR=g;}
-  if(d.k&&typeof d.k==='object'){const ko={};Object.keys(d.k).forEach(id=>{if(BRACKET[id]){const r=d.k[id]||{};const h=_knownTeam(r.home),a=_knownTeam(r.away),w=_knownTeam(r.winner);ko[id]={home:h?h.name:'',away:a?a.name:'',hg:Math.max(0,parseInt(r.hg)||0),ag:Math.max(0,parseInt(r.ag)||0),winner:w?w.name:'',round:BRACKET[id].r,played:!!r.played};}});state.koR=ko;}
+  if(d.k&&typeof d.k==='object'){const ko={};Object.keys(d.k).forEach(id=>{if(BRACKET[id]){const r=d.k[id]||{};const h=_knownTeam(r.home),a=_knownTeam(r.away),w=_knownTeam(r.winner);ko[id]={home:h?h.name:'',away:a?a.name:'',hg:Math.max(0,parseInt(r.hg)||0),ag:Math.max(0,parseInt(r.ag)||0),winner:w?w.name:'',round:BRACKET[id].r,played:!!r.played,pens:(r.pens&&r.pens.h!=null&&r.pens.a!=null)?{h:Math.max(0,parseInt(r.pens.h)||0),a:Math.max(0,parseInt(r.pens.a)||0)}:null};}});state.koR=ko;}
   if(d.s&&typeof d.s==='object'){const s={};Object.keys(d.s).forEach(k=>{const v=Number(d.s[k]);if(isFinite(v))s[k]=v;});state.scoring={...DEF_SCR,...s};}
   if(d.b&&typeof d.b==='object'){const bb={};Object.keys(d.b).forEach(k=>{const v=d.b[k];if(typeof v==='boolean')bb[k]=v;else{const nv=Number(v);if(isFinite(nv))bb[k]=nv;}});state.bonus={...DEF_BONUS,...bb};}
   return !!(dr||d.g||d.k);}catch{return false;}}
@@ -1798,6 +1810,18 @@ function isTodayDt(dt){
   }catch{return false;}
 }
 // (Live is a manual admin toggle now — there's no automatic time-based detection.)
+// How many days ago a "DD Mon" fixture date was, in UK time. 0 = today, 1 = yesterday, negative = future,
+// 9999 = unparseable. Used to keep result-flavoured ticker lines current (no harping on old games).
+function daysAgoDt(dt){
+  if(!dt)return 9999;
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const[d,m]=String(dt).split(' ');const day=parseInt(d),mon=months[m];
+  if(isNaN(day)||mon==null)return 9999;
+  let ty,tm,td;
+  try{const p=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/London',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date());const g=t=>parseInt(p.find(x=>x.type===t)?.value);ty=g('year');tm=g('month')-1;td=g('day');}
+  catch{const n=new Date();ty=n.getFullYear();tm=n.getMonth();td=n.getDate();}
+  return Math.round((new Date(ty,tm,td)-new Date(ty,mon,day))/86400000);
+}
 
 // ── CALCULATIONS ──────────────────────────────────────────────────────────────
 function groupTable(g){
@@ -1956,6 +1980,14 @@ function liveMatchIds(){
   Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.push(id);});
   return ids.sort((a,b)=>(GF[a].tm||'').localeCompare(GF[b].tm||''));
 }
+// Knockout live scores arrive keyed by knockout match id (e.g. m97), carrying their own team names
+// and round (GF only knows group fixtures). These helpers let the live displays show group AND
+// knockout games; the leaderboard/standings merges below deliberately stay group-only (liveMatchIds),
+// since knockout points are settled on advancement at full time, not on the in-play score.
+const KO_RND={r32:'Round of 32',r16:'Last 16',qf:'Quarter-Final',sf:'Semi-Final',final:'Final','3rd':'3rd Place'};
+function liveFix(id){if(GF[id])return GF[id];const s=state.live[id];return (s&&s.home&&s.away)?{home:s.home,away:s.away,ko:true,round:s.round}:null;}
+function liveKoIds(){const ids=[];Object.keys(state.live||{}).forEach(id=>{const s=state.live[id];if(s&&!GF[id]&&s.home&&s.away&&!state.koR?.[id]?.played)ids.push(id);});return ids;}
+function liveAllIds(){return liveMatchIds().concat(liveKoIds());}
 function calcProvisional(){
   const live=state.live||{};
   const ids=liveMatchIds();
@@ -1980,15 +2012,16 @@ function liveFeedStatusHTML(){
   return`<p class="sub">Straight from the live feed \u2014 ${cad}, so it can lag the telly slightly.</p>`;
 }
 function renderLive(){
-  const ids=liveMatchIds();
+  const ids=liveAllIds();
   const todayIds=gamesToday();
-  if(!ids.length&&!todayIds.length){
+  const koToday=koGamesToday();
+  if(!ids.length&&!todayIds.length&&!koToday.length){
     return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📅</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NO GAMES TODAY</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6;max-width:340px;margin:0 auto">Nothing on today. Have a look at <b>FIXTURES</b> for what's coming up — when the next game kicks off it'll appear here live, with the score and who's got a team playing.</p></div>`;
   }
   const myName=getMyName();
   const lb=calcLeaderboard();
   const ownersOf=team=>lb.filter(p=>p.breakdown.some(b=>b.name===team)).map(p=>p.name);
-  const liveTeams=new Set();ids.forEach(id=>{liveTeams.add(GF[id].home);liveTeams.add(GF[id].away);});
+  const liveTeams=new Set();ids.forEach(id=>{const f=liveFix(id);if(f){liveTeams.add(f.home);liveTeams.add(f.away);}});
   const prov=ids.length?calcProvisional():null;
   const myT=_myTeams||new Set();
   const schedIds=todayIds.filter(id=>!ids.includes(id));
@@ -1996,24 +2029,25 @@ function renderLive(){
   return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
     ${ids.length?'<span class="live-dot" style="width:10px;height:10px;margin:0"></span>':'<span style="font-size:1.05rem">⚽</span>'}
     <h2 class="ttl" style="margin:0">${ids.length?'On Now':'Today'}</h2>
-    <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length?`${ids.length} live`:`${todayIds.length} game${todayIds.length>1?'s':''}`}</span>
+    <span style="font-size:.7rem;color:var(--txm);margin-left:auto">${ids.length?`${ids.length} live`:`${todayIds.length+koToday.length} game${(todayIds.length+koToday.length)>1?'s':''}`}</span>
   </div>
   ${liveFeedStatusHTML()}
   ${ids.map(id=>{
-    const f=GF[id];const s=state.live[id]||{};const hg=s.hg||0,ag=s.ag||0;
+    const f=liveFix(id);if(!f)return '';const s=state.live[id]||{};const hg=s.hg||0,ag=s.ag||0;
     const hw=hg>ag,aw=ag>hg;
     const ownH=ownersOf(f.home),ownA=ownersOf(f.away);
     const myH=myName&&ownH.some(n=>n.toLowerCase()===myName.toLowerCase()),myA=myName&&ownA.some(n=>n.toLowerCase()===myName.toLowerCase());
     return`<div class="card live-card" style="padding:14px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <span style="display:flex;align-items:center;gap:5px;font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:var(--amber);font-weight:700"><span class="live-dot" style="margin:0"></span>LIVE${s.st==='HT'?' · HT':s.st==='BT'?' · ET':(s.min?` · ${s.min}'`:'')}${f.ch?` · ${f.ch}`:''}</span>
-        <span style="font-size:.64rem;color:var(--txm);font-family:'Oswald',sans-serif">Grp ${f.group} · MD${f.matchday}</span>
+        <span style="font-size:.64rem;color:var(--txm);font-family:'Oswald',sans-serif">${f.ko?(KO_RND[f.round]||'Knockout'):`Grp ${f.group} · MD${f.matchday}`}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.1rem;line-height:1">${FLAGS[f.home]||'⚽'}</div><div style="font-size:.82rem;font-weight:${hw?'700':'500'};color:${hw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.home}</div>${ownerLine(ownH,myH)}</div>
         <div style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:2.5rem;color:var(--tx);line-height:1">${hg}<span style="color:var(--txm)">:</span>${ag}</div>
         <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.1rem;line-height:1">${FLAGS[f.away]||'⚽'}</div><div style="font-size:.82rem;font-weight:${aw?'700':'500'};color:${aw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.away}</div>${ownerLine(ownA,myA)}</div>
       </div>
+      ${(s.sc&&s.sc.length)?`<div style="display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--b)"><div style="flex:1;text-align:left;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='h').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div><div style="font-size:.72rem;align-self:center">⚽</div><div style="flex:1;text-align:right;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='a').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div></div>`:''}
     </div>`;
   }).join('')}
   ${prov?(()=>{
@@ -2035,7 +2069,8 @@ function renderLive(){
       ${prov.prov.length>10?`<div style="text-align:center;font-size:.68rem;color:var(--txm);padding-top:8px">+ ${prov.prov.length-10} more</div>`:''}
     </div>`;
   })():''}
-  ${schedIds.length?`<div class="card" style="padding:12px 14px;margin-top:4px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gr);letter-spacing:.1em;font-weight:700;margin-bottom:10px">${ids.length?"TODAY'S OTHER GAMES":"TODAY'S GAMES"}</div>${schedIds.map(id=>{const f=GF[id];const mine=myT.has(f.home)||myT.has(f.away);const r=state.grR[id];const done=r&&r.played;const statTxt=done?'FT':f.tm;const statCol=done?'var(--gr)':'var(--txm)';const mid=done?`${f.home} <b>${r.hg}-${r.ag}</b> ${f.away}`:`${f.home} <span style="color:var(--txm)">v</span> ${f.away}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:${statCol};min-width:40px">${statTxt}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[f.home]||'⚽'} ${mid} ${FLAGS[f.away]||'⚽'}</span>${f.ch?`<span style="font-size:.62rem;color:var(--txm)">${f.ch}</span>`:''}</div>`;}).join('')}</div>`:''}`;
+  ${schedIds.length?`<div class="card" style="padding:12px 14px;margin-top:4px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gr);letter-spacing:.1em;font-weight:700;margin-bottom:10px">${ids.length?"TODAY'S OTHER GAMES":"TODAY'S GAMES"}</div>${schedIds.map(id=>{const f=GF[id];const mine=myT.has(f.home)||myT.has(f.away);const r=state.grR[id];const done=r&&r.played;const statTxt=done?'FT':f.tm;const statCol=done?'var(--gr)':'var(--txm)';const mid=done?`${f.home} <b>${r.hg}-${r.ag}</b> ${f.away}`:`${f.home} <span style="color:var(--txm)">v</span> ${f.away}`;return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:${statCol};min-width:40px">${statTxt}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[f.home]||'⚽'} ${mid} ${FLAGS[f.away]||'⚽'}</span>${f.ch?`<span style="font-size:.62rem;color:var(--txm)">${f.ch}</span>`:''}</div>`;}).join('')}</div>`:''}
+  ${koToday.length?`<div class="card" style="padding:12px 14px;margin-top:4px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;color:var(--gr);letter-spacing:.1em;font-weight:700;margin-bottom:10px">${koToday.length>1?"TODAY'S KNOCKOUTS":"TODAY'S KNOCKOUT"}</div>${(()=>{const kr=resolveBracket();return koToday.map(id=>{const rv=kr[id]||{};const sch=KO_SCHED[id]||{};const mine=myT.has(rv.teamA)||myT.has(rv.teamB);return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:6px;margin-bottom:4px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.7rem;color:var(--txm);min-width:40px">${sch.tm||''}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[rv.teamA]||'⚽'} ${rv.teamA} <span style="color:var(--txm)">v</span> ${rv.teamB} ${FLAGS[rv.teamB]||'⚽'}</span><span style="font-size:.6rem;color:var(--txm)">${KO_RND[BRACKET[id].r]||''}</span></div>`;}).join('')})()}</div>`:''}`;
 }
 
 
@@ -2080,7 +2115,9 @@ function saveKo(mId){
   const w=hg!==ag?(hg>ag?teamA:teamB):(winEl?.value||'');
   if(!w){showToast('Select penalty winner','error');return;}
   const bc=BRACKET[mId];
-  state.koR[mId]={home:teamA,away:teamB,hg,ag,winner:w,played:true,round:bc.r};
+  let pens=null;
+  if(hg===ag){const ph=parseInt(document.getElementById(`ph-${mId}`)?.value),pa=parseInt(document.getElementById(`pa-${mId}`)?.value);if(!isNaN(ph)&&!isNaN(pa))pens={h:ph,a:pa};}
+  state.koR[mId]={home:teamA,away:teamB,hg,ag,winner:w,played:true,round:bc.r,pens};
   fbSave('wc2026/ko',state.koR);
   try{if(mId==='m104'){SFX.fanfare();fireConfetti();}else SFX.goal();}catch{}
   showToast(`${FLAGS[w]||''}${w} advances!`,'gold');
@@ -2869,6 +2906,17 @@ function renderFixtures(){
         <div class="grid">${ids.map(id=>renderMC(id)).join('')}</div>
       </div>`;
     }).join('');
+  })()}
+  ${(()=>{
+    const res=resolveBracket();
+    const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    // Resolved knockout ties only — empty during the group stage, so this never duplicates the bracket's slot view.
+    let ids=Object.keys(KO_SCHED).filter(id=>{const rv=res[id]||{};return rv.teamA&&rv.teamB;});
+    if(state.fT==='__MINE__')ids=ids.filter(id=>{const rv=res[id];return _myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);});
+    else if(state.fT&&state.fT!=='ALL')ids=ids.filter(id=>{const rv=res[id];return rv.teamA===state.fT||rv.teamB===state.fT;});
+    if(!ids.length)return'';
+    ids.sort((a,b)=>{const sa=KO_SCHED[a],sb=KO_SCHED[b];const[da,ma]=(sa.dt||'').split(' '),[db,mb]=(sb.dt||'').split(' ');return (new Date(2026,months[ma],+da)-new Date(2026,months[mb],+db))||(parseInt((sa.tm||'').replace(/\D/g,'')||'0')-parseInt((sb.tm||'').replace(/\D/g,'')||'0'));});
+    return`<div style="margin-top:22px;margin-bottom:8px"><span style="font-family:'Oswald',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:.06em;color:var(--gr)">KNOCKOUTS</span></div>`+ids.map(id=>{const rv=res[id],sch=KO_SCHED[id],r=state.koR[id],done=r&&r.played,mine=_myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);const mid=done?`${rv.teamA} <b>${r.hg}-${r.ag}${r.pens?` (${r.pens.h}-${r.pens.a}p)`:''}</b> ${rv.teamB}`:`${rv.teamA} <span style="color:var(--txm)">v</span> ${rv.teamB}`;return`<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:7px;margin-bottom:5px;font-size:.78rem"><span style="font-family:'Oswald',sans-serif;font-size:.64rem;color:var(--txm);min-width:72px;line-height:1.35">${relDate(sch.dt)}<br>${done?'FT':(sch.tm||'')}</span><span style="flex:1">${mine?'⭐ ':''}${FLAGS[rv.teamA]||'⚽'} ${mid} ${FLAGS[rv.teamB]||'⚽'}</span><span style="font-size:.58rem;color:var(--txm);text-align:right;min-width:58px;line-height:1.35">${KO_RND[BRACKET[id].r]||''}${sch.ve&&sch.ve!=='TBC'?'<br>'+sch.ve:''}</span></div>`;}).join('');
   })()}`;
 }
 
@@ -2966,7 +3014,7 @@ function renderKOCard(mId,tA,tB){
   const sch=KO_SCHED[mId];
   const schLine=sch?`<span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.03em">${relDate(sch.dt)}${sch.tm&&sch.tm!=='TBC'?' · '+sch.tm+' BST':''}${sch.ve&&sch.ve!=='TBC'?' · '+sch.ve:''}</span>`:'';
   return`<div style="background:var(--card);border:1px solid ${played?rc+'55':'var(--b)'};border-radius:9px;padding:10px 12px;margin-bottom:0;box-shadow:var(--shadow)" id="komc-${mId}">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span style="font-family:'Oswald',sans-serif;font-size:.63rem;color:${rc};letter-spacing:.07em">${bc.l}</span>${dw&&played?`<span style="font-size:.6rem;padding:1px 5px;background:rgba(192,112,0,.15);border:1px solid rgba(192,112,0,.4);border-radius:3px;color:var(--amber);font-family:'Oswald',sans-serif;font-weight:600">PENS</span>`:''}</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span style="font-family:'Oswald',sans-serif;font-size:.63rem;color:${rc};letter-spacing:.07em">${bc.l}</span>${dw&&played?`<span style="font-size:.6rem;padding:1px 5px;background:rgba(192,112,0,.15);border:1px solid rgba(192,112,0,.4);border-radius:3px;color:var(--amber);font-family:'Oswald',sans-serif;font-weight:600">PENS${r.pens?` ${r.pens.h}-${r.pens.a}`:''}</span>`:''}</div>
     ${schLine?`<div style="margin-bottom:6px">${schLine}</div>`:''}
     ${[{name:tA||descA,flag:tA?FLAGS[tA]||'⚽':'🔲',isW:hw,isL:aw&&played,score:r?.hg,side:'hg'},{name:tB||descB,flag:tB?FLAGS[tB]||'⚽':'🔲',isW:aw,isL:hw&&played,score:r?.ag,side:'ag'}].map(({name,flag,isW,isL,score,side})=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;background:${isW?'rgba(0,122,61,.07)':isL?'rgba(120,120,120,.05)':(_myTeams.has(name)?'var(--pill-gr)':'transparent')}">
@@ -2975,7 +3023,7 @@ function renderKOCard(mId,tA,tB){
       ${canEnter?`<button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',-1)">−</button><span class="sval" id="sk${side}${mId}" style="font-size:1rem">${tempS[mId][side]}</span><button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',1)">+</button>`:''}
       ${played?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:${isW?'var(--gr)':'var(--txm)'}">${score}</span>${isW?`<span style="color:var(--gr);font-size:.8rem">✓</span>`:''}`:''}
     </div>`).join('<div style="height:1px;background:var(--b);margin:2px 0"></div>')}
-    ${canEnter?`<div id="pens-${mId}" style="display:${hg===ag?'flex':'none'};align-items:center;gap:6px;margin-top:6px;padding:5px 8px;background:rgba(192,112,0,.06);border:1px solid rgba(192,112,0,.25);border-radius:6px"><span style="font-size:.7rem;color:var(--amber);font-family:'Oswald',sans-serif;flex-shrink:0">Pens:</span><select id="kow-${mId}" style="flex:1;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem"><option value="">Select winner</option><option value="${tA}">${FLAGS[tA]||''} ${tA}</option><option value="${tB}">${FLAGS[tB]||''} ${tB}</option></select></div>
+    ${canEnter?`<div id="pens-${mId}" style="display:${hg===ag?'flex':'none'};flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;background:rgba(192,112,0,.06);border:1px solid rgba(192,112,0,.25);border-radius:6px"><span style="font-size:.7rem;color:var(--amber);font-family:'Oswald',sans-serif;flex-shrink:0">Pens:</span><input id="ph-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.h:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><span style="color:var(--txm)">–</span><input id="pa-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.a:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><select id="kow-${mId}" style="flex:1;min-width:110px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem"><option value="">Winner…</option><option value="${tA}">${FLAGS[tA]||''} ${tA}</option><option value="${tB}">${FLAGS[tB]||''} ${tB}</option></select></div>
     <button style="margin-top:8px;width:100%;padding:7px;background:linear-gradient(135deg,${rc},${rc}cc);border:none;border-radius:5px;color:#fff;font-family:'Oswald',sans-serif;font-size:.73rem;font-weight:700;letter-spacing:.06em;cursor:pointer" onclick="saveKo('${mId}')">SAVE RESULT</button>`:''}
     ${played?`<button class="btn-sm" style="margin-top:6px" onclick="clearKo('${mId}')">✕ REMOVE RESULT</button>`:''}
   </div>`;
@@ -2998,6 +3046,7 @@ function bonusAwardsHTML(){
 }
 function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
+  const liveStripIds=state.draw?liveAllIds():[];   // group + knockout, for the LIVE NOW strip display only; the merge below stays group-only
   const liveOn=liveIds.length>0;
   const _realGr=state.grR;
   const _todayHTML='';
@@ -3040,13 +3089,13 @@ function renderStandings(){
     <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
   </div>`:''}
   ${!showDeptView?`${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">${Date.now()<KICKOFF_MS?'TOURNAMENT STARTS 11 JUNE 2026':'TOURNAMENT UNDERWAY'}</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">${Date.now()<KICKOFF_MS?'Points appear here once games kick off.':(isAdmin()?'Enter results in Fixtures and points update here.':'Points appear here as soon as the first games finish.')}</div></div>`:''}${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}`:''}
-  ${liveOn&&!showDeptView?(()=>{
-    const moves=lb.map((p,i)=>({name:p.name,r:i+1,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d);
+  ${liveStripIds.length>0&&!showDeptView?(()=>{
+    const moves=liveOn?lb.map((p,i)=>({name:p.name,r:i+1,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d):[];
     const ord=n=>{const v=n%100;return n+(v>=11&&v<=13?'th':(['th','st','nd','rd'][n%10]||'th'));};
     const top=moves[0];
     return`<div class="card live-card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--amber)">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><span class="live-dot"></span><span style="font-family:'Oswald',sans-serif;font-size:.78rem;font-weight:700;color:var(--amber);letter-spacing:.04em">LIVE NOW</span><span style="font-size:.64rem;color:var(--txm);margin-left:auto">${state.workerHb&&state.workerHb.lastRun?('updated '+_ukTime(state.workerHb.lastRun)):'table updates as goals go in'}</span></div>
-      ${liveIds.map(id=>{const f=GF[id],s=state.live[id]||{};const ml=s.st==='HT'?'HT':s.st==='BT'?'ET':(s.min?s.min+"'":'');return`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem;padding:3px 0"><span>${FLAGS[f.home]||'⚽'}</span><span style="flex:1;text-align:right;color:var(--tx)">${f.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--tx);min-width:42px;text-align:center">${s.hg||0}–${s.ag||0}</span><span style="flex:1;color:var(--tx)">${f.away}</span><span>${FLAGS[f.away]||'⚽'}</span>${ml?`<span style="font-size:.6rem;color:var(--amber);font-family:'Oswald',sans-serif;min-width:24px;text-align:right">${ml}</span>`:''}</div>`;}).join('')}
+      ${liveStripIds.map(id=>{const f=liveFix(id);if(!f)return '';const s=state.live[id]||{};const ml=s.st==='HT'?'HT':s.st==='BT'?'ET':(s.min?s.min+"'":'');return`<div style="display:flex;align-items:center;gap:6px;font-size:.82rem;padding:3px 0"><span>${FLAGS[f.home]||'⚽'}</span><span style="flex:1;text-align:right;color:var(--tx)">${f.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--tx);min-width:42px;text-align:center">${s.hg||0}–${s.ag||0}</span><span style="flex:1;color:var(--tx)">${f.away}</span><span>${FLAGS[f.away]||'⚽'}</span>${ml?`<span style="font-size:.6rem;color:var(--amber);font-family:'Oswald',sans-serif;min-width:24px;text-align:right">${ml}</span>`:''}</div>`;}).join('')}
       ${top?`<div style="margin-top:8px;padding-top:8px;border-top:.5px solid var(--b);font-size:.72rem;color:var(--gr)">📈 <b>${esc(top.name)}</b> up to ${ord(top.r)} on the live score${liveIds.length>1?'s':''}</div>`:''}
     </div>`;
   })():''}
@@ -3213,7 +3262,7 @@ function render(){
   // Setup tab ONLY appears for signed-in admins — completely hidden otherwise
   const tabs=[];
   if(adminSess)tabs.push({id:'setup',l:'ADMIN'});
-  const liveCount=state.draw?liveMatchIds().length:0;
+  const liveCount=state.draw?liveAllIds().length:0;
   const underway=hasResults();
   const drawTab={id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')};
   if(!underway)tabs.push(drawTab);
@@ -3353,6 +3402,7 @@ else if(DB){
     state.grR=data.gr||{};
     state.live=data.live||{};
     state.koR=data.ko||{};
+    state.odds=data.odds||{};
     state.koOverride=data.koov||{};
     _accessHash=data.accessHash||null;
     state.paid=data.paid||{};
