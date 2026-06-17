@@ -2003,20 +2003,20 @@ function calcProvisional(){
 }
 function _ukTime(ms){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});}catch(e){const d=new Date(ms||Date.now());return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}}
 function liveFeedStatusHTML(){
-  const hb=state.workerHb,cad='updates about every minute while games are on';
+  const hb=state.workerHb,cad='refreshes every minute during games';
   if(hb&&hb.lastRun){
     const ageMin=Math.floor((Date.now()-hb.lastRun)/60000),t=_ukTime(hb.lastRun);
-    if(ageMin>15)return`<p class="sub" style="color:var(--amber)">\u26a0 Scores may be running behind \u2014 the feed was last checked at ${t}. It catches up on its own in a few minutes.</p>`;
-    return`<p class="sub"><span class="live-dot" style="margin:0 5px 0 0"></span>Last updated ${t} \u00b7 ${cad}, so it can lag the telly slightly.</p>`;
+    if(ageMin>15)return`<p class="sub" style="color:var(--amber)">\u26a0 Scores may be behind \u00b7 last checked ${t}</p>`;
+    return`<p class="sub"><span class="live-dot" style="margin:0 5px 0 0"></span>Last updated ${t} \u00b7 ${cad}</p>`;
   }
-  return`<p class="sub">Straight from the live feed \u2014 ${cad}, so it can lag the telly slightly.</p>`;
+  return`<p class="sub">Straight from the live feed \u00b7 ${cad}</p>`;
 }
 function renderLive(){
   const ids=liveAllIds();
   const todayIds=gamesToday();
   const koToday=koGamesToday();
   if(!ids.length&&!todayIds.length&&!koToday.length){
-    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📅</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NO GAMES TODAY</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6;max-width:340px;margin:0 auto">Nothing on today. Have a look at <b>FIXTURES</b> for what's coming up — when the next game kicks off it'll appear here live, with the score and who's got a team playing.</p></div>`;
+    return`<div style="text-align:center;padding:48px 20px"><div style="font-size:2.6rem;margin-bottom:12px">📅</div><div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--tx);letter-spacing:.03em;margin-bottom:6px">NO GAMES TODAY</div><p style="font-size:.8rem;color:var(--txm);line-height:1.6;max-width:340px;margin:0 auto">Nothing on today. Have a look at <b>FIXTURES</b> for what's coming up. The next game appears here live as it kicks off.</p></div>`;
   }
   const myName=getMyName();
   const lb=calcLeaderboard();
