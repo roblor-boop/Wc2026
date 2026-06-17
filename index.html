@@ -656,7 +656,7 @@ function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.key
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
 const MAX_PLAYERS=400;
-let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},odds:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,expandedDept:null,sOpen:{},standQ:'',deptQ:'',drawQ:'',drawCountdown:60,muted:false};
+let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,signupQ:'',names:Array(MAX_PLAYERS).fill(''),draw:null,grR:{},koR:{},odds:{},events:{},koOverride:{},scoring:{...DEF_SCR},bonus:{...DEF_BONUS},prize:{on:false,buyin:5,pay:[60,30,10]},charity:{on:true,name:'',suggested:10,total:0,goal:0,link:'',emphasis:'balanced',tickerAfterDraw:'same'},podium:{on:false,prizes:['','','']},predict:{on:false,bonus:10},ticker:{on:true,messages:[],customEmphasis:'balanced'},depts:{on:false,names:[],label:'Squads'},standView:'players',gateSignupOnly:true,footballApiKey:'',drawTime:'',paid:{},signups:{},signupOpen:false,live:{},fG:'ALL',fMD:'ALL',fT:'ALL',expanded:null,expandedDept:null,sOpen:{},standQ:'',deptQ:'',drawQ:'',drawCountdown:60,muted:false};
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
@@ -2003,7 +2003,7 @@ function calcProvisional(){
 }
 function _ukTime(ms){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:'Europe/London',hour:'2-digit',minute:'2-digit'});}catch(e){const d=new Date(ms||Date.now());return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}}
 function liveFeedStatusHTML(){
-  const hb=state.workerHb,cad='refreshes about every 5 min while games are on';
+  const hb=state.workerHb,cad='updates about every minute while games are on';
   if(hb&&hb.lastRun){
     const ageMin=Math.floor((Date.now()-hb.lastRun)/60000),t=_ukTime(hb.lastRun);
     if(ageMin>15)return`<p class="sub" style="color:var(--amber)">\u26a0 Scores may be running behind \u2014 the feed was last checked at ${t}. It catches up on its own in a few minutes.</p>`;
@@ -2248,6 +2248,15 @@ function showImportDraw(){
 }
 
 // ── RENDER HELPERS ────────────────────────────────────────────────────────────
+// Compact goalscorers line for a FINISHED game, from the durable events store. '' when none recorded.
+// Home (teamA / GF home) scorers on the left, away on the right — matches the card orientation.
+function eventScorers(id){
+  const ev=state.events&&state.events[id];if(!ev||!ev.sc||!ev.sc.length)return'';
+  const fmt=arr=>arr.map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join(', ');
+  const h=fmt(ev.sc.filter(e=>e.s==='h')),a=fmt(ev.sc.filter(e=>e.s==='a'));
+  if(!h&&!a)return'';
+  return`<div style="display:flex;gap:10px;margin-top:8px;padding-top:8px;border-top:.5px solid var(--b);font-size:.62rem;color:var(--txm);line-height:1.5"><div style="flex:1;text-align:left">${h}</div><div style="align-self:center;font-size:.7rem">⚽</div><div style="flex:1;text-align:right">${a}</div></div>`;
+}
 function renderMC(id){
   const fix=GF[id],r=state.grR[id];
   const played=r?.played&&!editing.has(id);
@@ -2286,6 +2295,7 @@ function renderMC(id){
     ${teamRow(fix.home,hw||lhw,(aw||law),'hg')}
     ${teamRow(fix.away,aw||law,(hw||lhw),'ag')}
   </div>
+  ${played?eventScorers(id):''}
   ${(played||live||admin)?`<div class="mc-foot">
     <span class="mc-lbl${hw||aw||lhw||law?' win':dw?' draw':''}">${hw?'✓ '+fix.home+' win':aw?'✓ '+fix.away+' win':dw?'Draw':live?'In progress':admin?'Enter result':''}</span>
     <div style="display:flex;gap:5px">
@@ -2494,11 +2504,11 @@ async function runDiagnostics(){
     const snap=await DB.ref('_worker').once('value');const hb=snap.val();
     if(!hb||!hb.lastRun){set(i,'fail','Not running. The background poller (Google Apps Script) hasn\'t checked in. Just set it up? Give it ~5 minutes, then re-check. Otherwise open the Apps Script editor and run the "install" function once.');}
     else{const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
-      if(hb.ok===false)set(i,'fail','The poller ran '+ageTxt+' but hit an error: '+(hb.error||'unknown')+'. Fix it in the Apps Script editor \u2014 usually the API-Football key or the Firebase login.');
-      else if(ageMin>13)set(i,'warn','Last successful check was '+ageTxt+', but it runs every 5 minutes. The timer may have stopped \u2014 open the Apps Script Triggers page and confirm the "poll" trigger is still listed.');
+      if(hb.ok===false)set(i,'fail','The poller ran '+ageTxt+' but hit an error: '+(hb.error||'unknown')+'. Fix it in the Apps Script editor \u2014 usually the Firebase login.');
+      else if(ageMin>13)set(i,'warn','Last successful check was '+ageTxt+', but it runs every minute. The timer may have stopped \u2014 open the Apps Script Triggers page and confirm the "poll" trigger is still listed.');
       else if(hb.totalMatches===0)set(i,'ok','Working \u2014 last checked '+ageTxt+', and there are no World Cup games on today (normal between match days). It steps up automatically when a game is on.');
       else if(hb.unmatchedCount>0)set(i,'warn','Working (last checked '+ageTxt+'), but '+hb.unmatchedCount+' finished fixture'+(hb.unmatchedCount>1?'s':'')+" couldn't be matched to your teams, so "+(hb.unmatchedCount>1?'they won':'it won')+"'t auto-score: "+(hb.unmatched||[]).join(', ')+'. Enter '+(hb.unmatchedCount>1?'those':'that')+' result'+(hb.unmatchedCount>1?'s':'')+' by hand in Fixtures.');
-      else set(i,'ok','Working \u2014 last checked '+ageTxt+(hb.totalMatches!=null?', reaching API-Football and seeing '+hb.totalMatches+' World Cup game'+(hb.totalMatches>1?'s':'')+' today'+(hb.callsToday!=null?' ('+hb.callsToday+'/95 daily calls used)':''):'')+'. Results + live scores update automatically, even with nobody online.');}
+      else set(i,'ok','Working \u2014 last checked '+ageTxt+(hb.totalMatches!=null?', reaching ESPN and seeing '+hb.totalMatches+' World Cup game'+(hb.totalMatches>1?'s':'')+' today'+(hb.callsToday!=null?' ('+hb.callsToday+' calls today)':''):'')+'. Results + live scores update automatically, even with nobody online.');}
   }catch(e){set(i,'warn','Couldn\'t read the feed status: '+((e&&e.message)||e)+'.');}}
 
   i=add('Country names (feed \u2192 your teams)');
@@ -2544,11 +2554,11 @@ async function testFeed(){
     }
     const ageMin=Math.round((Date.now()-hb.lastRun)/60000);const ageTxt=ageMin<1?'under a minute ago':ageMin+' min ago';
     if(hb.ok===false){
-      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor, usually the API-Football key or Firebase login.</span></div>';
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(192,32,32,.08);border:1px solid rgba(192,32,32,.3);border-radius:7px;font-size:.76rem;color:var(--red);line-height:1.6">✗ <b>Poller error</b> ('+ageTxt+')<br><span style="color:var(--txd)">'+esc(hb.error||'unknown')+'</span><br><span style="color:var(--txm)">Fix it in the Apps Script editor, usually the Firebase login.</span></div>';
       if(sEl)sEl.innerHTML='Last check: error';return;
     }
     if(ageMin>13){
-      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber);line-height:1.6">⚠ <b>May have stopped</b><br><span style="color:var(--txd)">Last successful check was '+ageTxt+' (it should run every 5 min). Check the Apps Script Triggers page.</span></div>';
+      rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(168,96,0,.08);border:1px solid rgba(168,96,0,.3);border-radius:7px;font-size:.76rem;color:var(--amber);line-height:1.6">⚠ <b>May have stopped</b><br><span style="color:var(--txd)">Last successful check was '+ageTxt+' (it should run every minute). Check the Apps Script Triggers page.</span></div>';
       if(sEl)sEl.innerHTML='Last check: '+ageTxt;return;
     }
     rEl.innerHTML='<div style="margin-top:10px;padding:10px 12px;background:rgba(0,128,42,.07);border:1px solid rgba(0,128,42,.3);border-radius:7px;font-size:.76rem;color:var(--gr);line-height:1.7">'+
@@ -2619,7 +2629,7 @@ function renderSetup(){
   <div class="card" style="padding:13px 14px;margin-bottom:11px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx)">📡 LIVE RESULTS FEED</div><div id="feed-status" style="font-size:.7rem;color:var(--txm);margin-top:2px">Updates automatically via the background poller · tap Test to check</div></div>
-      <div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="setApiKey()">${state.footballApiKey?'CHANGE KEY':'SET KEY'}</button><button class="btn btn-ghost" style="font-size:.7rem" onclick="testFeed()">TEST</button></div>
+      <div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-ghost" style="font-size:.7rem" onclick="testFeed()">TEST</button></div>
     </div>
     <div id="feed-result" style="margin-top:0"></div>
     <div style="font-size:.68rem;color:var(--txm);margin-top:8px;line-height:1.5">If the feed fails it just retries quietly every few minutes, and you can always enter or edit any score by hand on the Fixtures and Knockout tabs. Manual entries are never overwritten.</div>
@@ -3025,6 +3035,7 @@ function renderKOCard(mId,tA,tB){
       ${canEnter&&!live?`<button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',-1)">−</button><span class="sval" id="sk${side}${mId}" style="font-size:1rem">${tempS[mId][side]}</span><button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',1)">+</button>`:''}
       ${played?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:${isW?'var(--gr)':'var(--txm)'}">${score}</span>${isW?`<span style="color:var(--gr);font-size:.8rem">✓</span>`:''}`:live?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:var(--amber)">${side==='hg'?(ls.hg||0):(ls.ag||0)}</span>`:''}
     </div>`).join('<div style="height:1px;background:var(--b);margin:2px 0"></div>')}
+    ${played?eventScorers(mId):''}
     ${canEnter&&!live?`<div id="pens-${mId}" style="display:${hg===ag?'flex':'none'};flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;background:rgba(192,112,0,.06);border:1px solid rgba(192,112,0,.25);border-radius:6px"><span style="font-size:.7rem;color:var(--amber);font-family:'Oswald',sans-serif;flex-shrink:0">Pens:</span><input id="ph-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.h:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><span style="color:var(--txm)">–</span><input id="pa-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.a:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><select id="kow-${mId}" style="flex:1;min-width:110px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem"><option value="">Winner…</option><option value="${tA}">${FLAGS[tA]||''} ${tA}</option><option value="${tB}">${FLAGS[tB]||''} ${tB}</option></select></div>
     <button style="margin-top:8px;width:100%;padding:7px;background:linear-gradient(135deg,${rc},${rc}cc);border:none;border-radius:5px;color:#fff;font-family:'Oswald',sans-serif;font-size:.73rem;font-weight:700;letter-spacing:.06em;cursor:pointer" onclick="saveKo('${mId}')">SAVE RESULT</button>`:''}
     ${played?`<button class="btn-sm" style="margin-top:6px" onclick="clearKo('${mId}')">✕ REMOVE RESULT</button>`:''}
@@ -3405,6 +3416,7 @@ else if(DB){
     state.live=data.live||{};
     state.koR=data.ko||{};
     state.odds=data.odds||{};
+    state.events=data.events||{};
     state.koOverride=data.koov||{};
     _accessHash=data.accessHash||null;
     state.paid=data.paid||{};
