@@ -3010,20 +3010,22 @@ function renderKOCard(mId,tA,tB){
   if(!tempS[mId])tempS[mId]={hg:r?.hg||0,ag:r?.ag||0};
   const{hg,ag}=tempS[mId];
   const canEnter=!played&&tA&&tB;
+  const ls=(!played&&tA&&tB&&state.live[mId])?state.live[mId]:null;const live=!!ls;
   const descA=tA||(bc.sA?slotDesc(bc.sA):'TBD');const descB=tB||(bc.sB?slotDesc(bc.sB):'TBD');
   const sch=KO_SCHED[mId];
   const schLine=sch?`<span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.03em">${relDate(sch.dt)}${sch.tm&&sch.tm!=='TBC'?' · '+sch.tm+' BST':''}${sch.ve&&sch.ve!=='TBC'?' · '+sch.ve:''}</span>`:'';
+  const liveLine=live?`<span style="display:flex;align-items:center;gap:5px;font-family:'Oswald',sans-serif;font-size:.62rem;letter-spacing:.06em;color:var(--amber);font-weight:700"><span class="live-dot" style="margin:0"></span>LIVE${ls.st==='HT'?' · HT':ls.st==='BT'?' · ET':(ls.min?` · ${ls.min}'`:'')}</span>`:'';
   return`<div style="background:var(--card);border:1px solid ${played?rc+'55':'var(--b)'};border-radius:9px;padding:10px 12px;margin-bottom:0;box-shadow:var(--shadow)" id="komc-${mId}">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px"><span style="font-family:'Oswald',sans-serif;font-size:.63rem;color:${rc};letter-spacing:.07em">${bc.l}</span>${dw&&played?`<span style="font-size:.6rem;padding:1px 5px;background:rgba(192,112,0,.15);border:1px solid rgba(192,112,0,.4);border-radius:3px;color:var(--amber);font-family:'Oswald',sans-serif;font-weight:600">PENS${r.pens?` ${r.pens.h}-${r.pens.a}`:''}</span>`:''}</div>
-    ${schLine?`<div style="margin-bottom:6px">${schLine}</div>`:''}
+    ${live?`<div style="margin-bottom:6px">${liveLine}</div>`:(schLine?`<div style="margin-bottom:6px">${schLine}</div>`:'')}
     ${[{name:tA||descA,flag:tA?FLAGS[tA]||'⚽':'🔲',isW:hw,isL:aw&&played,score:r?.hg,side:'hg'},{name:tB||descB,flag:tB?FLAGS[tB]||'⚽':'🔲',isW:aw,isL:hw&&played,score:r?.ag,side:'ag'}].map(({name,flag,isW,isL,score,side})=>`
     <div style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:5px;background:${isW?'rgba(0,122,61,.07)':isL?'rgba(120,120,120,.05)':(_myTeams.has(name)?'var(--pill-gr)':'transparent')}">
       <span style="font-size:.98rem;filter:${isL?'grayscale(.7)':'none'}">${flag}</span>
       <span style="flex:1;font-size:.82rem;color:${isW?'var(--gr)':isL?'var(--txm)':'var(--tx)'};font-weight:${isW?600:400};${isL?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${_myTeams.has(name)?'⭐ ':''}${name}</span>
-      ${canEnter?`<button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',-1)">−</button><span class="sval" id="sk${side}${mId}" style="font-size:1rem">${tempS[mId][side]}</span><button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',1)">+</button>`:''}
-      ${played?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:${isW?'var(--gr)':'var(--txm)'}">${score}</span>${isW?`<span style="color:var(--gr);font-size:.8rem">✓</span>`:''}`:''}
+      ${canEnter&&!live?`<button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',-1)">−</button><span class="sval" id="sk${side}${mId}" style="font-size:1rem">${tempS[mId][side]}</span><button class="adj" style="width:26px;height:26px" onclick="adjKo('${mId}','${side}',1)">+</button>`:''}
+      ${played?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:${isW?'var(--gr)':'var(--txm)'}">${score}</span>${isW?`<span style="color:var(--gr);font-size:.8rem">✓</span>`:''}`:live?`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:var(--amber)">${side==='hg'?(ls.hg||0):(ls.ag||0)}</span>`:''}
     </div>`).join('<div style="height:1px;background:var(--b);margin:2px 0"></div>')}
-    ${canEnter?`<div id="pens-${mId}" style="display:${hg===ag?'flex':'none'};flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;background:rgba(192,112,0,.06);border:1px solid rgba(192,112,0,.25);border-radius:6px"><span style="font-size:.7rem;color:var(--amber);font-family:'Oswald',sans-serif;flex-shrink:0">Pens:</span><input id="ph-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.h:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><span style="color:var(--txm)">–</span><input id="pa-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.a:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><select id="kow-${mId}" style="flex:1;min-width:110px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem"><option value="">Winner…</option><option value="${tA}">${FLAGS[tA]||''} ${tA}</option><option value="${tB}">${FLAGS[tB]||''} ${tB}</option></select></div>
+    ${canEnter&&!live?`<div id="pens-${mId}" style="display:${hg===ag?'flex':'none'};flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px;padding:5px 8px;background:rgba(192,112,0,.06);border:1px solid rgba(192,112,0,.25);border-radius:6px"><span style="font-size:.7rem;color:var(--amber);font-family:'Oswald',sans-serif;flex-shrink:0">Pens:</span><input id="ph-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.h:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><span style="color:var(--txm)">–</span><input id="pa-${mId}" type="number" min="0" value="${r?.pens!=null?r.pens.a:''}" style="width:42px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem;text-align:center"><select id="kow-${mId}" style="flex:1;min-width:110px;padding:4px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--tx);font-size:.82rem"><option value="">Winner…</option><option value="${tA}">${FLAGS[tA]||''} ${tA}</option><option value="${tB}">${FLAGS[tB]||''} ${tB}</option></select></div>
     <button style="margin-top:8px;width:100%;padding:7px;background:linear-gradient(135deg,${rc},${rc}cc);border:none;border-radius:5px;color:#fff;font-family:'Oswald',sans-serif;font-size:.73rem;font-weight:700;letter-spacing:.06em;cursor:pointer" onclick="saveKo('${mId}')">SAVE RESULT</button>`:''}
     ${played?`<button class="btn-sm" style="margin-top:6px" onclick="clearKo('${mId}')">✕ REMOVE RESULT</button>`:''}
   </div>`;
@@ -3267,7 +3269,7 @@ function render(){
   const drawTab={id:'draw',l:state.draw?'DRAW':(state.signupOpen?'JOIN':'HOME')};
   if(!underway)tabs.push(drawTab);
   tabs.push({id:'standings',l:'STANDINGS',d:!state.draw});
-  if(state.draw)tabs.push({id:'live',l:liveCount?'🔴 LIVE':'TODAY'});
+  if(state.draw)tabs.push({id:'live',l:'TODAY',live:liveCount>0});
   tabs.push(
     {id:'fixtures',l:'FIXTURES'},
     {id:'tables',l:'GROUPS'}
@@ -3281,7 +3283,7 @@ function render(){
     else if(adminSess)state.tab='setup';
     else state.tab='draw'; // will show join/welcome screen
   }
-  document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}${t.id==='live'?' live':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
+  document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}${t.live?' live':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
   updateHdr();
   refreshRankBaseline();
   _myTeams=myTeamSet();
