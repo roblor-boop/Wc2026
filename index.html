@@ -1233,6 +1233,18 @@ function koGamesToday(){
     return rv.teamA&&rv.teamB&&!state.live[id]&&!(state.koR[id]&&state.koR[id].played);   // resolved teams, not live, not played
   }).sort((a,b)=>parseInt((KO_SCHED[a].tm||'').replace(/\D/g,'')||'0')-parseInt((KO_SCHED[b].tm||'').replace(/\D/g,'')||'0'));
 }
+// The soonest not-yet-played fixture for a team — a group game now, a knockout tie once the bracket resolves.
+// Returns {id,opp,oppFlag,dt,tm,ms,ko,live} or null. Gives the standings a forward-looking "what's next".
+function teamNextFix(name){
+  const MO={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const toMs=(dt,tm)=>{const a=(dt||'').split(' ');const h=(tm||'00:00').split(':');return new Date(2026,MO[a[1]]||0,parseInt(a[0])||1,parseInt(h[0])||0,parseInt(h[1])||0).getTime();};
+  const now=Date.now();const out=[];
+  Object.keys(GF).forEach(id=>{const f=GF[id];if((f.home===name||f.away===name)&&!(state.grR[id]&&state.grR[id].played)){const opp=f.home===name?f.away:f.home;out.push({id,opp,oppFlag:FLAGS[opp]||'⚽',dt:f.dt,tm:f.tm,ms:toMs(f.dt,f.tm),ko:false});}});
+  const res=resolveBracket();
+  Object.keys(KO_SCHED).forEach(id=>{const rv=res[id]||{};if((rv.teamA===name||rv.teamB===name)&&!(state.koR[id]&&state.koR[id].played)){const opp=rv.teamA===name?rv.teamB:rv.teamA;const s=KO_SCHED[id]||{};out.push({id,opp,oppFlag:FLAGS[opp]||'⚽',dt:s.dt,tm:s.tm,ms:toMs(s.dt,s.tm),ko:true});}});
+  const up=out.filter(c=>c.ms>=now-10800000).sort((a,b)=>a.ms-b.ms);   // soonest upcoming; 3h grace keeps an in-progress game in view
+  const nx=up[0]||null;if(nx)nx.live=!!state.live[nx.id];return nx;
+}
 function todayMatchesHTML(){
   if(!state.draw)return'';
   const ids=gamesToday();
@@ -1376,10 +1388,12 @@ function myPositionHTML(){
   if(!started)status=`You're all set with ${p.teams.length} team${p.teams.length>1?'s':''}. ${Date.now()<KICKOFF_MS?'Tournament kicks off 11 June!':'Points land here as your teams play.'}`;
   else if(rank===1)status=n>1?`Top of the table, ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
   else status=`${gapLead} pt${gapLead!==1?'s':''} behind the leader${i<n-1?` · ${ahead} clear of ${ordinal(rank+1)}`:''}`;
+  const myNext=started?p.breakdown.filter(b=>b.qual!=='eliminated').map(b=>({team:b.name,nx:teamNextFix(b.name)})).filter(x=>x.nx).sort((a,b)=>a.nx.ms-b.nx.ms)[0]:null;
+  const nextLine=myNext?(myNext.nx.live?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:5px;vertical-align:middle"></span><b style="color:var(--tx)">${esc(myNext.team)}</b> playing now`:`⚽ <b style="color:var(--tx)">${esc(myNext.team)}</b> next: ${myNext.nx.oppFlag} ${esc(myNext.nx.opp)} · ${myNext.nx.dt} ${myNext.nx.tm}`):'';
   const rc=rank===1&&started?'var(--gold)':'var(--gr)';
   return `<div class="card" style="padding:13px 15px;margin-bottom:13px;display:flex;align-items:center;gap:14px;border:1px solid var(--pill-grbr);background:linear-gradient(135deg,var(--pill-gr),transparent);box-shadow:var(--shadow)">`
     +`<div style="text-align:center;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.7rem;line-height:1;color:${rc}">${started?'#'+rank:'—'}</div><div style="font-size:.5rem;color:var(--txm);letter-spacing:.1em;font-family:'Oswald',sans-serif">OF ${n}</div></div>`
-    +`<div style="flex:1;min-width:0"><div style="font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;color:var(--tx)">👤 ${esc(me)}${mv}</div><div style="font-size:.74rem;color:var(--txd);margin-top:2px;line-height:1.4">${status}</div></div>`
+    +`<div style="flex:1;min-width:0"><div style="font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;color:var(--tx)">👤 ${esc(me)}${mv}</div><div style="font-size:.74rem;color:var(--txd);margin-top:2px;line-height:1.4">${status}</div>${nextLine?`<div style="font-size:.66rem;color:var(--txm);margin-top:3px;line-height:1.4">${nextLine}</div>`:''}</div>`
     +`<div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.5rem;line-height:1;color:${started?rc:'var(--txm)'}">${p.total}</div><div style="font-size:.5rem;color:var(--txm);letter-spacing:.08em;font-family:'Oswald',sans-serif">POINTS</div></div>`
     +`<button onclick="chooseMe('')" title="Not me" style="background:transparent;border:1px solid var(--b);border-radius:7px;color:var(--txm);font-size:.6rem;font-family:'Oswald',sans-serif;padding:4px 9px;cursor:pointer;flex-shrink:0;align-self:flex-start">✕</button></div>`;
 }
@@ -1905,15 +1919,15 @@ function calcLeaderboard(){
       Object.entries(GF).filter(([_,f])=>f.home===team.name||f.away===team.name).forEach(([id,f])=>{const r=state.grR[id];if(!r?.played)return;const isH=f.home===team.name,tf=isH?r.hg:r.ag,ta=isH?r.ag:r.hg;goals+=tf;if(tf>ta)gW++;else if(tf===ta)gD++;else gL++;});
       // knockout goals (for tiebreak)
       koArr.forEach(m=>{if(m.home===team.name)goals+=m.hg||0;else if(m.away===team.name)goals+=m.ag||0;});
-      if(gW){pts+=gW*state.scoring.group_win;items.push(`${gW}W +${gW*state.scoring.group_win}`);}
-      if(gD){pts+=gD*state.scoring.group_draw;items.push(`${gD}D +${gD*state.scoring.group_draw}`);}
-      if(gL)items.push(`${gL}L`);
-      if(state.scoring.goal_bonus>0&&goals>0){pts+=goals*state.scoring.goal_bonus;items.push(`${goals}⚽ +${+(goals*state.scoring.goal_bonus).toFixed(1)}`);}
+      if(gW){pts+=gW*state.scoring.group_win;items.push({label:`${gW} win${gW>1?'s':''}`,pts:gW*state.scoring.group_win});}
+      if(gD){pts+=gD*state.scoring.group_draw;items.push({label:`${gD} draw${gD>1?'s':''}`,pts:gD*state.scoring.group_draw});}
+      if(gL)items.push({label:`${gL} loss${gL>1?'es':''}`,pts:0});
+      if(state.scoring.goal_bonus>0&&goals>0){pts+=goals*state.scoring.goal_bonus;items.push({label:`${goals} goal${goals>1?'s':''} scored`,pts:+(goals*state.scoring.goal_bonus).toFixed(1)});}
       const qv=qual[team.name]||'pending';
-      if(qv==='top2'){pts+=state.scoring.qualify_top2;items.push(`Qual +${state.scoring.qualify_top2}`);}
-      else if(qv==='best3rd'){pts+=state.scoring.qualify_3rd;items.push(`Best 3rd +${state.scoring.qualify_3rd}`);}
-      const wins=koArr.filter(m=>m.winner===team.name);wins.forEach(m=>{const p2=state.scoring[`win_${m.round}`]||0;pts+=p2;items.push(`${KO_LABEL[m.round]} win +${p2}`);});
-      if(bonusFinal&&awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push(`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]} +${a.pts}`);});}
+      if(qv==='top2'){pts+=state.scoring.qualify_top2;items.push({label:'Qualified (top 2)',pts:state.scoring.qualify_top2});}
+      else if(qv==='best3rd'){pts+=state.scoring.qualify_3rd;items.push({label:'Qualified (best 3rd)',pts:state.scoring.qualify_3rd});}
+      const wins=koArr.filter(m=>m.winner===team.name);wins.forEach(m=>{const p2=state.scoring[`win_${m.round}`]||0;pts+=p2;items.push({label:`${KO_LABEL[m.round]} win`,pts:p2});});
+      if(bonusFinal&&awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push({label:`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]}`,pts:a.pts});});}
       pKoWins+=wins.length;pGoals+=goals;
       total+=pts;
       return{name:team.name,flag:team.flag,group:team.group,pts:Math.round(pts*10)/10,items,qual:qv};
@@ -3073,6 +3087,9 @@ function renderStandings(){
   const ownsLive=p=>liveOn&&p.breakdown.some(b=>_liveTeams.has(b.name));
   try{
   const lb=calcLeaderboard();const{qual}=computeQual();
+  const koOut=new Set();
+  Object.values(state.koR||{}).forEach(r=>{if(r&&r.played&&r.winner){[r.home,r.away].forEach(t=>{if(t&&t!==r.winner)koOut.add(t);});}});
+  const teamAlive=nm=>qual[nm]!=='eliminated'&&!koOut.has(nm);
   const np=state.draw?state.draw.participantCount:state.pc;
   const pot=state.prize.on?np*state.prize.buyin:0;
   const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;
@@ -3137,13 +3154,15 @@ function renderStandings(){
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
         ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span><span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span>${champ?`<span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:`<span style="font-size:.68rem;color:var(--txm)">awaiting Final</span>`}</div>`:''}
-        ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="display:flex;gap:9px;padding:8px 9px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
-          <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
-          <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px"><span style="font-size:.8rem;font-weight:600;color:${out?'var(--txd)':'var(--tx)'};${out?'text-decoration:line-through':''}">${b.name}</span>${qBadge(q)}</div>
-            <div style="font-size:.68rem;color:var(--txd);line-height:1.7">${b.items.length?b.items.join(' · '):'No results yet'}</div>
+        ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(!tN||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} team${tN>1?'s':''} still in it`:aN===0?'All teams out':`${aN} of ${tN} teams still alive`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
+        ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="padding:9px 10px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
+          <div style="display:flex;gap:9px;align-items:center">
+            <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
+            <div style="flex:1;min-width:0;display:flex;align-items:center;gap:5px"><span style="font-size:.8rem;font-weight:600;color:${out?'var(--txd)':'var(--tx)'};${out?'text-decoration:line-through':''}">${b.name}</span>${qBadge(q)}</div>
+            <span style="font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;color:${b.pts>0?'var(--gr)':'var(--txm)'};flex-shrink:0">${b.pts}</span>
           </div>
-          <span style="font-family:'Oswald',sans-serif;font-size:.92rem;font-weight:700;color:${b.pts>0?'var(--gr)':'var(--txm)'};flex-shrink:0">${b.pts}</span>
+          ${b.items.length?`<div style="margin-top:8px;padding-top:7px;border-top:.5px solid var(--b);display:flex;flex-direction:column;gap:4px">${b.items.map(it=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:.72rem"><span style="color:var(--txm)">${it.label}</span><span style="font-family:'Oswald',sans-serif;font-weight:600;color:${it.pts>0?'var(--gr)':'var(--txm)'}">${it.pts>0?'+'+it.pts:'0'}</span></div>`).join('')}</div>`:`<div style="margin-top:6px;font-size:.7rem;color:var(--txm)">No results yet</div>`}
+          ${(()=>{if(!teamAlive(b.name))return'';const nx=teamNextFix(b.name);if(!nx)return'';return`<div style="margin-top:8px;font-size:.68rem;color:var(--txd);display:flex;align-items:center;gap:5px">${nx.live?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0"></span><span style="color:var(--amber);font-weight:600">Playing now</span>`:`<span style="opacity:.6">▶</span><span>Next: <b style="color:var(--tx)">${nx.oppFlag} ${esc(nx.opp)}</b> · ${nx.dt} ${nx.tm}</span>`}</div>`;})()}
         </div>`;}).join('')}
       </div>`:''}
     </div>`;
