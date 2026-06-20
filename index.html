@@ -869,23 +869,23 @@ const OFFICE_BANTER=[
   "🥅 No lead is safe. Ask anyone sitting on 1-0",
   "😴 The favourites are flattering to deceive, as ever",
   "🚩 Somewhere an offside flag is about to ruin a perfectly good celebration",
-  "📺 VAR is checking. The office is holding its breath and its coffee",
+  "📺 VAR is checking. The office is holding its breath, coffee going cold",
   "🥉 Reminder: the third-place playoff still pays exactly nothing",
-  "🧤 Clean sheets win nothing and decide everything",
+  "🧤 Clean sheets don't win tournaments. Except when they do",
   "🫠 Somewhere, a banker bet is quietly collapsing",
   "⚽ A goalless draw is somehow ruining four people's day",
   "🏳️ Goal difference is about to matter to people who can't define it",
   "🎲 No skill was involved in any of this. That's the appeal",
   "🍀 The draw owes nobody an explanation",
-  "🤷 You didn't pick the team. The team picked the fight",
+  "🤷 You didn't pick the team. The team picked you. Make peace with it",
   "🙊 Two co-owners of one team are reportedly no longer on speaking terms",
   "🎰 Somebody's about to get lucky and take full credit",
   "🙃 Fierce loyalty to a team you were handed ninety seconds ago",
   "🃏 The draw is being called rigged, exclusively by those it didn't favour",
-  "💬 'I always had a good feeling about them', heard only from the winning",
+  "💬 'I always had a good feeling about them', heard only from the winners",
   "🌙 Games this side of the Atlantic are a strictly late-night commitment now",
   "🕐 Nothing says rigorous analysis like a 1am group game",
-  "🌎 Five time zones between you and your team's bedtime",
+  "🌎 Five time zones between you and kickoff. Nobody said this was convenient",
   "☕ The coffee machine is bracing for the morning after",
   "💼 Diversified? You've got one team. Concentrated risk it is",
   "🐌 Slow start? Call it a J-curve and hold your nerve",
@@ -963,22 +963,22 @@ const SQUAD_LINES={
 "Global Technology & Solutions":["🏢 Global Tech & Solutions installed the goal-line technology, obviously","🏢 Global Tech & Solutions will fix your bracket once you raise a ticket","🏢 Global Tech & Solutions: have you tried supporting a different team?"],
 "Human Capital Management":["🏢 HCM are calling a group-stage exit 'a development opportunity'","🏢 HCM reckon it's all about squad depth and a strong bench","🏢 HCM here to support you through the defeats"],
 "Investor Relations":["🏢 IR already managing expectations on an early exit","🏢 IR are basically the supporters' liaison this tournament","🏢 IR drafting the 'challenging quarter' update as we speak"],
-"Office Services":["🏢 Office Services know exactly who's watching at their desk","🏢 Office Services would have the pitch immaculate for kickoff"],
+"Office Services":["🏢 Office Services know exactly who's watching at their desk","🏢 Office Services have the pitch immaculate for kickoff"],
 "Global Workplace Services":["🏢 Workplace Services keeping the coffee machine going for the late kickoffs","🏢 Workplace Services are the groundsmen keeping the whole show on"],
 "Alpinvest":["🏢 AlpInvest would happily own a player on every single team","🏢 AlpInvest are the neutrals who somehow come out ahead"],
 "Europe Buyout":["🏢 Europe Buyout don't play for a draw","🏢 Europe Buyout want 90 minutes, full control, three points","🏢 Europe Buyout treating the final like a take-private"],
 "Private Credit":["🏢 Private Credit want a clean sheet and no surprises at the back","🏢 Private Credit expect a steady return and no nasty surprises"],
 "Europe Private Credit":["🏢 Europe Private Credit backing a safe pair of hands and a tidy yield","🏢 Europe Private Credit reckon it's won at the back"],
 "Global Credit Management":["🏢 Global Credit reckon it's won at the back","🏢 Global Credit don't lose — they recover"],
-"Europe Structured Credit":["🏢 Structured Credit reckon their squad's a solid AAA tranche","🏢 Structured Credit have the most solid back line in the building"],
+"Europe Structured Credit":["🏢 Structured Credit reckon their squad's a solid AAA tranche","🏢 Structured Credit have the tightest back line in the building"],
 "Europe Real Estate":["🏢 Europe Real Estate are all about home advantage","🏢 Real Estate backing the side with the best home record","🏢 Europe Real Estate playing the long game — safe as houses"],
 "Europe Technology":["🏢 Europe Tech backing the young disruptor to break the press","🏢 Europe Technology calling their team a scalable platform"],
 "International Energy":["🏢 International Energy fancy a high press for the full 90","🏢 International Energy reckon it's won in the legs","🏢 International Energy reckon their team's got the most in the tank"],
 "Carlyle Global Wealth":["🏢 Carlyle Global Wealth reckon it's the people's game, and so's this","🏢 Carlyle Global Wealth want everyone to have a piece of the action"],
 "Abingworth":["🏢 Abingworth all about sports science and marginal gains","🏢 Abingworth backing the team with the best medical bench"],
-"Carlyle Capital Solutions":["🏢 Carlyle Capital Solutions would bankroll the January transfer window"],
-"Fund Management - GC":["🏢 Fund Management reckon it's all in the team selection"],
-"Fund Management-GPE":["🏢 Fund Management reckon it's all in the team selection"],
+"Carlyle Capital Solutions":["🏢 Carlyle Capital Solutions would bankroll the January transfer window","🏢 Carlyle Capital Solutions know exactly how to structure a winning run"],
+"Fund Management - GC":["🏢 Fund Management reckon it's all in the team selection","🏢 Fund Management run matchday like a closing"],
+"Fund Management-GPE":["🏢 Fund Management back themselves to pick a winner","🏢 Fund Management like the look of their book this year"],
 "Global Portfolio Solutions":["🏢 Global Portfolio Solutions believe in rotating the whole squad"],
 "Finance Process & Operations":["🏢 Finance Process & Operations run matchday like clockwork"]
 };
@@ -1032,14 +1032,14 @@ function tickerItems(){
       const topTies=lb.filter(p=>p.total===L.total).length, shaped=topTies<3;
       const margin=lb.length>1?Math.round((L.total-lb[1].total)*10)/10:0;
       if(shaped){
-      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table that counts, ${L.total} pts`,`📈 ${L.name} ahead of the pack, ${L.total} pts`,`👀 ${L.name} has entered the "please stop scoring" phase`]));
+      a.push(pick([`🥇 ${L.name} leads on ${L.total} pts`,`👑 ${L.name} out in front with ${L.total}`,`🚀 ${L.name} setting the pace on ${L.total}`,`🔝 ${L.name} top of the office on ${L.total}`,`💼 ${L.name} running the show, ${L.total} pts`,`🏆 ${L.name} in pole on ${L.total}`,`📈 ${L.name} leading the way, ${L.total}`,`🎯 ${L.name} the one to catch, ${L.total} pts`,`⚽ ${L.name} top of the table that counts, ${L.total} pts`,`🔼 ${L.name} ahead of the pack, ${L.total} pts`,`👀 ${L.name} has entered the "please stop scoring" phase`]));
       if(lb.length>1){
         if(margin===0)a.push(pick([`🤝 ${L.name} and ${lb[1].name} level at the top`,`😤 Nothing between ${L.name} and ${lb[1].name}`,`⚖️ Dead level up top: ${L.name} and ${lb[1].name}`]));
         else if(margin<=3)a.push(pick([`🔥 Only ${margin} pt${margin>1?"s":""} in it at the top`,`📸 Photo finish, ${lb[1].name} just ${margin} behind`,`😬 ${lb[1].name} right on ${L.name}'s tail, ${margin} pt${margin>1?"s":""} in it`,`⚔️ ${L.name} v ${lb[1].name}, ${margin} pt${margin>1?"s":""} between them`,`🍿 ${margin} pt${margin>1?"s":""} in it, proper squeaky-bum time`]));
         else a.push(pk([`😏 ${L.name} getting comfy at the top. Someone go and stop them`,`🎯 Big target on ${L.name} at number one`,`☕ ${L.name} out front, so first round's on them`,`👀 The whole office is after ${L.name} now`,`🎯 ${L.name} the one everyone wants to beat now`,`😌 ${L.name} cruising at the top`],7));
         if(margin>0&&margin<=6)a.push(pk([`🐎 ${lb[1].name} hunting ${L.name} down, ${margin} back`,`📡 ${lb[1].name} closing in, ${margin} off the top`,`👀 ${lb[1].name} not far off, ${margin} behind`,`🏃 ${lb[1].name} in hot pursuit, ${margin} off the top`],4));
         const within=lb.filter(p=>L.total-p.total<=5).length;
-        if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🔥 ${within} still in the hunt at the top`,`🎢 ${within} of them covered by 5 pts`]));
+        if(within>=3&&margin>0)a.push(pick([`😮 ${within} players within 5 pts of top. Anyone's race`,`🔥 ${within} still in the hunt at the top`,`🎢 ${within} of them bunched within 5 pts`]));
         for(let i=0;i<lb.length-1;i++){if(lb[i].total===lb[i+1].total&&lb[i].total>0){a.push(`🤜🤛 ${lb[i].name} and ${lb[i+1].name} tied on ${lb[i].total}`);break;}}
       }
       } else {
@@ -1060,7 +1060,7 @@ function tickerItems(){
         else a.push(pk([`🐏 Against all odds: ${fw} ${u.win} beat the favourites ${ff} ${u.fav}`,`😱 Upset! ${fw} ${u.win} saw off ${ff} ${u.fav}, who the market had at ${u.p}%`,`📊 Form book in the bin — ${fw} ${u.win} downed ${ff} ${u.fav}`,`🎲 ${fw} ${u.win} ignored the ${u.p}% odds and beat ${ff} ${u.fav}`],5).replace(/ +/g," ").trim());}
       // A light pre-match nod for a game coming up today.
       const upc=gamesToday().filter(id=>!state.grR[id]?.played&&!state.live[id]&&state.odds[id]&&state.odds[id].fav&&state.odds[id].fav!=='Draw');
-      if(upc.length){const o=state.odds[upc[Math.abs(seed)%upc.length]];a.push(pk([`📊 Market makes ${FLAGS[o.fav]||''} ${o.fav} favourites today (${o.p}%)`,`📈 ${FLAGS[o.fav]||''} ${o.fav} the ones to beat today, per the odds`,`🎟️ Form book fancies ${FLAGS[o.fav]||''} ${o.fav} later — ${o.p}% says the market`],6).replace(/ +/g," ").trim());}
+      if(upc.length){const o=state.odds[upc[Math.abs(seed)%upc.length]];a.push(pk([`📊 Market makes ${FLAGS[o.fav]||''} ${o.fav} favourites today (${o.p}%)`,`📈 ${FLAGS[o.fav]||''} ${o.fav} the ones to beat today, for what that's worth`,`🎟️ The market fancies ${FLAGS[o.fav]||''} ${o.fav} today — ${o.p}% if you're asking`],6).replace(/ +/g," ").trim());}
       const st=tickerStats(lb,qual);
       const teamHas=x=>`team${x.teamsN>1?'s have':' has'}`;   // "team has" (one team each) / "teams have" (multi-team draw)
       const teamPl =x=>`team${x.teamsN>1?'s':''}`;             // "team" / "teams"
@@ -1104,7 +1104,7 @@ function tickerItems(){
         else if(dm2<=3)a.push(pk([`🔥 Just ${dm2} between ${D.name} and ${ds[1].name}`,`😬 ${ds[1].name} breathing down ${D.name}'s neck, ${dm2} in it`],4));
         else a.push(pk([`😏 ${D.name} pulling clear of the pack`,`👀 The whole floor's chasing ${D.name} now`],5));
         if(ds.length>=3){const dlast=ds[ds.length-1];a.push(pk([`🥄 ${dlast.name} propping up the ${dl}, only way is up`,`📉 ${dlast.name} could use a few results, bottom of the ${dl}`],6));}
-        if(me){const myD=deptMap()[myLc];if(myD){const di=ds.findIndex(x=>x.name===myD);if(di>=0)a.push(pk([`🏢 Your lot (${myD}) sit ${ordinal(di+1)} of ${ds.length}`,`💼 ${myD} are ${ordinal(di+1)} in the office, ${me}`],7));}}
+        if(me){const myD=deptMap()[myLc];if(myD){const di=ds.findIndex(x=>x.name===myD);if(di>=0)a.push(pk([`🏢 Your lot (${myD}) sit ${ordinal(di+1)} out of ${ds.length}`,`💼 ${myD} are ${ordinal(di+1)} in the office, ${me}`],7));}}
       }
       [5,19,33,47].forEach(o=>a.push(pk(OFFICE_BANTER,o)));   // several different banter lines per loop; rotate as results come in
       if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;const _sl=(idx,o)=>{const nm=dn[(((idx%dn.length)+dn.length)%dn.length)];const bsp=squadLinesFor(nm);return (bsp&&bsp.length)?pk(bsp,o):pk(DEPT_HYPE,o).replace('{D}',nm);};a.push(_sl(seed,seed));a.push(_sl(seed+7,seed+11));}
