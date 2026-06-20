@@ -1062,15 +1062,17 @@ function tickerItems(){
       const upc=gamesToday().filter(id=>!state.grR[id]?.played&&!state.live[id]&&state.odds[id]&&state.odds[id].fav&&state.odds[id].fav!=='Draw');
       if(upc.length){const o=state.odds[upc[Math.abs(seed)%upc.length]];a.push(pk([`📊 Market makes ${FLAGS[o.fav]||''} ${o.fav} favourites today (${o.p}%)`,`📈 ${FLAGS[o.fav]||''} ${o.fav} the ones to beat today, per the odds`,`🎟️ Form book fancies ${FLAGS[o.fav]||''} ${o.fav} later — ${o.p}% says the market`],6).replace(/ +/g," ").trim());}
       const st=tickerStats(lb,qual);
+      const teamHas=x=>`team${x.teamsN>1?'s have':' has'}`;   // "team has" (one team each) / "teams have" (multi-team draw)
+      const teamPl =x=>`team${x.teamsN>1?'s':''}`;             // "team" / "teams"
       const anyOut=st.players.some(x=>x.aliveN<x.teamsN);
       const _sc=st.players.filter(x=>x.gf>0).sort((x,y)=>y.gf-x.gf)[0];
-      if(_sc)a.push(pk([`⚽ ${_sc.name}'s teams have scored the most, ${_sc.gf} goal${_sc.gf>1?'s':''}`,`🎯 Nobody's outscoring ${_sc.name} yet, ${_sc.gf} goal${_sc.gf>1?'s':''}`,`🥅 ${_sc.name} out in front for goals, ${_sc.gf}`],8));
+      if(_sc)a.push(pk([`⚽ ${_sc.name}'s ${teamHas(_sc)} scored the most, ${_sc.gf} goal${_sc.gf>1?'s':''}`,`🎯 Nobody's outscoring ${_sc.name} yet, ${_sc.gf} goal${_sc.gf>1?'s':''}`,`🥅 ${_sc.name} out in front for goals, ${_sc.gf}`],8));
       const _cs=st.players.filter(x=>x.cs>0).sort((x,y)=>y.cs-x.cs)[0];
-      if(_cs)a.push(pk([`🧤 ${_cs.name}'s teams have kept ${_cs.cs} clean sheet${_cs.cs>1?'s':''}`,`🛡️ ${_cs.cs} clean sheet${_cs.cs>1?'s':''} for ${_cs.name}, rock solid`,`🚫 ${_cs.name} keeping them out, ${_cs.cs} clean sheet${_cs.cs>1?'s':''}`],12));
+      if(_cs)a.push(pk([`🧤 ${_cs.name}'s ${teamHas(_cs)} kept ${_cs.cs} clean sheet${_cs.cs>1?'s':''}`,`🛡️ ${_cs.cs} clean sheet${_cs.cs>1?'s':''} for ${_cs.name}, rock solid`,`🚫 ${_cs.name} keeping them out, ${_cs.cs} clean sheet${_cs.cs>1?'s':''}`],12));
       const _lk=st.players.filter(x=>(x.w+x.d+x.l)>0).sort((x,y)=>y.ga-x.ga)[0];
-      if(_lk&&_lk.ga>=4)a.push(pk([`🥴 ${_lk.name}'s teams have let in ${_lk.ga}, time to sign a keeper`,`🚨 ${_lk.ga} conceded by ${_lk.name}'s teams, leaky at the back`,`🕳️ ${_lk.name}'s teams have shipped ${_lk.ga} so far`],16));
+      if(_lk&&_lk.ga>=4)a.push(pk([`🥴 ${_lk.name}'s ${teamHas(_lk)} let in ${_lk.ga}, time to sign a keeper`,`🚨 ${_lk.ga} conceded by ${_lk.name}'s ${teamPl(_lk)}, leaky at the back`,`🕳️ ${_lk.name}'s ${teamHas(_lk)} shipped ${_lk.ga} so far`],16));
       if(anyOut){
-        const _ai=st.players.filter(x=>x.teamsN>0&&x.aliveN===x.teamsN);if(_ai.length){const p2=pk(_ai,seed);a.push(pk([`🛡️ ${p2.name} still has ${p2.teamsN>1?`all ${p2.teamsN} teams`:'a team'} in it`,`💪 ${p2.name}'s teams are all still standing`,`✅ ${p2.name} hasn't lost a team yet`],20));}
+        const _ai=st.players.filter(x=>x.teamsN>0&&x.aliveN===x.teamsN);if(_ai.length){const p2=pk(_ai,seed);a.push(pk([`🛡️ ${p2.name} still has ${p2.teamsN>1?`all ${p2.teamsN} teams`:'a team'} in it`,`💪 ${p2.name}'s team${p2.teamsN>1?'s are all':' is'} still standing`,`✅ ${p2.name} hasn't lost a team yet`],20));}
         const _ao=st.players.filter(x=>x.teamsN>0&&x.aliveN===0);if(_ao.length){const p3=pk(_ao,seed+3);a.push(pk([`🪦 ${p3.name}'s ${p3.teamsN>1?'teams are all':'team is'} out now`,`💔 Tough week for ${p3.name}, ${p3.teamsN>1?'every team':'their team'} gone`,`🫡 ${p3.name} out of the running, there's always next year`],24));}
       }
       const _sh=Object.entries(teamMap).map(([name,d])=>({name,pts:d.pts,owners:d.owners})).filter(t=>t.pts>0&&t.owners.length>=2).sort((x,y)=>y.pts-x.pts)[0];
@@ -1385,7 +1387,7 @@ function myPositionHTML(){
   const base=(_baseRanks||{})[p.name];let mv='';
   if(started&&base&&base!==rank){const d=base-rank;mv=d>0?` <span style="color:var(--gr);font-weight:700">▲${d} today</span>`:` <span style="color:#e0245e;font-weight:700">▼${Math.abs(d)} today</span>`;}
   let status;
-  if(!started)status=`You're all set with ${p.teams.length} team${p.teams.length>1?'s':''}. ${Date.now()<KICKOFF_MS?'Tournament kicks off 11 June!':'Points land here as your teams play.'}`;
+  if(!started)status=`You're all set with ${p.teams.length} team${p.teams.length>1?'s':''}. ${Date.now()<KICKOFF_MS?'Tournament kicks off 11 June!':`Points land here as your team${p.teams.length>1?'s':''} play${p.teams.length>1?'':'s'}.`}`;
   else if(rank===1)status=n>1?`Top of the table, ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
   else status=`${gapLead} pt${gapLead!==1?'s':''} behind the leader${i<n-1?` · ${ahead} clear of ${ordinal(rank+1)}`:''}`;
   const myNext=started?p.breakdown.filter(b=>b.qual!=='eliminated').map(b=>({team:b.name,nx:teamNextFix(b.name)})).filter(x=>x.nx).sort((a,b)=>a.nx.ms-b.nx.ms)[0]:null;
@@ -3154,7 +3156,7 @@ function renderStandings(){
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
         ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span><span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span>${champ?`<span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:`<span style="font-size:.68rem;color:var(--txm)">awaiting Final</span>`}</div>`:''}
-        ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(!tN||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} team${tN>1?'s':''} still in it`:aN===0?'All teams out':`${aN} of ${tN} teams still alive`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
+        ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(tN<=1||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} teams still in it`:aN===0?'All teams out':`${aN} of ${tN} teams still alive`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="padding:9px 10px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
           <div style="display:flex;gap:9px;align-items:center">
             <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
