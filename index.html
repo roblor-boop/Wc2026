@@ -660,6 +660,8 @@ let state={tab:'setup',pc:12,drawView:'player',autoDraw:false,drawByTeam:false,s
 const tempS={},editing=new Set();
 let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
+let navOrder=[];   // ordered ids of the currently-visible tabs, kept in sync by render() for swipe nav
+let _swipeHintDone=false;   // first-touch-session guard for the one-time swipe hint
 let _prevRanks={};  // name → rank before last result
 function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p.name]=i+1;});}
 let _baseRanks=null;  // persisted "start of today" ranks → movement (▲/▼) survives a page reload
@@ -1861,6 +1863,15 @@ function computeQual(){
   if(allDone){thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);thirds.forEach((t,i)=>{q[t.name]=i<8?'best3rd':'eliminated';});}
   return{qual:q,thirds,tables};
 }
+// Live "race for the last 8": ranks each group's CURRENT 3rd-placed team against the others, using the same
+// order the app settles best-3rd qualification on (points, then goal difference, then goals). Top 8 of 12 go
+// through to the last 32. During the group stage this is provisional; once every group is done it's final.
+function thirdPlaceRace(tables){
+  tables=tables||computeQual().tables;
+  const thirds=Object.keys(tables).map(g=>{const r=tables[g].rows[2];return r?{...r,group:g,groupDone:tables[g].complete}:null;}).filter(Boolean);
+  thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);
+  return thirds;
+}
 function groupStageDone(){const t=computeQual().tables;const ks=Object.keys(t);return ks.length>0&&ks.every(g=>t[g]&&t[g].complete);}
 // Assign the 8 qualifying 3rd-place teams to the 8 best-3rd R32 slots so each
 // slot gets a DISTINCT eligible team (a perfect matching respecting FIFA's
@@ -2946,6 +2957,30 @@ function renderFixtures(){
   })()}`;
 }
 
+function thirdRaceHTML(race){
+  if(!race.length||!race.some(t=>t.P>0))return'';   // nothing meaningful until some games are played
+  const allDone=race.every(t=>t.groupDone);
+  return`<div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:13px 14px;margin-bottom:14px;box-shadow:var(--shadow)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px">
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;color:var(--tx)">🎟️ Race for the last 8</span>
+      <span style="font-size:.58rem;color:${allDone?'var(--gr)':'var(--amber)'};font-family:'Oswald',sans-serif;letter-spacing:.06em;font-weight:600">${allDone?'FINAL':'AS IT STANDS'}</span>
+    </div>
+    <div style="font-size:.68rem;color:var(--txd);margin-bottom:11px;line-height:1.45">The 8 best third-placed teams join the group winners and runners-up in the last 32.${allDone?'':' Updates as games are played.'}</div>
+    <div style="display:flex;align-items:center;padding:0 7px 5px;font-size:.54rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.04em;font-weight:600">
+      <span style="width:20px">#</span><span style="flex:1">Team</span><span style="width:30px;text-align:center">Grp</span><span style="width:20px;text-align:center">Pl</span><span style="width:28px;text-align:center">GD</span><span style="width:22px;text-align:center">GF</span><span style="width:26px;text-align:center">Pts</span>
+    </div>
+    ${race.map((t,i)=>{const inN=i<8,mine=_myTeams.has(t.name);return`${i===8?`<div style="display:flex;align-items:center;gap:6px;margin:7px 2px;font-size:.52rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.07em"><div style="flex:1;height:1px;background:var(--b)"></div>QUALIFYING CUT<div style="flex:1;height:1px;background:var(--b)"></div></div>`:''}<div style="display:flex;align-items:center;padding:5px 7px;border-radius:6px;${mine?'background:var(--pill-gr);':''}${inN?'':'opacity:.5;'}">
+      <span style="width:20px;font-family:'Oswald',sans-serif;font-weight:700;font-size:.78rem;color:${inN?'var(--gr)':'var(--txm)'}">${i+1}</span>
+      <span style="flex:1;display:flex;align-items:center;gap:5px;min-width:0"><span style="font-size:.92rem;flex-shrink:0">${t.flag}</span><span style="font-size:.74rem;color:${inN?'var(--tx)':'var(--txd)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</span>${mine?`<span style="font-size:.48rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;flex-shrink:0">YOU</span>`:''}</span>
+      <span style="width:30px;text-align:center;font-size:.64rem;color:var(--txm)">${t.group}</span>
+      <span style="width:20px;text-align:center;font-size:.7rem;color:var(--txd)">${t.P}</span>
+      <span style="width:28px;text-align:center;font-size:.7rem;color:${t.GD>0?'var(--gr)':t.GD<0?'var(--red)':'var(--txd)'}">${(t.GD>0?'+':'')+t.GD}</span>
+      <span style="width:22px;text-align:center;font-size:.7rem;color:var(--txd)">${t.GF}</span>
+      <span style="width:26px;text-align:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:.76rem;color:var(--tx)">${t.Pts}</span>
+    </div>`;}).join('')}
+    <div style="font-size:.57rem;color:var(--txm);margin-top:10px;line-height:1.4">Ranked on points, then goal difference, then goals scored. Teams level on all three are split by fair play then world ranking (not shown here).</div>
+  </div>`;
+}
 function renderTablesContent(qual){
   return`<div class="grid-wide">${Object.keys(GD).map(g=>{
     const{complete,rows,played}=groupTable(g);
@@ -2968,9 +3003,10 @@ function renderTables(){
   const _realGr=state.grR;
   if(liveOn){const _m={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};if(!((s.hg||0)>0||(s.ag||0)>0))return;_m[id]={hg:s.hg||0,ag:s.ag||0,played:true};});state.grR=_m;}
   try{
-  const{qual}=computeQual();
+  const{qual,tables}=computeQual();
   return`<h2 class="ttl">Group Tables${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2>
   ${liveOn?`<div style="font-size:.72rem;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:5px"><span class="live-dot"></span>Provisional — includes the live game${liveIds.length>1?'s':''} as ${liveIds.length>1?'they stand':'it stands'}.</div>`:''}
+  ${thirdRaceHTML(thirdPlaceRace(tables))}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:.7rem">${[['#007a3d','Qualified top 2'],['var(--amber)','Possible best 3rd'],['#607080','Eliminated']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span><span style="color:var(--txd)">${l}</span></span>`).join('')}</div>
   ${renderTablesContent(qual)}`;
   }finally{ if(liveOn) state.grR=_realGr; }
@@ -3176,7 +3212,36 @@ function renderStandings(){
 }
 
 // ── MAIN RENDER ───────────────────────────────────────────────────────────────
-function setTab(t){state.tab=t;render();}
+function setTab(t){const _d=navOrder.indexOf(t)-navOrder.indexOf(state.tab);state.tab=t;render();window.scrollTo(0,0);slideContent(_d);}
+// Subtle directional slide+fade when changing tabs, so a swipe (or tap) feels like turning a page rather
+// than a hard cut. Only ever fired from setTab (a real navigation), never on a live data re-render.
+function slideContent(dir){
+  const c=document.getElementById('content');if(!c)return;
+  const dx=dir>0?16:dir<0?-16:0;
+  c.style.transition='none';c.style.transform='translateX('+dx+'px)';c.style.opacity='0.35';
+  void c.offsetWidth;                                  // force reflow so the start state takes
+  c.style.transition='transform .19s ease, opacity .19s ease';c.style.transform='translateX(0)';c.style.opacity='1';
+  setTimeout(()=>{if(!c)return;c.style.transition='';c.style.transform='';c.style.opacity='';},240);
+}
+// One-time, touch-only nudge so people discover the swipe gesture. Shows once per device, auto-dismisses,
+// and clears on the first touch. No-ops on desktop and after it's been seen.
+function maybeSwipeHint(){
+  if(_swipeHintDone||!state.draw)return;
+  let touch=false,seen=false;
+  try{touch=('ontouchstart'in window)||(typeof navigator!=='undefined'&&navigator.maxTouchPoints>0)||(typeof matchMedia!=='undefined'&&matchMedia('(pointer:coarse)').matches);}catch(_){}
+  try{seen=localStorage.getItem('wc26:swipehint')==='1';}catch(_){}
+  _swipeHintDone=true;
+  if(!touch||seen)return;
+  try{localStorage.setItem('wc26:swipehint','1');}catch(_){}
+  const h=document.createElement('div');
+  h.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:140;background:rgba(8,12,28,.92);color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:9px 18px;font-family:\'Oswald\',sans-serif;font-size:.8rem;letter-spacing:.03em;box-shadow:0 6px 22px rgba(0,0,0,.35);opacity:0;transition:opacity .3s ease, transform .3s ease;pointer-events:none;display:flex;align-items:center;gap:8px';
+  h.innerHTML='<span style="opacity:.6">‹</span> Swipe to switch tabs <span style="opacity:.6">›</span>';
+  document.body.appendChild(h);
+  requestAnimationFrame(()=>{h.style.opacity='1';h.style.transform='translateX(-50%) translateY(0)';});
+  const kill=()=>{if(!h.parentNode)return;h.style.opacity='0';h.style.transform='translateX(-50%) translateY(10px)';setTimeout(()=>h.remove(),320);window.removeEventListener('touchstart',kill);};
+  setTimeout(kill,4200);
+  window.addEventListener('touchstart',kill,{once:true,passive:true});
+}
 function setPC(n){if(!adminSess)return;state.pc=Math.max(2,Math.min(MAX_PLAYERS,n));saveSetup();render();}
 // ── PARTICIPANT MANAGEMENT ────────────────────────────────────────────────────
 function addParticipant(){
@@ -3316,6 +3381,8 @@ function render(){
     else state.tab='draw'; // will show join/welcome screen
   }
   document.getElementById('tab-nav').innerHTML=tabs.map(t=>`<button class="tab-btn${state.tab===t.id?' active':''}${t.live?' live':''}" onclick="${t.d?'':'setTab(\''+t.id+'\')'}" ${t.d?'disabled':''} style="${t.d?'opacity:.25;cursor:not-allowed':''}">${t.l}</button>`).join('');
+  navOrder=tabs.filter(t=>!t.d).map(t=>t.id);
+  {const _nav=document.getElementById('tab-nav'),_ab=_nav&&_nav.querySelector('.tab-btn.active');if(_ab)_nav.scrollLeft+=_ab.getBoundingClientRect().left-_nav.getBoundingClientRect().left-(_nav.clientWidth-_ab.clientWidth)/2;}
   updateHdr();
   refreshRankBaseline();
   _myTeams=myTeamSet();
@@ -3337,6 +3404,7 @@ function render(){
   updateResultsBanner();
   startCountdown();
   checkGate();
+  maybeSwipeHint();
   _syncHdrH();
   if(!window._hdrRO){window._hdrRO=1;try{window.addEventListener('resize',_syncHdrH);const _hh=document.getElementById('hdr');if(_hh&&window.ResizeObserver)new ResizeObserver(_syncHdrH).observe(_hh);}catch(e){}}
 }
@@ -3490,6 +3558,29 @@ async function localInit(){
   if(state.draw)state.tab=hasResults()?'standings':'draw';
   hideLoading();startPolling();render();
 }
+// ── swipe left/right anywhere to move between tabs (mobile) ──────────────────
+// Guarded so it never hijacks a horizontal scroll (the tab strip, the bracket, wide tables),
+// a slider/text field, or a quick vertical scroll. Clamps at the first/last tab (no wrap).
+(function(){
+  let x0=null,y0=null,t0=0,skip=false;
+  function hScroll(el){while(el&&el!==document.body){if(el.scrollWidth-el.clientWidth>4){const o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true;}el=el.parentElement;}return false;}
+  document.body.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1){skip=true;return;}
+    const t=e.target;
+    skip=!!(t.closest&&t.closest('#tab-nav,input,textarea,select,[contenteditable],.no-swipe'))||hScroll(t);
+    if(skip)return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;t0=Date.now();
+  },{passive:true});
+  document.body.addEventListener('touchend',function(e){
+    if(skip||x0==null){x0=null;return;}
+    const dx=e.changedTouches[0].clientX-x0,dy=e.changedTouches[0].clientY-y0,dt=Date.now()-t0;x0=null;
+    if(dt>700||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*2)return;   // needs a clear, horizontal flick
+    const i=navOrder.indexOf(state.tab);if(i<0)return;
+    const ni=dx<0?i+1:i-1;if(ni<0||ni>=navOrder.length)return;        // left = next, right = previous; clamp at ends
+    if(navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}
+    setTab(navOrder[ni]);
+  },{passive:true});
+})();
 
 </script>
 </body>
