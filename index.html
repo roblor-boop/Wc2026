@@ -662,6 +662,7 @@ let assignTarget=null,manualMap={},recentResults=[],pendingImports=[];
 let adminSess=false;
 let navOrder=[];   // ordered ids of the currently-visible tabs, kept in sync by render() for swipe nav
 let _swipeHintDone=false;   // first-touch-session guard for the one-time swipe hint
+let _recapDone=false;       // once-per-load guard for the "while you were away" recap
 let _prevRanks={};  // name → rank before last result
 function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p.name]=i+1;});}
 let _baseRanks=null;  // persisted "start of today" ranks → movement (▲/▼) survives a page reload
@@ -2960,7 +2961,7 @@ function renderFixtures(){
 function thirdRaceHTML(race){
   if(!race.length||!race.some(t=>t.P>0))return'';   // nothing meaningful until some games are played
   const allDone=race.every(t=>t.groupDone);
-  return`<div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:13px 14px;margin-bottom:14px;box-shadow:var(--shadow)">
+  return`<div style="background:var(--card);border:1px solid var(--b);border-radius:12px;padding:13px 14px;margin:20px 0 6px;box-shadow:var(--shadow)">
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px">
       <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1rem;color:var(--tx)">🎟️ Race for the last 8</span>
       <span style="font-size:.58rem;color:${allDone?'var(--gr)':'var(--amber)'};font-family:'Oswald',sans-serif;letter-spacing:.06em;font-weight:600">${allDone?'FINAL':'AS IT STANDS'}</span>
@@ -3006,9 +3007,9 @@ function renderTables(){
   const{qual,tables}=computeQual();
   return`<h2 class="ttl">Group Tables${liveOn?` <span style="font-size:.56rem;vertical-align:middle;color:var(--amber);font-family:'Oswald',sans-serif;letter-spacing:.06em"><span class="live-dot"></span>LIVE</span>`:''}</h2>
   ${liveOn?`<div style="font-size:.72rem;color:var(--amber);margin-bottom:10px;display:flex;align-items:center;gap:5px"><span class="live-dot"></span>Provisional — includes the live game${liveIds.length>1?'s':''} as ${liveIds.length>1?'they stand':'it stands'}.</div>`:''}
-  ${thirdRaceHTML(thirdPlaceRace(tables))}
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;font-size:.7rem">${[['#007a3d','Qualified top 2'],['var(--amber)','Possible best 3rd'],['#607080','Eliminated']].map(([c,l])=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${c};display:inline-block"></span><span style="color:var(--txd)">${l}</span></span>`).join('')}</div>
-  ${renderTablesContent(qual)}`;
+  ${renderTablesContent(qual)}
+  ${thirdRaceHTML(thirdPlaceRace(tables))}`;
   }finally{ if(liveOn) state.grR=_realGr; }
 }
 
@@ -3212,6 +3213,73 @@ function renderStandings(){
 }
 
 // ── MAIN RENDER ───────────────────────────────────────────────────────────────
+// ── "while you were away" recap ─────────────────────────────────────────────
+// On return, summarises what changed since the user last left: their team's results and any rank movement.
+// The baseline snapshot is rewritten when they leave (visibilitychange/pagehide), so it reflects what they
+// actually saw, and only meaningful changes produce a card. Personalised — needs a pinned "me".
+function recapTeamGames(tn){
+  const g={};
+  Object.keys(GF).forEach(id=>{const r=state.grR[id];if(!r||!r.played)return;const f=GF[id];if(tn.includes(f.home)||tn.includes(f.away))g[id]=(r.hg||0)+'-'+(r.ag||0);});
+  Object.keys(state.koR||{}).forEach(id=>{const r=state.koR[id];if(!r||!r.played)return;if(tn.includes(r.home)||tn.includes(r.away))g[id]=(r.hg||0)+'-'+(r.ag||0)+(r.pens?'p'+r.pens.h+'-'+r.pens.a:'');});
+  return g;
+}
+function recapDescribe(id,tn){
+  if(GF[id]&&state.grR[id]&&state.grR[id].played){
+    const f=GF[id],r=state.grR[id],isH=tn.includes(f.home),my=isH?f.home:f.away,opp=isH?f.away:f.home,ms=isH?(r.hg||0):(r.ag||0),os=isH?(r.ag||0):(r.hg||0),fl=FLAGS[my]||'⚽',ofl=FLAGS[opp]||'⚽';
+    if(ms>os)return `${fl} ${my} beat ${ofl} ${opp} ${ms}-${os}`;
+    if(ms<os)return `${fl} ${my} lost ${ms}-${os} to ${ofl} ${opp}`;
+    return `${fl} ${my} drew ${ms}-${os} with ${ofl} ${opp}`;
+  }
+  const r=state.koR&&state.koR[id];
+  if(r&&r.played){
+    const isH=tn.includes(r.home),my=isH?r.home:r.away,opp=isH?r.away:r.home,ms=isH?(r.hg||0):(r.ag||0),os=isH?(r.ag||0):(r.hg||0),fl=FLAGS[my]||'⚽',ofl=FLAGS[opp]||'⚽',pens=r.pens?` (${r.pens.h}-${r.pens.a} pens)`:'';
+    return r.winner===my?`${fl} ${my} beat ${ofl} ${opp} ${ms}-${os}${pens} to go through`:`${fl} ${my} went out, ${ms}-${os}${pens} to ${ofl} ${opp}`;
+  }
+  return '';
+}
+function recapSnapshot(me){
+  const lb=calcLeaderboard(),meP=lb.find(p=>p.name===me),tn=meP?meP.teams.map(t=>t.name):[];
+  let played=0,goals=0;
+  Object.values(state.grR||{}).forEach(r=>{if(r&&r.played){played++;goals+=(r.hg||0)+(r.ag||0);}});
+  Object.values(state.koR||{}).forEach(r=>{if(r&&r.played){played++;goals+=(r.hg||0)+(r.ag||0);}});
+  return {t:Date.now(),me,rank:meP?lb.indexOf(meP)+1:null,games:recapTeamGames(tn),played,tn};
+}
+function buildRecapLines(prev,cur,tn){
+  const lines=[];
+  const newIds=Object.keys(cur.games).filter(id=>prev.games[id]===undefined||prev.games[id]!==cur.games[id]);
+  newIds.slice(0,4).forEach(id=>{const d=recapDescribe(id,tn);if(d)lines.push('⚽ '+d);});
+  if(prev.rank&&cur.rank){
+    if(cur.rank<prev.rank)lines.push(`📈 You climbed from ${ordinal(prev.rank)} to ${ordinal(cur.rank)}`);
+    else if(cur.rank>prev.rank)lines.push(`📉 You slipped from ${ordinal(prev.rank)} to ${ordinal(cur.rank)}`);
+    else if(newIds.length)lines.push(`➡️ You held ${ordinal(cur.rank)}`);
+  }
+  const dG=(cur.played||0)-(prev.played||0);
+  if(dG>0&&lines.length<3)lines.push(`📊 ${dG} game${dG>1?'s':''} played across the tournament since`);
+  return lines;
+}
+function showRecapCard(lines){
+  const old=document.getElementById('recap-card');if(old)old.remove();
+  const c=document.createElement('div');c.id='recap-card';
+  c.style.cssText='position:fixed;left:50%;top:calc(var(--hdr-h,90px) + 10px);transform:translateX(-50%) translateY(-8px);width:min(440px,92vw);z-index:130;background:var(--card);border:1px solid var(--bb,var(--b));border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.34);opacity:0;transition:opacity .32s ease, transform .32s ease;overflow:hidden';
+  c.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--cardh);border-bottom:1px solid var(--b)"><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:var(--tx)">👋 While you were away</span><button id="recap-x" style="background:none;border:none;color:var(--txm);font-size:1.05rem;cursor:pointer;line-height:1;padding:2px 5px">✕</button></div><div style="padding:11px 15px;display:flex;flex-direction:column;gap:7px">${lines.map(l=>`<div style="font-size:.82rem;color:var(--txd);line-height:1.4">${l}</div>`).join('')}</div>`;
+  document.body.appendChild(c);
+  requestAnimationFrame(()=>{c.style.opacity='1';c.style.transform='translateX(-50%) translateY(0)';});
+  const kill=()=>{if(!c.parentNode)return;c.style.opacity='0';c.style.transform='translateX(-50%) translateY(-8px)';setTimeout(()=>c.remove(),320);};
+  const x=c.querySelector('#recap-x');if(x)x.addEventListener('click',kill);
+  setTimeout(kill,14000);
+}
+function maybeRecap(){
+  if(_recapDone)return;
+  const me=getMyName();if(!me||!state.draw)return;
+  _recapDone=true;
+  let prev=null;try{const raw=localStorage.getItem('wc26:recap:'+me);if(raw)prev=JSON.parse(raw);}catch(_){}
+  const cur=recapSnapshot(me);
+  const persist=()=>{try{localStorage.setItem('wc26:recap:'+me,JSON.stringify(recapSnapshot(me)));}catch(_){}};
+  if(prev&&prev.me===me){const lines=buildRecapLines(prev,cur,cur.tn);if(lines.length)showRecapCard(lines);}
+  persist();                                                              // baseline = this load
+  try{document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist();});}catch(_){}
+  try{window.addEventListener('pagehide',persist);}catch(_){}             // refine baseline to last-seen on leave
+}
 function setTab(t){const _d=navOrder.indexOf(t)-navOrder.indexOf(state.tab);state.tab=t;render();window.scrollTo(0,0);slideContent(_d);}
 // Subtle directional slide+fade when changing tabs, so a swipe (or tap) feels like turning a page rather
 // than a hard cut. Only ever fired from setTab (a real navigation), never on a live data re-render.
@@ -3405,6 +3473,7 @@ function render(){
   startCountdown();
   checkGate();
   maybeSwipeHint();
+  maybeRecap();
   _syncHdrH();
   if(!window._hdrRO){window._hdrRO=1;try{window.addEventListener('resize',_syncHdrH);const _hh=document.getElementById('hdr');if(_hh&&window.ResizeObserver)new ResizeObserver(_syncHdrH).observe(_hh);}catch(e){}}
 }
