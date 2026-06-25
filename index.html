@@ -386,6 +386,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
 /* ── ANIMATIONS ──────────────────────────────────────── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .fl{display:inline-block;width:1.3em;height:.92em;vertical-align:-.16em;border-radius:2px;box-shadow:0 0 0 .5px rgba(0,0,0,.12)}
+.fl-code{display:inline-flex;align-items:center;justify-content:center;min-width:1.55em;height:1.05em;padding:0 .22em;font-family:'Oswald',sans-serif;font-weight:600;font-size:.66em;letter-spacing:.04em;line-height:1;color:var(--txm);background:var(--cardh);border:1px solid var(--b);border-radius:3px;vertical-align:-.06em}
 .ticker{position:relative;overflow:hidden;white-space:nowrap;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:9px 0;margin-bottom:14px;box-shadow:var(--shadow);-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
 #hdr-inner .ticker{margin:9px 0 11px}
 .ticker-track{display:inline-block;white-space:nowrap;will-change:transform;transform:translateZ(0);backface-visibility:hidden;animation:tickerScroll var(--tk-dur,40s) linear infinite;font-size:.8rem;color:var(--tx);font-weight:500}
@@ -612,13 +613,20 @@ const KO_SCHED={
 };
 const DEF_SCR={group_win:2,group_draw:1,qualify_top2:5,qualify_3rd:2,win_r32:5,win_r16:7,win_qf:10,win_sf:15,win_final:20,goal_bonus:0};
 const SCR_LBL={group_win:'Group win',group_draw:'Group draw',qualify_top2:'Qualify (top 2)',qualify_3rd:'Qualify (best 3rd)',win_r32:'Win in R32',win_r16:'Win in R16',win_qf:'Win in QF',win_sf:'Win in SF',win_final:'Win the Final',goal_bonus:'Per goal (bonus)'};
-const DEF_BONUS={on:true,most_goals:5,fewest_goals:3,best_def:5,worst_def:3};
+const DEF_BONUS={on:true,live:false,most_goals:5,fewest_goals:3,best_def:5,worst_def:3};
 const BONUS_LBL={most_goals:'Most goals scored',fewest_goals:'Fewest goals scored',best_def:'Best defence (fewest conceded)',worst_def:'Leakiest defence (most conceded)'};
 const BONUS_ICON={most_goals:'\u26bd',fewest_goals:'\ud83e\uddca',best_def:'\ud83d\udee1\ufe0f',worst_def:'\ud83e\udd45'};
 const QCOL={top2:'#007a3d',best3rd:'#0e8888',maybe3rd:'#c07000',eliminated:'#607080',pending:'#607080'};
 const QLBL={top2:'Qualified ✓',best3rd:'Qual (3rd) ✓',maybe3rd:'Maybe 3rd',eliminated:'Out',pending:'TBD'};
 const MEDAL=['🥇','🥈','🥉'];
 const GF={},ALL_TEAMS=[],FLAGS={};
+// England & Scotland use inline SVGs because their subdivision flag emoji render as a black box on Windows.
+// But on Windows the OTHER teams' flag emoji render as little 2-letter code boxes (MX, KR…), leaving Eng/Sco
+// as the only real flags. So: detect whether this browser renders flag emoji as flags; if not, swap Eng/Sco
+// to matching code badges so the table is consistent. Detection fails safe to "flags work" (keep current look).
+let _FLAGS_OK=true;
+function _flagEmojiOK(){try{const c=document.createElement('canvas');c.width=c.height=16;const x=c.getContext('2d');if(!x)return true;x.fillStyle='#000';x.textBaseline='top';x.font='16px serif';x.fillText('🇬🇧',0,0);const d=x.getImageData(0,0,16,16).data;for(let i=0;i<d.length;i+=4){if(d[i+3]>0&&(Math.abs(d[i]-d[i+1])>24||Math.abs(d[i+1]-d[i+2])>24))return true;}return false;}catch(e){return true;}}
+(function(){_FLAGS_OK=_flagEmojiOK();if(_FLAGS_OK)return;const code=n=>n==='England'?'EN':n==='Scotland'?'SC':'';Object.values(GD).forEach(arr=>arr.forEach(t=>{const c=code(t.n);if(c)t.f=`<span class="fl-code">${c}</span>`;}));})();
 Object.entries(GD).forEach(([g,ts])=>{const ps=g==='B'||g==='K'?S3:S1;ps.forEach(([h,a],i)=>{const id=`g_${g}_${i}`;GF[id]={group:g,matchday:[1,1,2,2,3,3][i],home:ts[h].n,away:ts[a].n,...(SC[id]||{dt:'TBC',tm:'TBC',ve:'TBC'})};});ts.forEach(t=>{ALL_TEAMS.push({name:t.n,flag:t.f,group:g});FLAGS[t.n]=t.f;});});
 const GF_IDS=Object.fromEntries(Object.keys(GD).map(g=>[g,Object.keys(GF).filter(id=>GF[id].group===g)]));
 
@@ -891,14 +899,14 @@ const OFFICE_BANTER=[
   "🌎 Five time zones between you and kickoff. Nobody said this was convenient",
   "☕ The coffee machine is bracing for the morning after",
   "💼 Diversified? You've got one team. Concentrated risk it is",
-  "🐌 Slow start? Call it a J-curve and hold your nerve",
+  "🧦 Someone's into a third match in the same lucky socks and not apologising",
   "💸 Bragging rights: tax-free, fully yours, no clawback",
   "📜 Capital at risk. So are your bragging rights",
   "🔍 Did the DD on your team only after you drew it, didn't you",
   "🏛️ The investment committee would not have signed off most of these teams",
   "🛢️ Plenty of dry powder, no clue where to deploy it",
-  "♾️ TVPI on a free entry is technically infinite. Make the most of it",
-  "🔒 Concentrated, illiquid and emotionally leveraged. Textbook",
+  "🤫 Whoever's leading has gone suspiciously modest all of a sudden",
+  "🔮 Every confident prediction from week one is looking shakier by the day",
   "📑 No term sheet, no warranties, no recourse. Just the draw",
   "🧾 Fairly sure this one doesn't need compliance pre-clearance",
   "💷 No prize money on offer, which has deterred precisely no one",
@@ -958,7 +966,7 @@ const DEPT_HYPE=[
 // Bespoke per-squad lines (real teams). Auto-matched to a squad name (case/spacing-insensitive); squads not listed fall back to the generic DEPT_HYPE templates.
 const SQUAD_LINES={
 "Compliance":["🏢 Compliance are the VAR of this sweepstake — every goal gets a second look","🏢 Compliance still checking whether cheering counts as a conflict of interest","🏢 Compliance have pre-cleared their own team and nobody else's"],
-"Corporate Accounting":["🏢 Accounting are the only ones who actually trust the goal-difference column","🏢 Corporate Accounting have already reconciled the leaderboard to the penny","🏢 Trust the table — Accounting would've spotted an error by now"],
+"Corporate Accounting":["🏢 Accounting already know it's head-to-head that breaks a tie now, not goal difference. They read the footnotes","🏢 Corporate Accounting have already reconciled the leaderboard to the penny","🏢 Trust the table — Accounting would've spotted an error by now"],
 "Corporate Communications":["🏢 Comms have the post-match press conference ready, win or lose","🏢 Comms can spin a group-stage exit as 'a strong foundation'","🏢 Comms doing the gaffer's interview for him"],
 "Global Legal Investments":["🏢 Legal want the final result subject to documentation","🏢 Legal have read the rules twice and found no get-out clause","🏢 Legal reckon that one's offside on a technicality"],
 "Tax":["🏢 Tax have found a tax-efficient route to the trophy","🏢 Tax reckon their bragging rights are fully deductible","🏢 Tax reckon a 1-0 is the most efficient scoreline going"],
@@ -981,7 +989,7 @@ const SQUAD_LINES={
 "Abingworth":["🏢 Abingworth all about sports science and marginal gains","🏢 Abingworth backing the team with the best medical bench"],
 "Carlyle Capital Solutions":["🏢 Carlyle Capital Solutions would bankroll the January transfer window","🏢 Carlyle Capital Solutions know exactly how to structure a winning run"],
 "Fund Management - GC":["🏢 Fund Management reckon it's all in the team selection","🏢 Fund Management run matchday like a closing"],
-"Fund Management-GPE":["🏢 Fund Management back themselves to pick a winner","🏢 Fund Management like the look of their book this year"],
+"Fund Management - GPE":["🏢 Fund Management back themselves to pick a winner","🏢 Fund Management like the look of their book this year"],
 "Global Portfolio Solutions":["🏢 Global Portfolio Solutions believe in rotating the whole squad"],
 "Finance Process & Operations":["🏢 Finance Process & Operations run matchday like clockwork"]
 };
@@ -1005,7 +1013,7 @@ function tickerItems(){
   const a=[];
   if(state.draw){
     const lb=calcLeaderboard();
-    const {qual}=computeQual();
+    const {qual,tables}=computeQual();
     const champ=(state.koR["m104"]&&state.koR["m104"].played)?state.koR["m104"].winner:null;
     const started=lb.some(p=>p.total>0);
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
@@ -1112,6 +1120,10 @@ function tickerItems(){
       [5,19,33,47].forEach(o=>a.push(pk(OFFICE_BANTER,o)));   // several different banter lines per loop; rotate as results come in
       if(state.depts&&state.depts.on&&(state.depts.names||[]).length){const dn=state.depts.names;const _sl=(idx,o)=>{const nm=dn[(((idx%dn.length)+dn.length)%dn.length)];const bsp=squadLinesFor(nm);return (bsp&&bsp.length)?pk(bsp,o):pk(DEPT_HYPE,o).replace('{D}',nm);};a.push(_sl(seed,seed));a.push(_sl(seed+7,seed+11));}
     }
+    // teams knocked out with a game still to play (mid-group mathematical elimination)
+    const earlyOut=[];Object.entries(tables).forEach(([g,t])=>{if(t.complete)return;t.rows.forEach(r=>{if(qual[r.name]==='eliminated')earlyOut.push({name:r.name,flag:r.flag});});});
+    if(earlyOut.length){const e=earlyOut[seed%earlyOut.length];const ow=[];lb.forEach(p=>{if(p.breakdown.some(b=>b.name===e.name))ow.push(p.name);});const who=ow.length?(ow.length>2?`the ${ow.length} who drew them`:ow.join(' & ')):null;
+      a.push(pk([`🚪 Early bath for ${e.flag} ${e.name}, out of the group with a game still to play${who?`. Hard lines, ${who}`:''}`,`🪦 ${e.flag} ${e.name} are out before their last game's even kicked off, going through the motions now${who?`. Sorry, ${who}`:''}`,`📉 That's ${e.flag} ${e.name} written off a game early${who?`. ${who} will want a quiet word with the draw`:''}`,`⏳ One game left and nothing to play for, ${e.flag} ${e.name} are done${who?`. Chin up, ${who}`:''}`],seed));}
     if(gp+kp>0)a.push(pk([`📊 ${gp+kp} matches played, ${goals} goals so far`,`⚽ ${goals} goals in ${gp+kp} games`,`📊 ${gp+kp} games down, ${goals} goals`,`🥅 ${goals} goals in ${gp+kp} games and the keepers are sweating`],6));
     if(!started&&!champ)a.push(pick([`🎲 Teams drawn at random. Pure luck`,`👀 Check the draw tab to see who got the favourites`,`🍀 It's all down to the draw now`,`💪 Everyone's in with a shout till the whistle goes`,`⏳ Not long until kick-off`]));
     if(state.predict.on&&!champ){const pc={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.prediction)pc[s.prediction]=(pc[s.prediction]||0)+1;});const top=Object.entries(pc).sort((x,y)=>y[1]-x[1])[0];if(top)a.push(`🔮 ${top[0]} is the office favourite to win it (${top[1]} backer${top[1]>1?"s":""})`);}
@@ -1843,18 +1855,68 @@ function daysAgoDt(dt){
 }
 
 // ── CALCULATIONS ──────────────────────────────────────────────────────────────
+// FIFA 2026 group tiebreaker helpers (Article 13). h2hTable builds the mini-table among a set of teams from
+// only the matches played between them. rankTied orders teams level on points: head-to-head points, GD, goals
+// first; if that separates some but not all, the teams still level are re-assessed from the top of the ladder;
+// if head-to-head can't separate them at all, fall back to overall GD, overall goals, then a stable name sort.
+function h2hTable(names,matches){const set=new Set(names);const m={};names.forEach(n=>m[n]={Pts:0,GD:0,GF:0});matches.forEach(x=>{if(!set.has(x.home)||!set.has(x.away))return;m[x.home].GF+=x.hg;m[x.away].GF+=x.ag;m[x.home].GD+=x.hg-x.ag;m[x.away].GD+=x.ag-x.hg;if(x.hg>x.ag)m[x.home].Pts+=3;else if(x.hg<x.ag)m[x.away].Pts+=3;else{m[x.home].Pts++;m[x.away].Pts++;}});return m;}
+function rankTied(tied,matches){
+  if(tied.length<=1)return tied.slice();
+  const m=h2hTable(tied.map(t=>t.name),matches);
+  const sorted=tied.slice().sort((a,b)=>m[b.name].Pts-m[a.name].Pts||m[b.name].GD-m[a.name].GD||m[b.name].GF-m[a.name].GF);
+  const out=[];
+  for(let i=0;i<sorted.length;){
+    let j=i+1;while(j<sorted.length&&m[sorted[j].name].Pts===m[sorted[i].name].Pts&&m[sorted[j].name].GD===m[sorted[i].name].GD&&m[sorted[j].name].GF===m[sorted[i].name].GF)j++;
+    const sub=sorted.slice(i,j);
+    if(sub.length===1)out.push(sub[0]);                                            // separated outright
+    else if(sub.length<tied.length)rankTied(sub,matches).forEach(r=>out.push(r));  // some separated → re-assess the rest from the top
+    else sub.sort((a,b)=>b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name)).forEach(r=>out.push(r)); // head-to-head can't split them → overall GD, goals, name
+    i=j;
+  }
+  return out;
+}
 function groupTable(g){
   const s={};GD[g].forEach(t=>{s[t.n]={name:t.n,flag:t.f,P:0,W:0,D:0,L:0,GF:0,GA:0,GD:0,Pts:0};});
   let played=0;const matches=[];
   GF_IDS[g].forEach(id=>{const r=state.grR[id];if(!r?.played)return;played++;const{hg,ag}=r,f=GF[id];matches.push({home:f.home,away:f.away,hg,ag});s[f.home].P++;s[f.away].P++;s[f.home].GF+=hg;s[f.home].GA+=ag;s[f.home].GD+=hg-ag;s[f.away].GF+=ag;s[f.away].GA+=hg;s[f.away].GD+=ag-hg;if(hg>ag){s[f.home].W++;s[f.home].Pts+=3;s[f.away].L++;}else if(hg<ag){s[f.away].W++;s[f.away].Pts+=3;s[f.home].L++;}else{s[f.home].D++;s[f.away].D++;s[f.home].Pts++;s[f.away].Pts++;}});
-  // FIFA tiebreak order: overall points, then goal difference, then goals scored. For teams STILL level on
-  // all three, FIFA looks at the matches played between only those teams (head-to-head points, then GD, then
-  // goals), and finally a deterministic fallback. Head-to-head only changes things in an exact three-way tie,
-  // but when it does it can flip who finishes 1st/2nd/3rd, so it's worth getting right.
-  const rows=Object.values(s).sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF||a.name.localeCompare(b.name));
-  const h2h=names=>{const set=new Set(names);const m={};names.forEach(n=>m[n]={Pts:0,GD:0,GF:0});matches.forEach(x=>{if(!set.has(x.home)||!set.has(x.away))return;m[x.home].GF+=x.hg;m[x.away].GF+=x.ag;m[x.home].GD+=x.hg-x.ag;m[x.away].GD+=x.ag-x.hg;if(x.hg>x.ag)m[x.home].Pts+=3;else if(x.hg<x.ag)m[x.away].Pts+=3;else{m[x.home].Pts++;m[x.away].Pts++;}});return m;};
-  for(let i=0;i<rows.length;){let j=i+1;while(j<rows.length&&rows[j].Pts===rows[i].Pts&&rows[j].GD===rows[i].GD&&rows[j].GF===rows[i].GF)j++;if(j-i>1){const tied=rows.slice(i,j),names=tied.map(t=>t.name),m=h2h(names);tied.sort((a,b)=>m[b.name].Pts-m[a.name].Pts||m[b.name].GD-m[a.name].GD||m[b.name].GF-m[a.name].GF||a.name.localeCompare(b.name));for(let k=i;k<j;k++)rows[k]=tied[k-i];}i=j;}
+  // FIFA 2026 (Article 13, from April 2026): teams level on points are separated FIRST by their head-to-head
+  // record among the tied teams (points, then goal difference, then goals), re-assessed among any teams still
+  // level, and only then by overall goal difference and overall goals. This replaced the old goal-difference-
+  // first order. Conduct (cards) and FIFA ranking are the next steps but aren't modelled here; a stable name
+  // fallback stands in. Third-placed teams across groups are ranked separately (no head-to-head — they never met).
+  const pSorted=Object.values(s).sort((a,b)=>b.Pts-a.Pts);
+  const rows=[];
+  for(let i=0;i<pSorted.length;){let j=i+1;while(j<pSorted.length&&pSorted[j].Pts===pSorted[i].Pts)j++;if(j-i===1)rows.push(pSorted[i]);else rankTied(pSorted.slice(i,j),matches).forEach(r=>rows.push(r));i=j;}
   return{complete:played===6,played,rows};
+}
+// Sound mid-group elimination test. Returns true if team `name` can STILL finish in the top 3 of group g
+// under some set of remaining results — which is what keeps it alive, since 4th can never qualify by any route.
+// It's built to never declare a live team out: the team is handed every benefit (it wins all its remaining
+// games, and wins every tie-break except head-to-head results already decided against it), and only teams
+// CERTAINLY above it are counted. It enumerates the win/draw/loss outcomes of the group's other remaining games
+// (tiny — a four-team group has at most six). If no scenario lets it reach the top 3, it's mathematically gone.
+// (The best-third lifeline across groups isn't modelled, so a team doomed only via that route is confirmed out
+// when its group completes, not before — a deliberate miss, never a false alarm.)
+function canEscapeGroup(g,name){
+  const teamNames=GD[g].map(t=>t.n),ids=GF_IDS[g];
+  const remIds=ids.filter(id=>!state.grR[id]?.played);
+  if(!remIds.length)return false;
+  const played=ids.filter(id=>state.grR[id]?.played).map(id=>{const f=GF[id],r=state.grR[id];return{home:f.home,away:f.away,hg:r.hg,ag:r.ag};});
+  const myRem=remIds.filter(id=>GF[id].home===name||GF[id].away===name);
+  const otherRem=remIds.filter(id=>GF[id].home!==name&&GF[id].away!==name);
+  const myWins=myRem.map(id=>{const f=GF[id];return f.home===name?{home:f.home,away:f.away,hg:9,ag:0}:{home:f.home,away:f.away,hg:0,ag:9};}); // big margins so our goals win any tie-break we're allowed to win
+  const combos=Math.pow(3,otherRem.length);
+  for(let c=0;c<combos;c++){
+    let x=c;const synth=otherRem.map(id=>{const f=GF[id],d=x%3;x=Math.floor(x/3);return d===0?{home:f.home,away:f.away,hg:1,ag:0}:d===1?{home:f.home,away:f.away,hg:0,ag:0}:{home:f.home,away:f.away,hg:0,ag:1};});
+    const all=played.concat(myWins,synth),pts={};teamNames.forEach(t=>pts[t]=0);
+    all.forEach(m=>{if(m.hg>m.ag)pts[m.home]+=3;else if(m.hg<m.ag)pts[m.away]+=3;else{pts[m.home]++;pts[m.away]++;}});
+    const myPts=pts[name];
+    let above=teamNames.filter(t=>t!==name&&pts[t]>myPts).length;                  // strictly more points → certainly above us
+    const tieSet=teamNames.filter(t=>pts[t]===myPts);                              // teams level on points with us (incl. us)
+    if(tieSet.length>1){const hh=h2hTable(tieSet,all),myH=hh[name];above+=tieSet.filter(t=>t!==name&&hh[t].Pts>myH.Pts).length;} // more head-to-head points beats us regardless of goals; equal can't beat our maximal head-to-head goals
+    if(above<=2)return true;                                                       // a route to 3rd or better exists
+  }
+  return false;
 }
 function computeQual(){
   const tables={};let allDone=true;
@@ -1862,7 +1924,10 @@ function computeQual(){
   const q={};const thirds=[];
   Object.entries(tables).forEach(([g,{complete,rows}])=>{if(complete){q[rows[0].name]='top2';q[rows[1].name]='top2';thirds.push({...rows[2],group:g});q[rows[2].name]='maybe3rd';q[rows[3].name]='eliminated';}else rows.forEach(r=>{if(!q[r.name])q[r.name]='pending';});});
   if(allDone){thirds.sort((a,b)=>b.Pts-a.Pts||b.GD-a.GD||b.GF-a.GF);thirds.forEach((t,i)=>{q[t.name]=i<8?'best3rd':'eliminated';});}
-  return{qual:q,thirds,tables};
+  // Mid-group: flag any team mathematically unable to escape its group (sound — see canEscapeGroup). Only
+  // touches teams still 'pending' in incomplete groups, so completed-group and qualified statuses are untouched.
+  Object.entries(tables).forEach(([g,t])=>{if(t.complete)return;t.rows.forEach(r=>{if(q[r.name]==='pending'&&!canEscapeGroup(g,r.name))q[r.name]='eliminated';});});
+  const out={qual:q,thirds,tables};return out;
 }
 // Live "race for the last 8": ranks each group's CURRENT 3rd-placed team against the others, using the same
 // order the app settles best-3rd qualification on (points, then goal difference, then goals). Top 8 of 12 go
@@ -1923,7 +1988,8 @@ function calcLeaderboard(){
   if(!state.draw)return[];
   const{qual}=computeQual();const koArr=Object.values(state.koR).filter(m=>m.played);
   const champ=state.koR['m104']&&state.koR['m104'].played?state.koR['m104'].winner:null;
-  const bonusFinal=!!(state.koR['m104']&&state.koR['m104'].played); // bonus awards are whole-tournament superlatives — only count them once the final is played (as the app says), so one early game can't let a heavy defeat outscore a win
+  const bonusFinal=!!(state.koR['m104']&&state.koR['m104'].played); // whole-tournament superlatives: by default only counted once the final is played, so one early game can't let a heavy defeat outscore a win
+  const bonusCount=bonusFinal||!!(state.bonus&&state.bonus.live),bonusProv=bonusCount&&!bonusFinal; // admin can opt to count them live (provisional) before the final
   const predMap={};if(state.predict.on)Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.prediction)predMap[s.name.toLowerCase()]=s.prediction;});
   const _bonus=calcBonusAwards();const awardByTeam={};
   if(_bonus){['most_goals','fewest_goals','best_def','worst_def'].forEach(k=>{const pp=(state.bonus&&state.bonus[k])||0;if(pp<=0||!_bonus[k])return;_bonus[k].teams.forEach(t=>{(awardByTeam[t]=awardByTeam[t]||[]).push({key:k,pts:pp});});});}
@@ -1941,10 +2007,10 @@ function calcLeaderboard(){
       if(qv==='top2'){pts+=state.scoring.qualify_top2;items.push({label:'Qualified (top 2)',pts:state.scoring.qualify_top2});}
       else if(qv==='best3rd'){pts+=state.scoring.qualify_3rd;items.push({label:'Qualified (best 3rd)',pts:state.scoring.qualify_3rd});}
       const wins=koArr.filter(m=>m.winner===team.name);wins.forEach(m=>{const p2=state.scoring[`win_${m.round}`]||0;pts+=p2;items.push({label:`${KO_LABEL[m.round]} win`,pts:p2});});
-      if(bonusFinal&&awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push({label:`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]}`,pts:a.pts});});}
+      if(bonusCount&&awardByTeam[team.name]){awardByTeam[team.name].forEach(a=>{pts+=a.pts;items.push({label:`${BONUS_ICON[a.key]||''} ${BONUS_LBL[a.key].split(' (')[0]}${bonusProv?' (provisional)':''}`,pts:a.pts});});}
       pKoWins+=wins.length;pGoals+=goals;
       total+=pts;
-      return{name:team.name,flag:team.flag,group:team.group,pts:Math.round(pts*10)/10,items,qual:qv};
+      return{name:team.name,flag:FLAGS[team.name]||team.flag,group:team.group,pts:Math.round(pts*10)/10,items,qual:qv};
     });
     const myPred=state.predict.on?(predMap[p.name.toLowerCase()]||null):null;
     let predBonus=0,predCorrect=false;
@@ -2075,7 +2141,7 @@ function renderLive(){
         <div style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:2.5rem;color:var(--tx);line-height:1">${hg}<span style="color:var(--txm)">:</span>${ag}</div>
         <div style="flex:1;text-align:center;min-width:0"><div style="font-size:2.1rem;line-height:1">${FLAGS[f.away]||'⚽'}</div><div style="font-size:.82rem;font-weight:${aw?'700':'500'};color:${aw?'var(--gr)':'var(--tx)'};margin-top:4px;line-height:1.2">${f.away}</div>${ownerLine(ownA,myA)}</div>
       </div>
-      ${(s.sc&&s.sc.length)?`<div style="display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--b)"><div style="flex:1;text-align:left;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='h').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div><div style="font-size:.72rem;align-self:center">⚽</div><div style="flex:1;text-align:right;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='a').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div></div>`:''}
+      ${(s.sc&&s.sc.length)?`<div style="display:flex;gap:10px;margin-top:10px;padding-top:10px;border-top:.5px solid var(--b)"><div style="flex:1;text-align:left;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='h').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div><div style="flex:1;text-align:right;font-size:.64rem;color:var(--txm);line-height:1.55">${s.sc.filter(e=>e.s==='a').map(e=>`${e.m?esc(e.m)+' ':''}${esc(e.n||'')}${e.og?' (OG)':e.pk?' (P)':''}`).join('<br>')}</div></div>`:''}
     </div>`;
   }).join('')}
   ${prov?(()=>{
@@ -2723,7 +2789,7 @@ function renderSetup(){
     `<div style="font-size:.72rem;color:var(--txm);margin-bottom:9px">Points are totalled automatically as results come in. Adjust any value if you like, though the defaults are well balanced.</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;margin-top:4px">${Object.entries(SCR_LBL).map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 7px;background:var(--cardh);border-radius:5px"><span style="flex:1;font-size:.76rem;color:var(--tx)">${l}</span><input type="number" min="0" max="99" step="${k==='goal_bonus'?.1:1}" value="${state.scoring[k]}" oninput="state.scoring['${k}']=Math.max(0,parseFloat(this.value)||0);saveSetup()" style="width:50px;padding:3px 6px;background:var(--inp);border:1px solid var(--b);border-radius:4px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;text-align:center"/></div>`).join('')}</div>
     <button class="btn-sm" style="margin-top:9px" onclick="state.scoring={...DEF_SCR};saveSetup();render()">RESET TO DEFAULT</button>`
     :key==='bonus'?
-    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize. Settles when the tournament ends.</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
+    `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.bonus.on?'checked':''} onchange="state.bonus.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Bonus awards · give weaker draws a way to win</span></label>${state.bonus.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Extra points worked out automatically from results. They reward the best <b>and worst</b> teams, so even a hopeless draw can bag a prize.</div><label style="display:flex;align-items:center;gap:8px;margin:2px 0 8px;cursor:pointer"><input type="checkbox" ${state.bonus.live?'checked':''} onchange="state.bonus.live=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.8rem">Count towards the live table now <span style="color:var(--txm)">(provisional)</span></span></label><div style="font-size:.68rem;color:var(--txm);line-height:1.55;margin-bottom:10px">${state.bonus.live?'On — awards count straight away and show as “provisional” on the cards until the final settles them.':'Off — added only when the tournament ends. Safest while goal tallies are still swinging; best switched on once the group stage is done.'}</div><div style="display:flex;flex-direction:column;gap:5px">${[['most_goals','⚽ Most goals scored'],['best_def','🛡️ Best defence (fewest conceded)'],['fewest_goals','🧊 Fewest goals scored'],['worst_def','🥅 Leakiest defence (most conceded)']].map(([k,l])=>`<div style="display:flex;align-items:center;gap:7px;padding:5px 9px;background:var(--cardh);border-radius:6px"><span style="flex:1;font-size:.78rem;color:var(--tx)">${l}</span><input type="number" min="0" max="50" value="${state.bonus[k]}" oninput="state.bonus['${k}']=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:52px;padding:4px 7px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.85rem;text-align:center"/></div>`).join('')}</div><div style="font-size:.68rem;color:var(--txm);margin-top:7px;line-height:1.5">Set any award to 0 to drop just that one. A tie shares the points. Turn the whole thing off any time with the switch above.</div><button class="btn-sm" style="margin-top:9px" onclick="state.bonus={...DEF_BONUS};saveSetup();render()">RESET TO DEFAULT</button>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Off. Only the main scoring counts. Turn on to add automatic "most goals", "best/worst defence" and "fewest goals" awards, so a weak draw still has something to play for.</div>`}`
     :key==='predict'?
     `<label style="display:flex;align-items:center;gap:8px;margin:9px 0;cursor:pointer"><input type="checkbox" ${state.predict.on?'checked':''} onchange="state.predict.on=this.checked;saveSetup();render()" style="width:15px;height:15px;accent-color:var(--gr);cursor:pointer"/><span style="font-size:.83rem">Add a "who'll win the World Cup?" pick at sign-up</span></label>${state.predict.on?`<div style="font-size:.72rem;color:var(--txm);line-height:1.6;margin-bottom:10px">Players choose their champion when they join. Anyone who calls it right gets the bonus points, and it doubles as the tie-breaker when people share a team.</div><div style="display:flex;align-items:center;gap:7px;background:var(--cardh);padding:8px 11px;border-radius:7px"><span style="font-size:.8rem;color:var(--tx)">Correct-pick bonus</span><input type="number" min="0" max="50" value="${state.predict.bonus}" oninput="state.predict.bonus=Math.max(0,parseInt(this.value)||0);saveSetup()" style="width:58px;padding:5px 8px;background:var(--inp);border:1px solid var(--b);border-radius:5px;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;text-align:center"/><span style="font-size:.74rem;color:var(--txm)">points</span></div><div style="font-size:.68rem;color:var(--txm);margin-top:7px">Tip: players need to <b>sign up themselves</b> to make a pick. The dropdown is on the sign-up form.</div>`:`<div style="font-size:.74rem;color:var(--txm);margin-top:4px">Turn on to add a fun "predict the winner" pick to the sign-up form. Default bonus: ${state.predict.bonus} points.</div>`}`
     :key==='depts'?
@@ -3107,8 +3173,9 @@ function bonusAwardsHTML(){
     else{detail=aw[k].teams.map(t=>{const tt=ALL_TEAMS.find(x=>x.name===t);const fl=tt?tt.flag:'';const ow=teamOwner(t);return `${fl} <b style="color:var(--tx)">${esc(t)}</b>${ow?` <span style="color:var(--txm)">· ${esc(ow)}</span>`:''}`;}).join('&nbsp;&nbsp;');}
     return`<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:var(--cardh);border-radius:7px"><span style="flex-shrink:0;font-size:.95rem">${BONUS_ICON[k]}</span><span style="flex:1;font-size:.78rem;line-height:1.5"><span style="color:var(--txd)">${BONUS_LBL[k].split(' (')[0]}</span><br>${detail}</span><span style="flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;color:var(--gr);font-size:.82rem">+${pts}</span></div>`;
   }).join('');
-  const done=!!(state.koR['m104']&&state.koR['m104'].played);
-  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${done?'✓ Now added to everyone\'s totals.':live?'Provisional — these don\'t change the table yet. They\'re added to totals when the tournament ends, so a single early game can\'t outweigh a win.':'Up for grabs · worked out automatically from results, and added at the very end.'}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
+  const done=!!(state.koR['m104']&&state.koR['m104'].played),liveOn=!!(state.bonus&&state.bonus.live);
+  const msg=done?'✓ Now added to everyone\'s totals.':liveOn?(live?'Counting towards the table now, provisional. They settle for good once the final\'s played.':'Set to count live · they\'ll start moving the table as soon as games are played.'):live?'Provisional — these don\'t change the table yet. They\'re added to totals when the tournament ends, so a single early game can\'t outweigh a win.':'Up for grabs · worked out automatically from results, and added at the very end.';
+  return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${msg}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
 }
 function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
