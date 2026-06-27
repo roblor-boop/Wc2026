@@ -2047,9 +2047,23 @@ function deptTableHTML(){
   const ds=q?all.filter(d=>d.name.toLowerCase().includes(q)):all;
   const maxR=Math.max(1,...all.map(d=>d.rating));
   const dm=deptMap();const lb=calcLeaderboard();const noDept=lb.filter(p=>!dm[p.name.toLowerCase()]).length;
-  const intro=`<div style="font-size:.72rem;color:var(--txm);margin-bottom:10px;line-height:1.5">Ranked by points per player, with smaller ${esc(label.toLowerCase())} steadied toward the office average so a single lucky pick can't run away with it. Total points shown too. Tap a ${esc(sing)} to see who's in it.</div>`;
+  const intro=`<div style="font-size:.72rem;color:var(--txm);margin-bottom:8px;line-height:1.5">Ranked by a rating, not a straight average — smaller ${esc(label.toLowerCase())} are eased toward the office average so a single lucky pick can't run away with it. Total points shown alongside. Tap a ${esc(sing)} to see who's in it.</div>`;
+  const helpOpen=!!state.showRatingHelp;
+  const help=`<div style="margin-bottom:11px;border:1px solid var(--b);border-radius:9px;overflow:hidden">
+    <div onclick="state.showRatingHelp=!state.showRatingHelp;render()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--cardh)">
+      <span style="font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;color:var(--tx)">ℹ️ How the rating works</span>
+      <span style="color:var(--txm);font-size:.66rem">${helpOpen?'▲':'▼'}</span>
+    </div>
+    ${helpOpen?`<div style="padding:11px 13px;background:var(--card);font-size:.72rem;color:var(--txm);line-height:1.6">
+      <p style="margin:0 0 8px">A straight average favours tiny squads: with one or two players, a single lucky team sends the average sky-high and a single dud sinks it, so small squads would dominate both ends of the table on luck alone.</p>
+      <p style="margin:0 0 8px">To correct this, every squad has two notional "average" players added before averaging. A one-person squad is mostly made up of these, so its score is pulled toward the office average. A five-person squad is barely affected. The more real players a squad has, the closer the rating sits to its true average.</p>
+      <div style="margin:0 0 8px;padding:8px 10px;background:var(--cardh);border-radius:7px;color:var(--tx);font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.02em;text-align:center">Rating = (total points + 2 × office average) ÷ (players + 2)</div>
+      <p style="margin:0 0 8px">Office average = the mean points per player across everyone in the sweepstake. Total points are shown alongside the rating.</p>
+      <p style="margin:0"><b style="color:var(--tx)">Example</b> (office average 6): a 1-player squad on 12 pts rates (12 + 2×6) ÷ (1 + 2) = <b style="color:var(--gr)">8</b>. A 5-player squad on 60 pts — the same 12 each — rates (60 + 2×6) ÷ (5 + 2) = <b style="color:var(--gr)">10.3</b>. Same per-player average, but the larger squad rates higher because its figure is better evidenced.</p>
+    </div>`:''}
+  </div>`;
   if(!ds.length)return`${intro}<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No ${esc(label.toLowerCase())} match "${esc(state.deptQ)}"</div>`;
-  return`${intro}${ds.map((d)=>{
+  return`${intro}${help}${ds.map((d)=>{
     const rank=all.indexOf(d);
     const lead=rank===0&&d.total>0;
     const open=state.expandedDept===d.name;
