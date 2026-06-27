@@ -616,8 +616,8 @@ const SCR_LBL={group_win:'Group win',group_draw:'Group draw',qualify_top2:'Quali
 const DEF_BONUS={on:true,live:false,most_goals:5,fewest_goals:3,best_def:5,worst_def:3};
 const BONUS_LBL={most_goals:'Most goals scored',fewest_goals:'Fewest goals scored',best_def:'Best defence (fewest conceded)',worst_def:'Leakiest defence (most conceded)'};
 const BONUS_ICON={most_goals:'\u26bd',fewest_goals:'\ud83e\uddca',best_def:'\ud83d\udee1\ufe0f',worst_def:'\ud83e\udd45'};
-const QCOL={top2:'#007a3d',best3rd:'#0e8888',maybe3rd:'#c07000',eliminated:'#607080',pending:'#607080'};
-const QLBL={top2:'Qualified ✓',best3rd:'Qual (3rd) ✓',maybe3rd:'Maybe 3rd',eliminated:'Out',pending:'TBD'};
+const QCOL={top2:'#007a3d',best3rd:'#0e8888',maybe3rd:'#c07000',eliminated:'#c0392b',pending:'#607080'};
+const QLBL={top2:'Qualified ✓',best3rd:'Qual (3rd) ✓',maybe3rd:'Maybe 3rd',eliminated:'❌ Out',pending:'TBD'};
 const MEDAL=['🥇','🥈','🥉'];
 const GF={},ALL_TEAMS=[],FLAGS={};
 // England & Scotland use inline SVGs because their subdivision flag emoji render as a black box on Windows.
@@ -657,7 +657,7 @@ let DB = null;
 if (FB_OK) { try { firebase.initializeApp(CONFIG.firebase); DB = firebase.database(); } catch(e) { console.warn('Firebase init error:', e); } }
 
 // team name normalisation (provider names → ours)
-const NMAP={'Czech Republic':'Czechia','Ivory Coast':"Côte d'Ivoire","Cote d'Ivoire":"Côte d'Ivoire",'Bosnia and Herzegovina':'Bosnia & Herz.','Bosnia & Herzegovina':'Bosnia & Herz.','Korea Republic':'South Korea','Republic of Korea':'South Korea','Cape Verde':'Cabo Verde','Congo DR':'DR Congo','Congo, DR':'DR Congo','Democratic Republic of Congo':'DR Congo','United States':'USA','Curacao':'Curaçao','United States of America':'USA','Türkiye':'Turkey','Turkiye':'Turkey','IR Iran':'Iran','Korea DPR':'North Korea'};
+const NMAP={'Czech Republic':'Czechia','Ivory Coast':"Côte d'Ivoire","Cote d'Ivoire":"Côte d'Ivoire",'Bosnia and Herzegovina':'Bosnia & Herz.','Bosnia & Herzegovina':'Bosnia & Herz.','Bosnia-Herzegovina':'Bosnia & Herz.','Korea Republic':'South Korea','Republic of Korea':'South Korea','Cape Verde':'Cabo Verde','Congo DR':'DR Congo','Congo, DR':'DR Congo','Democratic Republic of Congo':'DR Congo','United States':'USA','Curacao':'Curaçao','United States of America':'USA','Türkiye':'Turkey','Turkiye':'Turkey','IR Iran':'Iran','Korea DPR':'North Korea'};
 function normTeam(n){return NMAP[n]||n;}
 function findGFId(h,a){const hn=normTeam(h),an=normTeam(a);return Object.keys(GF).find(id=>(GF[id].home===hn&&GF[id].away===an)||(GF[id].home===an&&GF[id].away===hn));}
 function findKOId(h,a,res){const hn=normTeam(h),an=normTeam(a);return Object.keys(BRACKET).find(id=>{const rv=res[id];return rv&&((rv.teamA===hn&&rv.teamB===an)||(rv.teamA===an&&rv.teamB===hn));});}
@@ -1945,7 +1945,7 @@ function groupStageDone(){const t=computeQual().tables;const ks=Object.keys(t);r
 function bestThirdAssignment(tables,thirds,pinned){
   pinned=pinned||{};
   const q8=thirds.slice(0,8);
-  if(q8.length<8)return null;                 // groups not all finished yet
+  if(thirds.length<12)return null;            // wait until ALL 12 groups are done — only then is `thirds` the true, sorted best-8. Before that, best-3rd slots stay TBD rather than guessing from a partial, unsorted set.
   const slots=[];
   Object.keys(BRACKET).forEach(id=>{['sA','sB'].forEach(side=>{const sl=BRACKET[id][side];if(sl&&sl.t==='best3rd')slots.push({key:id+'_'+side,gs:sl.gs});});});
   const assign={},used=new Set();
