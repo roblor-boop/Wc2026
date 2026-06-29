@@ -27,6 +27,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<!-- GoatCounter: privacy-friendly analytics (no cookies, no personal data, GDPR-clean) -->
+<script data-goatcounter="https://wc2026.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════
    THEME SYSTEM — light default, .dark class for dark mode
@@ -574,22 +576,22 @@ const KO_SCHED={
   // ALL times BST, dates & venues from the official BBC wall chart.
   // Teams fill in automatically from results via resolveBracket().
   // Round of 32 (28 Jun – 4 Jul)
-  m73:{dt:'28 Jun',tm:'20:00',ve:'Los Angeles'},
-  m74:{dt:'29 Jun',tm:'21:30',ve:'Boston'},
-  m75:{dt:'29 Jun',tm:'18:00',ve:'Houston'},
-  m76:{dt:'30 Jun',tm:'02:00',ve:'Monterrey'},
-  m77:{dt:'1 Jul', tm:'17:00',ve:'Atlanta'},
-  m78:{dt:'2 Jul', tm:'01:00',ve:'San Francisco'},
-  m79:{dt:'30 Jun',tm:'22:00',ve:'New York NJ'},
-  m80:{dt:'30 Jun',tm:'18:00',ve:'Dallas'},
-  m81:{dt:'1 Jul', tm:'21:00',ve:'Seattle'},
-  m82:{dt:'3 Jul', tm:'19:00',ve:'Dallas'},
-  m83:{dt:'3 Jul', tm:'23:00',ve:'Miami'},
-  m84:{dt:'4 Jul', tm:'02:30',ve:'Kansas City'},
-  m85:{dt:'3 Jul', tm:'00:00',ve:'Toronto'},
-  m86:{dt:'2 Jul', tm:'20:00',ve:'Los Angeles'},
-  m87:{dt:'1 Jul', tm:'02:00',ve:'Mexico City'},
-  m88:{dt:'3 Jul', tm:'04:00',ve:'Vancouver'},
+  m73:{dt:'28 Jun',tm:'20:00',ve:'Los Angeles'},  // South Africa v Canada
+  m74:{dt:'29 Jun',tm:'21:30',ve:'Boston'},        // Germany v Paraguay
+  m75:{dt:'30 Jun',tm:'02:00',ve:'Monterrey'},     // Netherlands v Morocco
+  m76:{dt:'29 Jun',tm:'18:00',ve:'Houston'},       // Brazil v Japan
+  m77:{dt:'30 Jun',tm:'22:00',ve:'New York NJ'},   // France v Sweden
+  m78:{dt:'30 Jun',tm:'18:00',ve:'Dallas'},        // Cote d'Ivoire v Norway
+  m79:{dt:'1 Jul', tm:'02:00',ve:'Mexico City'},   // Mexico v Ecuador
+  m80:{dt:'1 Jul', tm:'17:00',ve:'Atlanta'},       // England v DR Congo
+  m81:{dt:'2 Jul', tm:'01:00',ve:'San Francisco'}, // USA v Bosnia & Herz.
+  m82:{dt:'1 Jul', tm:'21:00',ve:'Seattle'},       // Belgium v Senegal
+  m83:{dt:'3 Jul', tm:'00:00',ve:'Toronto'},       // Portugal v Croatia
+  m84:{dt:'2 Jul', tm:'20:00',ve:'Los Angeles'},   // Spain v Austria
+  m85:{dt:'3 Jul', tm:'04:00',ve:'Vancouver'},     // Switzerland v Algeria
+  m86:{dt:'3 Jul', tm:'23:00',ve:'Miami'},         // Argentina v Cape Verde
+  m87:{dt:'4 Jul', tm:'02:30',ve:'Kansas City'},   // Colombia v Ghana
+  m88:{dt:'3 Jul', tm:'19:00',ve:'Dallas'},        // Australia v Egypt
   // Round of 16 (4 – 7 Jul)
   m89:{dt:'4 Jul', tm:'22:00',ve:'Philadelphia'},
   m90:{dt:'4 Jul', tm:'18:00',ve:'Houston'},
@@ -1940,6 +1942,14 @@ function thirdPlaceRace(tables){
 }
 function groupStageDone(){const t=computeQual().tables;const ks=Object.keys(t);return ks.length>0&&ks.every(g=>t[g]&&t[g].complete);}
 // Assign the 8 qualifying 3rd-place teams to the 8 best-3rd R32 slots so each
+// FIFA publishes an official table fixing WHICH third-placed team meets WHICH group winner, depending on which
+// eight groups produced the qualifying thirds. The generic backtracking below finds a *valid* matching but not
+// necessarily FIFA's *official* one, so we pin the official allocation for the combination that actually qualified.
+// Keyed by the sorted groups of the eight qualified thirds; value maps each facing winner-group -> the third's group.
+const OFFICIAL_BEST3={
+  // Thirds from B,D,E,F,I,J,K,L (the 2026 group-stage outcome) — verified against the official last-32 draw.
+  'BDEFIJKL':{A:'E',B:'J',D:'B',E:'D',G:'I',I:'F',K:'L',L:'K'}
+};
 // slot gets a DISTINCT eligible team (a perfect matching respecting FIFA's
 // per-slot group eligibility). Prevents the same 3rd-placed team appearing twice.
 function bestThirdAssignment(tables,thirds,pinned){
@@ -1953,6 +1963,17 @@ function bestThirdAssignment(tables,thirds,pinned){
   // of an override is to correct the coded allocation to match FIFA's official last-32. Only accept a pin that
   // is one of the eight qualified third-placed teams (so a stale pin self-heals if results change).
   slots.forEach(s=>{const pv=pinned[s.key];if(pv&&q8.some(t=>t.name===pv)&&!used.has(pv)){assign[s.key]=pv;used.add(pv);}});
+  // Next, the official FIFA allocation for the combination that actually qualified (manual pins still win over it).
+  const combo=q8.map(t=>t.group).slice().sort().join('');
+  const official=OFFICIAL_BEST3[combo];
+  if(official){slots.forEach(s=>{
+    if(assign[s.key])return;
+    const id=s.key.slice(0,s.key.length-3),side=s.key.slice(-2),sib=side==='sB'?'sA':'sB';
+    const wsl=BRACKET[id][sib],wg=(wsl&&wsl.t==='winner')?wsl.g:null,tg=wg?official[wg]:null;
+    if(!tg)return;
+    const t=q8.find(x=>x.group===tg&&!used.has(x.name));
+    if(t){assign[s.key]=t.name;used.add(t.name);}
+  });}
   const open=slots.filter(s=>!assign[s.key]);
   const bt=i=>{if(i===open.length)return true;const s=open[i];for(const t of q8){if(used.has(t.name))continue;if(!s.gs.includes(t.group))continue;assign[s.key]=t.name;used.add(t.name);if(bt(i+1))return true;used.delete(t.name);delete assign[s.key];}return false;};
   if(!bt(0)){ // overrides made an eligibility-respecting fill impossible: fill the rest greedily so no slot is blank and no team repeats
@@ -2987,12 +3008,65 @@ function drawByTeamHTML(){
     </div>`).join('');
 }
 let _fxAuto=true;
+function renderKOFixtures(res){
+  const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  let ids=Object.keys(KO_SCHED).filter(id=>{const rv=res[id]||{};return rv.teamA&&rv.teamB;});
+  if(state.fT==='__MINE__')ids=ids.filter(id=>{const rv=res[id];return _myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);});
+  else if(state.fT&&state.fT!=='ALL')ids=ids.filter(id=>{const rv=res[id];return rv.teamA===state.fT||rv.teamB===state.fT;});
+  const teamSel=`<div style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end;flex-wrap:wrap">
+    <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">TEAM</div>
+    <select onchange="_fxAuto=false;state.fT=this.value;render()" style="padding:5px 8px;background:var(--inp);border:1px solid ${(!state.fT||state.fT==='ALL')?'var(--b)':'var(--gr)'};border-radius:6px;color:var(--tx);font-size:.78rem;font-family:inherit;cursor:pointer;max-width:200px"><option value="ALL">All teams</option>${_myTeams.size?`<option value="__MINE__" ${state.fT==='__MINE__'?'selected':''}>⭐ My teams</option>`:''}${ALL_TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(t=>`<option value="${esc(t.name)}" ${state.fT===t.name?'selected':''}>${t.flag} ${esc(t.name)}</option>`).join('')}</select></div>
+    ${(state.fT&&state.fT!=='ALL')?`<button class="fb" onclick="_fxAuto=false;state.fT='ALL';render()" style="color:var(--gr);border-color:var(--pill-grbr)">✕ Clear</button>`:''}
+  </div>`;
+  if(!ids.length)return teamSel+`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No knockout ties match this filter yet.</div>`;
+  const byDate={};ids.forEach(id=>{const dt=KO_SCHED[id].dt||'';(byDate[dt]=byDate[dt]||[]).push(id);});
+  const dates=Object.keys(byDate).sort((a,b)=>{const[da,ma]=a.split(' '),[db,mb]=b.split(' ');return new Date(2026,months[ma],+da)-new Date(2026,months[mb],+db);});
+  dates.forEach(dt=>byDate[dt].sort((a,b)=>parseInt((KO_SCHED[a].tm||'').replace(/\D/g,'')||'0')-parseInt((KO_SCHED[b].tm||'').replace(/\D/g,'')||'0')));
+  const _n0=new Date();_n0.setHours(0,0,0,0);
+  const _tIdx=dates.findIndex(d=>isTodayDt(d));
+  const _fIdx=dates.findIndex(d=>{const[da,ma]=d.split(' ');return new Date(2026,months[ma],+da)>=_n0;});
+  const jumpDt=_tIdx>=0?dates[_tIdx]:(_fIdx>=0?dates[_fIdx]:null);
+  const jumpBtn=(jumpDt&&dates[0]!==jumpDt)?`<button class="fb" onclick="document.getElementById('ko-jump')?.scrollIntoView({behavior:'smooth',block:'start'})" style="margin-bottom:12px;color:var(--gr);border-color:var(--pill-grbr)">📅 ${isTodayDt(jumpDt)?'Jump to today':'Jump to next matches'}</button>`:'';
+  const row=id=>{
+    const rv=res[id],sch=KO_SCHED[id],r=state.koR[id],done=r&&r.played;
+    const lv=state.live&&state.live[id];const liveOn=!done&&lv&&(lv.on||lv.min||(lv.hg||0)>0||(lv.ag||0)>0);
+    const mine=_myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);
+    const score=done?`${r.hg}-${r.ag}${r.pens?` (${r.pens.h}-${r.pens.a}p)`:''}`:liveOn?`${lv.hg||0}-${lv.ag||0}`:'v';
+    const mid=`${mine?'⭐ ':''}${FLAGS[rv.teamA]||'⚽'} ${rv.teamA} <b style="color:${done?'var(--gr)':liveOn?'var(--amber)':'var(--txm)'}">${score}</b> ${rv.teamB} ${FLAGS[rv.teamB]||'⚽'}`;
+    const when=done?'FT':liveOn?`<span class="live-dot"></span>${lv.min?lv.min+"'":'LIVE'}`:(sch.tm||'');
+    return`<div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:8px;margin-bottom:6px;font-size:.8rem">
+      <span style="font-family:'Oswald',sans-serif;font-size:.64rem;color:${liveOn?'var(--amber)':'var(--txm)'};min-width:48px;text-align:center;line-height:1.3;display:flex;align-items:center;justify-content:center;gap:3px">${when}</span>
+      <span style="flex:1;min-width:0">${mid}</span>
+      <span style="font-size:.58rem;color:var(--txm);text-align:right;min-width:60px;line-height:1.35">${KO_RND[BRACKET[id].r]||''}${sch.ve&&sch.ve!=='TBC'?'<br>'+sch.ve:''}</span>
+    </div>`;
+  };
+  return teamSel+jumpBtn+dates.map(dt=>{
+    const dayIds=byDate[dt];const done=dayIds.filter(id=>state.koR[id]?.played).length;const isToday=isTodayDt(dt);
+    return`<div style="margin-bottom:16px"${dt===jumpDt?' id="ko-jump"':''}>
+      <div style="position:sticky;top:54px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
+        <span style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.04em;color:${isToday?'var(--gr)':'var(--tx)'}">${relDate(dt)}${isToday?' ●':''}</span>
+        <span style="font-size:.66rem;color:var(--txm)">${dayIds.length} match${dayIds.length>1?'es':''}${done?` · ${done} played`:''}</span>
+      </div>
+      ${dayIds.map(row).join('')}
+    </div>`;
+  }).join('');
+}
 function renderFixtures(){
   if(_fxAuto&&getMyName()&&_myTeams&&_myTeams.size)state.fT='__MINE__';
+  const gsDone=groupStageDone();
+  const _res0=resolveBracket();
+  const koResolved=Object.keys(KO_SCHED).some(id=>{const rv=_res0[id]||{};return rv.teamA&&rv.teamB;});
+  const showPhase=gsDone||koResolved;
+  const phase=showPhase?(state.fxPhase||(gsDone?'ko':'grp')):'grp';
+  const phaseToggle=showPhase?`<div style="display:flex;gap:6px;margin-bottom:16px">
+    <button class="fb${phase==='grp'?' on':''}" onclick="state.fxPhase='grp';render()" style="flex:1;max-width:160px">Group Stage</button>
+    <button class="fb${phase==='ko'?' on':''}" onclick="state.fxPhase='ko';render()" style="flex:1;max-width:160px">Knockouts</button>
+  </div>`:'';
+  if(phase==='ko')return`<h2 class="ttl">Fixtures</h2><p class="sub">Knockout stage — dates, venues and UK kick-off times (BST).</p>${phaseToggle}${renderKOFixtures(_res0)}`;
   const vis=Object.entries(GF).filter(([_,f])=>((!state.fT||state.fT==='ALL')?(state.fG==='ALL'||f.group===state.fG):state.fT==='__MINE__'?(_myTeams.has(f.home)||_myTeams.has(f.away)):(f.home===state.fT||f.away===state.fT))&&(state.fMD==='ALL'||String(f.matchday)===state.fMD));
   const played=vis.filter(([id])=>state.grR[id]?.played).length;
   const feed=recentResults.slice(0,5);
-  return`<h2 class="ttl">Fixtures</h2><p class="sub">All 72 group matches with UK kick-off times and TV channels.</p>
+  return`<h2 class="ttl">Fixtures</h2><p class="sub">All 72 group matches with UK kick-off times and TV channels.</p>${phaseToggle}
   ${feed.length?`<div style="margin-bottom:14px"><div style="font-family:'Oswald',sans-serif;font-size:.68rem;letter-spacing:.1em;color:var(--txm);margin-bottom:6px">RECENT RESULTS</div><div style="display:flex;flex-direction:column;gap:5px">${feed.map(r=>`<div class="feed-item"><span style="font-size:.9rem">${FLAGS[r.home]||'⚽'}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.home}</span><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.9rem;color:${r.hg===r.ag?'var(--amber)':'var(--gr)'};padding:0 6px">${r.hg}–${r.ag}</span><span style="flex:1;font-size:.78rem;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right">${r.away}</span><span style="font-size:.9rem">${FLAGS[r.away]||'⚽'}</span></div>`).join('')}</div></div>`:''}
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:flex-start">
     <div><div style="font-size:.62rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em;margin-bottom:4px">GROUP</div><div style="display:flex;gap:3px;flex-wrap:wrap">${['ALL',...Object.keys(GD)].map(g=>`<button class="fb${state.fG===g?' on':''}" onclick="_fxAuto=false;state.fG='${g}';state.fT='ALL';render()">${g}</button>`).join('')}</div></div>
@@ -3032,7 +3106,8 @@ function renderFixtures(){
   ${(()=>{
     const res=resolveBracket();
     const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    // Resolved knockout ties only — empty during the group stage, so this never duplicates the bracket's slot view.
+    // Knockout fixtures now have their own phase view (renderKOFixtures); this legacy bottom list is disabled.
+    return'';
     let ids=Object.keys(KO_SCHED).filter(id=>{const rv=res[id]||{};return rv.teamA&&rv.teamB;});
     if(state.fT==='__MINE__')ids=ids.filter(id=>{const rv=res[id];return _myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);});
     else if(state.fT&&state.fT!=='ALL')ids=ids.filter(id=>{const rv=res[id];return rv.teamA===state.fT||rv.teamB===state.fT;});
