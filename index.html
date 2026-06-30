@@ -470,7 +470,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-i (stale-live guard)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -2108,9 +2108,24 @@ function deptTableHTML(){
 // The Google Apps Script writes in-play scores to wc2026/live (→ state.live) whenever
 // the API reports a WC game live, and clears them when it finishes. The app just shows
 // them — no manual controls. Final results land in state.grR automatically.
+// A live entry with no fresh poll behind it would otherwise show "LIVE" forever. Treat any live score whose
+// kickoff was more than 4h ago as stale (no match runs 4h, even with extra time and penalties) and ignore it
+// for display. The stored data is untouched — if the poller resumes, its update simply overrides this.
+const LIVE_STALE_MS=4*3600*1000;
+function liveStale(id){
+  const sch=KO_SCHED[id]||(typeof GF!=='undefined'?GF[id]:null);
+  if(!sch||!sch.dt)return false;
+  const M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const p=String(sch.dt).trim().split(/\s+/);
+  const day=parseInt(p[p.length-2],10),mo=M[p[p.length-1]];
+  if(isNaN(day)||mo==null)return false;
+  const tm=String(sch.tm||'00:00').match(/(\d{1,2}):(\d{2})/);
+  const ko=new Date(2026,mo,day,tm?+tm[1]:0,tm?+tm[2]:0).getTime();
+  return Date.now()-ko>LIVE_STALE_MS;
+}
 function liveMatchIds(){
   const ids=[];
-  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played)ids.push(id);});
+  Object.keys(state.live||{}).forEach(id=>{if(GF[id]&&!state.grR[id]?.played&&!liveStale(id))ids.push(id);});
   return ids.sort((a,b)=>(GF[a].tm||'').localeCompare(GF[b].tm||''));
 }
 // Knockout live scores arrive keyed by knockout match id (e.g. m97), carrying their own team names
@@ -2119,7 +2134,7 @@ function liveMatchIds(){
 // since knockout points are settled on advancement at full time, not on the in-play score.
 const KO_RND={r32:'Round of 32',r16:'Last 16',qf:'Quarter-Final',sf:'Semi-Final',final:'Final','3rd':'3rd Place'};
 function liveFix(id){if(GF[id])return GF[id];const s=state.live[id];return (s&&s.home&&s.away)?{home:s.home,away:s.away,ko:true,round:s.round}:null;}
-function liveKoIds(){const ids=[];Object.keys(state.live||{}).forEach(id=>{const s=state.live[id];if(s&&!GF[id]&&s.home&&s.away&&!state.koR?.[id]?.played)ids.push(id);});return ids;}
+function liveKoIds(){const ids=[];Object.keys(state.live||{}).forEach(id=>{const s=state.live[id];if(s&&!GF[id]&&s.home&&s.away&&!state.koR?.[id]?.played&&!liveStale(id))ids.push(id);});return ids;}
 function liveAllIds(){return liveMatchIds().concat(liveKoIds());}
 function calcProvisional(){
   const live=state.live||{};
@@ -2398,7 +2413,7 @@ function renderMC(id){
   const hw=played&&r.hg>r.ag,aw=played&&r.ag>r.hg,dw=played&&r.hg===r.ag;
   const chCls=fix.ch?.startsWith('BBC')?'ch-bbc':'ch-itv';
   const admin=isAdmin();
-  const ls=(!played&&state.live[id])?state.live[id]:null;
+  const ls=(!played&&state.live[id]&&!liveStale(id))?state.live[id]:null;
   const live=!!ls;
   const lhw=live&&(ls.hg||0)>(ls.ag||0), law=live&&(ls.ag||0)>(ls.hg||0);
   // Vertical row per team — full-width names; final score, or live score, or admin control on the right
@@ -3029,7 +3044,7 @@ function renderKOFixtures(res){
   const jumpBtn=(jumpDt&&dates[0]!==jumpDt)?`<button class="fb" onclick="document.getElementById('ko-jump')?.scrollIntoView({behavior:'smooth',block:'start'})" style="margin-bottom:12px;color:var(--gr);border-color:var(--pill-grbr)">📅 ${isTodayDt(jumpDt)?'Jump to today':'Jump to next matches'}</button>`:'';
   const row=id=>{
     const rv=res[id],sch=KO_SCHED[id],r=state.koR[id],done=r&&r.played;
-    const lv=state.live&&state.live[id];const liveOn=!done&&lv&&(lv.on||lv.min||(lv.hg||0)>0||(lv.ag||0)>0);
+    const lv=state.live&&state.live[id];const liveOn=!done&&lv&&!liveStale(id)&&(lv.on||lv.min||(lv.hg||0)>0||(lv.ag||0)>0);
     const mine=_myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);
     const score=done?`${r.hg}-${r.ag}${r.pens?` (${r.pens.h}-${r.pens.a}p)`:''}`:liveOn?`${lv.hg||0}-${lv.ag||0}`:'v';
     const mid=`${mine?'⭐ ':''}${FLAGS[rv.teamA]||'⚽'} ${rv.teamA} <b style="color:${done?'var(--gr)':liveOn?'var(--amber)':'var(--txm)'}">${score}</b> ${rv.teamB} ${FLAGS[rv.teamB]||'⚽'}`;
@@ -3042,8 +3057,8 @@ function renderKOFixtures(res){
   };
   return teamSel+jumpBtn+dates.map(dt=>{
     const dayIds=byDate[dt];const done=dayIds.filter(id=>state.koR[id]?.played).length;const isToday=isTodayDt(dt);
-    return`<div style="margin-bottom:16px"${dt===jumpDt?' id="ko-jump"':''}>
-      <div style="position:sticky;top:54px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
+    return`<div style="margin-bottom:16px;scroll-margin-top:var(--hdr-h,96px)"${dt===jumpDt?' id="ko-jump"':''}>
+      <div style="position:sticky;top:var(--hdr-h,96px);z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
         <span style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.04em;color:${isToday?'var(--gr)':'var(--tx)'}">${relDate(dt)}${isToday?' ●':''}</span>
         <span style="font-size:.66rem;color:var(--txm)">${dayIds.length} match${dayIds.length>1?'es':''}${done?` · ${done} played`:''}</span>
       </div>
@@ -3094,8 +3109,8 @@ function renderFixtures(){
       const done=ids.filter(id=>state.grR[id]?.played).length;
       const rel=relDate(dt);
       const isToday=isTodayDt(dt);
-      return`<div style="margin-bottom:16px"${dt===jumpDt?' id="fx-jump"':''}>
-        <div style="position:sticky;top:54px;z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
+      return`<div style="margin-bottom:16px;scroll-margin-top:var(--hdr-h,96px)"${dt===jumpDt?' id="fx-jump"':''}>
+        <div style="position:sticky;top:var(--hdr-h,96px);z-index:5;display:flex;align-items:center;gap:8px;padding:6px 2px;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--b)">
           <span style="font-family:'Oswald',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.04em;color:${isToday?'var(--gr)':'var(--tx)'}">${rel}${isToday?' ●':''}</span>
           <span style="font-size:.66rem;color:var(--txm)">${ids.length} match${ids.length>1?'es':''}${done?` · ${done} played`:''}</span>
         </div>
@@ -3232,7 +3247,7 @@ function renderKOCard(mId,tA,tB){
   if(!tempS[mId])tempS[mId]={hg:r?.hg||0,ag:r?.ag||0};
   const{hg,ag}=tempS[mId];
   const canEnter=!played&&tA&&tB;const admin=isAdmin();
-  const ls=(!played&&tA&&tB&&state.live[mId])?state.live[mId]:null;const live=!!ls;
+  const ls=(!played&&tA&&tB&&state.live[mId]&&!liveStale(mId))?state.live[mId]:null;const live=!!ls;
   const descA=tA||(bc.sA?slotDesc(bc.sA):'TBD');const descB=tB||(bc.sB?slotDesc(bc.sB):'TBD');
   const sch=KO_SCHED[mId];
   const schLine=sch?`<span style="font-size:.6rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.03em">${relDate(sch.dt)}${sch.tm&&sch.tm!=='TBC'?' · '+sch.tm+' BST':''}${sch.ve&&sch.ve!=='TBC'?' · '+sch.ve:''}</span>`:'';
