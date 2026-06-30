@@ -470,7 +470,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-i (stale-live guard)</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-j (live heartbeat guard)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -2111,8 +2111,13 @@ function deptTableHTML(){
 // A live entry with no fresh poll behind it would otherwise show "LIVE" forever. Treat any live score whose
 // kickoff was more than 4h ago as stale (no match runs 4h, even with extra time and penalties) and ignore it
 // for display. The stored data is untouched — if the poller resumes, its update simply overrides this.
-const LIVE_STALE_MS=4*3600*1000;
+const LIVE_STALE_MS=4*3600*1000, FEED_STALE_MS=15*60*1000;
+// The poller writes a heartbeat (_worker.lastRun) every run — every minute while games are on. If we can read it
+// and it hasn't checked in for 15 min, the feed is dead and any "live" score on screen is just a frozen snapshot.
+// (If the heartbeat can't be read at all, we don't assume dead — we fall back to the kickoff-age check below.)
+function feedDead(){const hb=state.workerHb;if(!hb||!hb.lastRun)return false;return Date.now()-hb.lastRun>FEED_STALE_MS;}
 function liveStale(id){
+  if(feedDead())return true;
   const sch=KO_SCHED[id]||(typeof GF!=='undefined'?GF[id]:null);
   if(!sch||!sch.dt)return false;
   const M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
