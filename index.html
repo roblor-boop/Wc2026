@@ -264,6 +264,7 @@ html.dark .bk-match.final{border-color:rgba(255,215,0,.45);box-shadow:0 0 20px r
 .bk-pair{position:relative;display:flex;flex-direction:column}
 .bk-pair::after{content:'';position:absolute;right:-2px;top:calc(25% + 1px);height:50%;width:1px;background:var(--bb);pointer-events:none}
 .bk-match.connector::after{content:'';position:absolute;right:-10px;top:50%;width:9px;height:1px;background:var(--bb)}
+.bk-match.fed::before{content:'';position:absolute;left:-10px;top:50%;width:9px;height:1px;background:var(--bb)}
 /* ── DRAW CARDS ──────────────────────────────────────── */
 .dc{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px;animation:fadeUp .38s ease forwards;opacity:0;box-shadow:var(--shadow);transition:box-shadow .2s}
 .dc-hdr{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding-bottom:10px;border-bottom:1px solid var(--b)}
@@ -471,7 +472,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-k (single-sided bracket)</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-a (live guard: trust healthy heartbeat fully)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -2116,9 +2117,15 @@ const LIVE_STALE_MS=4*3600*1000, FEED_STALE_MS=15*60*1000;
 // The poller writes a heartbeat (_worker.lastRun) every run — every minute while games are on. If we can read it
 // and it hasn't checked in for 15 min, the feed is dead and any "live" score on screen is just a frozen snapshot.
 // (If the heartbeat can't be read at all, we don't assume dead — we fall back to the kickoff-age check below.)
-function feedDead(){const hb=state.workerHb;if(!hb||!hb.lastRun)return false;return Date.now()-hb.lastRun>FEED_STALE_MS;}
+// Returns true (dead), false (alive), or null (no heartbeat data to judge by — e.g. Firebase rules block the read).
+function feedDead(){const hb=state.workerHb;if(!hb||!hb.lastRun)return null;return Date.now()-hb.lastRun>FEED_STALE_MS;}
 function liveStale(id){
-  if(feedDead())return true;
+  const fd=feedDead();
+  if(fd===true)return true;   // heartbeat present but stale -> feed is dead, every live score is a frozen snapshot
+  if(fd===false)return false; // heartbeat present and fresh -> trust it fully; a delayed kickoff, long stoppage,
+                               // extra time or a penalty shootout can all push a genuine match past the 4h guess
+                               // below, so a healthy heartbeat should never be second-guessed by it
+  // fd===null: no heartbeat data at all -> fall back to the kickoff-age guess as a safety net
   const sch=KO_SCHED[id]||(typeof GF!=='undefined'?GF[id]:null);
   if(!sch||!sch.dt)return false;
   const M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
@@ -3206,18 +3213,24 @@ function renderKO(){
   ];
   function bkSlot(name,isW,isL){const f=name?FLAGS[name]||'⚽':'🔲';const mine=!!(name&&_myTeams.has(name));return`<div class="bk-slot${isW?' w':isL?' l':''}"${mine&&!isW?' style="background:var(--pill-gr)"':''}><span style="font-size:.9rem;filter:${isL?'grayscale(.7)':'none'}">${f}</span><span class="bn">${mine?'⭐ ':''}${name||'TBD'}</span>${isW?`<span style="color:var(--gr);font-size:.72rem">✓</span>`:''}</div>`;}
   const bkHtml=bkCols.map((col)=>{
+    const isFinal=col.h==='FINAL';
+    const groups=[];
+    if(isFinal)col.ms.forEach(m=>groups.push([m]));
+    else for(let i=0;i<col.ms.length;i+=2)groups.push(col.ms.slice(i,i+2));
     return`<div class="bk-col">
       <div class="bk-rnd-hdr" style="color:${col.h==='FINAL'?'var(--gold)':'rgba(255,255,255,.3)'}">${col.h}</div>
       <div class="bk-col-body">
-        ${col.ms.map(mId=>{
-          const r2=state.koR[mId];const rv=res[mId]||{};const hw=r2?.played&&r2.winner===rv.teamA;const aw=r2?.played&&r2.winner===rv.teamB;
-          return`<div class="bk-match${mId==='m104'?' final':' connector'}" style="border-color:${r2?.played?KO_COL[BRACKET[mId].r]+'55':'var(--b)'}">
-            ${mId==='m104'?`<div style="padding:2px 8px;background:rgba(176,120,0,.12);border-bottom:1px solid rgba(176,120,0,.3);font-family:'Oswald',sans-serif;font-size:.57rem;color:var(--gold);letter-spacing:.1em;text-align:center">🏆 FINAL</div>`:''}
-            ${bkSlot(rv.teamA,hw,aw&&r2?.played)}
-            <div class="bk-div"></div>
-            ${bkSlot(rv.teamB,aw,hw&&r2?.played)}
-          </div>`;
-        }).join('')}
+        ${groups.map(grp=>`<div class="${isFinal?'':'bk-pair'}">
+          ${grp.map(mId=>{
+            const r2=state.koR[mId];const rv=res[mId]||{};const hw=r2?.played&&r2.winner===rv.teamA;const aw=r2?.played&&r2.winner===rv.teamB;
+            return`<div class="bk-match${mId==='m104'?' final':' connector'}${col.h!=='R32'?' fed':''}" style="border-color:${r2?.played?KO_COL[BRACKET[mId].r]+'55':'var(--b)'}">
+              ${mId==='m104'?`<div style="padding:2px 8px;background:rgba(176,120,0,.12);border-bottom:1px solid rgba(176,120,0,.3);font-family:'Oswald',sans-serif;font-size:.57rem;color:var(--gold);letter-spacing:.1em;text-align:center">🏆 FINAL</div>`:''}
+              ${bkSlot(rv.teamA,hw,aw&&r2?.played)}
+              <div class="bk-div"></div>
+              ${bkSlot(rv.teamB,aw,hw&&r2?.played)}
+            </div>`;
+          }).join('')}
+        </div>`).join('')}
       </div>
     </div>`;
   }).join('');
