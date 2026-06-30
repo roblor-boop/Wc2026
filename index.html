@@ -247,8 +247,9 @@ html.dark .sc.gold{border-color:rgba(255,215,0,.3);background:linear-gradient(13
 .ko-slot.lose{opacity:.6}
 /* ── BRACKET ─────────────────────────────────────────── */
 .bk-wrap{overflow-x:auto;padding:4px 0 12px}
-.bk-inner{display:flex;align-items:flex-start}
+.bk-inner{display:flex;align-items:stretch}
 .bk-col{display:flex;flex-direction:column;flex-shrink:0}
+.bk-col-body{flex:1;display:flex;flex-direction:column;justify-content:space-around}
 .bk-rnd-hdr{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.1em;color:rgba(255,255,255,.28);text-align:center;padding:5px 4px;white-space:nowrap}
 .bk-match{width:170px;margin:2px 10px;border:1px solid var(--b);border-radius:8px;overflow:hidden;background:var(--card);flex-shrink:0;position:relative;box-shadow:var(--shadow)}
 .bk-match.final{border-color:rgba(168,120,0,.5);box-shadow:0 0 20px rgba(168,120,0,.15)}
@@ -470,7 +471,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-j (live heartbeat guard)</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-29-k (single-sided bracket)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -3197,36 +3198,27 @@ function renderKO(){
   const koByRound={};KO_ROUNDS.forEach(r=>{koByRound[r]=[];});Object.entries(BRACKET).filter(([_,b])=>b.r!=='3rd').forEach(([id,b])=>{if(koByRound[b.r])koByRound[b.r].push(id);});
   // Bracket visualization
   const bkCols=[
-    {h:'R32',ms:['m73','m75','m74','m77','m83','m84','m81','m82']},
-    {h:'R16',ms:['m90','m89','m93','m94']},
-    {h:'QF', ms:['m97','m98']},
-    {h:'SF', ms:['m101']},
+    {h:'R32',ms:['m74','m77','m73','m75','m83','m84','m81','m82','m76','m78','m79','m80','m86','m88','m85','m87']},
+    {h:'R16',ms:['m89','m90','m93','m94','m91','m92','m95','m96']},
+    {h:'QF', ms:['m97','m98','m99','m100']},
+    {h:'SF', ms:['m101','m102']},
     {h:'FINAL',ms:['m104']},
-    {h:'SF', ms:['m102']},
-    {h:'QF', ms:['m99','m100']},
-    {h:'R16',ms:['m91','m92','m95','m96']},
-    {h:'R32',ms:['m76','m78','m79','m80','m86','m88','m85','m87']},
   ];
   function bkSlot(name,isW,isL){const f=name?FLAGS[name]||'⚽':'🔲';const mine=!!(name&&_myTeams.has(name));return`<div class="bk-slot${isW?' w':isL?' l':''}"${mine&&!isW?' style="background:var(--pill-gr)"':''}><span style="font-size:.9rem;filter:${isL?'grayscale(.7)':'none'}">${f}</span><span class="bn">${mine?'⭐ ':''}${name||'TBD'}</span>${isW?`<span style="color:var(--gr);font-size:.72rem">✓</span>`:''}</div>`;}
-  const bkHtml=bkCols.map((col,ci)=>{
-    const pairs=[];for(let i=0;i<col.ms.length;i+=2)pairs.push(col.ms.slice(i,i+2));
+  const bkHtml=bkCols.map((col)=>{
     return`<div class="bk-col">
       <div class="bk-rnd-hdr" style="color:${col.h==='FINAL'?'var(--gold)':'rgba(255,255,255,.3)'}">${col.h}</div>
-      ${pairs.map(pair=>{
-        const spacerH=col.ms.length<=1?0:col.ms.length<=2?48:col.ms.length<=4?20:4;
-        return`<div class="bk-pair">
-          ${pair.map((mId,pi)=>{
-            const r2=state.koR[mId];const rv=res[mId]||{};const hw=r2?.played&&r2.winner===rv.teamA;const aw=r2?.played&&r2.winner===rv.teamB;
-            return`${pi>0?`<div style="height:${spacerH}px"></div>`:''}
-            <div class="bk-match${mId==='m104'?' final':''} connector" style="border-color:${r2?.played?KO_COL[BRACKET[mId].r]+'55':'var(--b)'}">
-              ${mId==='m104'?`<div style="padding:2px 8px;background:rgba(176,120,0,.12);border-bottom:1px solid rgba(176,120,0,.3);font-family:'Oswald',sans-serif;font-size:.57rem;color:var(--gold);letter-spacing:.1em;text-align:center">🏆 FINAL</div>`:''}
-              ${bkSlot(rv.teamA,hw,aw&&r2?.played)}
-              <div class="bk-div"></div>
-              ${bkSlot(rv.teamB,aw,hw&&r2?.played)}
-            </div>`;
-          }).join('')}
-        </div>`;
-      }).join('')}
+      <div class="bk-col-body">
+        ${col.ms.map(mId=>{
+          const r2=state.koR[mId];const rv=res[mId]||{};const hw=r2?.played&&r2.winner===rv.teamA;const aw=r2?.played&&r2.winner===rv.teamB;
+          return`<div class="bk-match${mId==='m104'?' final':' connector'}" style="border-color:${r2?.played?KO_COL[BRACKET[mId].r]+'55':'var(--b)'}">
+            ${mId==='m104'?`<div style="padding:2px 8px;background:rgba(176,120,0,.12);border-bottom:1px solid rgba(176,120,0,.3);font-family:'Oswald',sans-serif;font-size:.57rem;color:var(--gold);letter-spacing:.1em;text-align:center">🏆 FINAL</div>`:''}
+            ${bkSlot(rv.teamA,hw,aw&&r2?.played)}
+            <div class="bk-div"></div>
+            ${bkSlot(rv.teamB,aw,hw&&r2?.played)}
+          </div>`;
+        }).join('')}
+      </div>
     </div>`;
   }).join('');
   return`<h2 class="ttl">Knockout Stage</h2>
