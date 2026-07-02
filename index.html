@@ -249,7 +249,7 @@ html.dark .sc.gold{border-color:rgba(255,215,0,.3);background:linear-gradient(13
 .bk-wrap{overflow-x:auto;padding:4px 0 12px}
 .bk-inner{display:flex;align-items:stretch}
 .bk-col{display:flex;flex-direction:column;flex-shrink:0}
-.bk-col-body{flex:1;display:flex;flex-direction:column;justify-content:space-around}
+.bk-col-body{flex:1;display:flex;flex-direction:column}
 .bk-rnd-hdr{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.1em;color:rgba(255,255,255,.28);text-align:center;padding:5px 4px;white-space:nowrap}
 .bk-match{width:170px;margin:2px 10px;border:1px solid var(--b);border-radius:8px;overflow:hidden;background:var(--card);flex-shrink:0;position:relative;box-shadow:var(--shadow)}
 .bk-match.final{border-color:rgba(168,120,0,.5);box-shadow:0 0 20px rgba(168,120,0,.15)}
@@ -261,8 +261,10 @@ html.dark .bk-match.final{border-color:rgba(255,215,0,.45);box-shadow:0 0 20px r
 .bk-slot.w .bn{color:var(--gr);font-weight:600}
 .bk-slot.l .bn{color:var(--txm);text-decoration:line-through}
 .bk-div{height:1px;background:var(--b)}
-.bk-pair{position:relative;display:flex;flex-direction:column}
-.bk-pair::after{content:'';position:absolute;right:-2px;top:calc(25% + 1px);height:50%;width:1px;background:var(--bb);pointer-events:none}
+.bk-pair{flex:1;position:relative;display:flex;flex-direction:column;justify-content:space-around}
+.bk-fin{flex:1;display:flex;flex-direction:column;justify-content:center}
+.bk-pair::after{content:'';position:absolute;right:0;top:25%;height:50%;width:1px;background:var(--bb);pointer-events:none}
+.bk-meta{font-size:.53rem;color:var(--txm);text-align:center;padding:2px 6px 3px;border-top:1px solid var(--b);white-space:nowrap;font-family:'Oswald',sans-serif;letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis}
 .bk-match.connector::after{content:'';position:absolute;right:-10px;top:50%;width:9px;height:1px;background:var(--bb)}
 .bk-match.fed::before{content:'';position:absolute;left:-10px;top:50%;width:9px;height:1px;background:var(--bb)}
 /* ── DRAW CARDS ──────────────────────────────────────── */
@@ -472,7 +474,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-a (live guard: trust healthy heartbeat fully)</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-d (KO cards in kickoff order)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -597,10 +599,10 @@ const KO_SCHED={
   // Round of 16 (4 – 7 Jul)
   m89:{dt:'4 Jul', tm:'22:00',ve:'Philadelphia'},
   m90:{dt:'4 Jul', tm:'18:00',ve:'Houston'},
-  m91:{dt:'6 Jul', tm:'20:00',ve:'Dallas'},
-  m92:{dt:'7 Jul', tm:'01:00',ve:'Seattle'},
-  m93:{dt:'5 Jul', tm:'21:00',ve:'New York NJ'},
-  m94:{dt:'6 Jul', tm:'01:00',ve:'Mexico City'},
+  m91:{dt:'5 Jul', tm:'21:00',ve:'New York NJ'},
+  m92:{dt:'6 Jul', tm:'01:00',ve:'Mexico City'},
+  m93:{dt:'6 Jul', tm:'20:00',ve:'Dallas'},
+  m94:{dt:'7 Jul', tm:'01:00',ve:'Seattle'},
   m95:{dt:'7 Jul', tm:'17:00',ve:'Atlanta'},
   m96:{dt:'7 Jul', tm:'21:00',ve:'Vancouver'},
   // Quarter-finals (9 – 12 Jul)
@@ -3203,6 +3205,10 @@ function renderTables(){
 function renderKO(){
   const res=resolveBracket();const champ=state.koR['m104']?.winner;
   const koByRound={};KO_ROUNDS.forEach(r=>{koByRound[r]=[];});Object.entries(BRACKET).filter(([_,b])=>b.r!=='3rd').forEach(([id,b])=>{if(koByRound[b.r])koByRound[b.r].push(id);});
+  // order each round's entry cards by actual kick-off (UK time) so they read as a schedule, not by match number
+  const _koMo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const _koTs=id=>{const s=KO_SCHED[id];if(!s||!s.dt)return 8.64e15;const p=String(s.dt).trim().split(/\s+/);const d=parseInt(p[p.length-2],10),mo=_koMo[p[p.length-1]];if(isNaN(d)||mo==null)return 8.64e15;const t=String(s.tm||'00:00').match(/(\d{1,2}):(\d{2})/);return new Date(2026,mo,d,t?+t[1]:0,t?+t[2]:0).getTime();};
+  KO_ROUNDS.forEach(r=>koByRound[r].sort((a,b)=>_koTs(a)-_koTs(b)||(+a.slice(1))-(+b.slice(1))));
   // Bracket visualization
   const bkCols=[
     {h:'R32',ms:['m74','m77','m73','m75','m83','m84','m81','m82','m76','m78','m79','m80','m86','m88','m85','m87']},
@@ -3212,6 +3218,7 @@ function renderKO(){
     {h:'FINAL',ms:['m104']},
   ];
   function bkSlot(name,isW,isL){const f=name?FLAGS[name]||'⚽':'🔲';const mine=!!(name&&_myTeams.has(name));return`<div class="bk-slot${isW?' w':isL?' l':''}"${mine&&!isW?' style="background:var(--pill-gr)"':''}><span style="font-size:.9rem;filter:${isL?'grayscale(.7)':'none'}">${f}</span><span class="bn">${mine?'⭐ ':''}${name||'TBD'}</span>${isW?`<span style="color:var(--gr);font-size:.72rem">✓</span>`:''}</div>`;}
+  const _bkMeta=mId=>{const s=KO_SCHED[mId];if(!s||!s.dt)return'';const pl=state.koR[mId]?.played;return`<div class="bk-meta">${relDate(s.dt)}${!pl&&s.tm&&s.tm!=='TBC'?' · '+s.tm:''}</div>`;};
   const bkHtml=bkCols.map((col)=>{
     const isFinal=col.h==='FINAL';
     const groups=[];
@@ -3220,7 +3227,7 @@ function renderKO(){
     return`<div class="bk-col">
       <div class="bk-rnd-hdr" style="color:${col.h==='FINAL'?'var(--gold)':'rgba(255,255,255,.3)'}">${col.h}</div>
       <div class="bk-col-body">
-        ${groups.map(grp=>`<div class="${isFinal?'':'bk-pair'}">
+        ${groups.map(grp=>`<div class="${isFinal?'bk-fin':'bk-pair'}">
           ${grp.map(mId=>{
             const r2=state.koR[mId];const rv=res[mId]||{};const hw=r2?.played&&r2.winner===rv.teamA;const aw=r2?.played&&r2.winner===rv.teamB;
             return`<div class="bk-match${mId==='m104'?' final':' connector'}${col.h!=='R32'?' fed':''}" style="border-color:${r2?.played?KO_COL[BRACKET[mId].r]+'55':'var(--b)'}">
@@ -3228,6 +3235,7 @@ function renderKO(){
               ${bkSlot(rv.teamA,hw,aw&&r2?.played)}
               <div class="bk-div"></div>
               ${bkSlot(rv.teamB,aw,hw&&r2?.played)}
+              ${_bkMeta(mId)}
             </div>`;
           }).join('')}
         </div>`).join('')}
