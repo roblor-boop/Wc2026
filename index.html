@@ -474,7 +474,7 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-d (KO cards in kickoff order)</span></footer>
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-e (label group wins/draws)</span></footer>
 
 <script>
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -2024,8 +2024,8 @@ function calcLeaderboard(){
       Object.entries(GF).filter(([_,f])=>f.home===team.name||f.away===team.name).forEach(([id,f])=>{const r=state.grR[id];if(!r?.played)return;const isH=f.home===team.name,tf=isH?r.hg:r.ag,ta=isH?r.ag:r.hg;goals+=tf;if(tf>ta)gW++;else if(tf===ta)gD++;else gL++;});
       // knockout goals (for tiebreak)
       koArr.forEach(m=>{if(m.home===team.name)goals+=m.hg||0;else if(m.away===team.name)goals+=m.ag||0;});
-      if(gW){pts+=gW*state.scoring.group_win;items.push({label:`${gW} win${gW>1?'s':''}`,pts:gW*state.scoring.group_win});}
-      if(gD){pts+=gD*state.scoring.group_draw;items.push({label:`${gD} draw${gD>1?'s':''}`,pts:gD*state.scoring.group_draw});}
+      if(gW){pts+=gW*state.scoring.group_win;items.push({label:`${gW} group win${gW>1?'s':''}`,pts:gW*state.scoring.group_win});}
+      if(gD){pts+=gD*state.scoring.group_draw;items.push({label:`${gD} group draw${gD>1?'s':''}`,pts:gD*state.scoring.group_draw});}
       if(gL)items.push({label:`${gL} loss${gL>1?'es':''}`,pts:0});
       if(state.scoring.goal_bonus>0&&goals>0){pts+=goals*state.scoring.goal_bonus;items.push({label:`${goals} goal${goals>1?'s':''} scored`,pts:+(goals*state.scoring.goal_bonus).toFixed(1)});}
       const qv=qual[team.name]||'pending';
