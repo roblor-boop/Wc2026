@@ -474,9 +474,13 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span><br><span style="opacity:.5;font-size:.58rem">build 2026-06-30-e (label group wins/draws)</span></footer>
+<!-- build 2026-06-30-k (run-in tracker, rooting split, deciders) -->
+<footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span></footer>
 
 <script>
+// Build tag — kept in source for version control only (not rendered in the UI). Logged to the browser console so the live build can be confirmed after a deploy.
+const APP_BUILD='2026-06-30-k (run-in tracker, rooting split, deciders)';
+try{console.log('Carlyle London Sweepstake — build '+APP_BUILD);}catch(e){}
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ENG_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#fff"/><rect x="25" width="10" height="42" fill="#ce1124"/><rect y="16" width="60" height="10" fill="#ce1124"/></svg>';
 const SCO_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#005eb8"/><path d="M0 0L60 42M60 0L0 42" stroke="#fff" stroke-width="8" fill="none"/></svg>';
@@ -678,14 +682,14 @@ let navOrder=[];   // ordered ids of the currently-visible tabs, kept in sync by
 let _swipeHintDone=false;   // first-touch-session guard for the one-time swipe hint
 let _recapDone=false;       // once-per-load guard for the "while you were away" recap
 let _prevRanks={};  // name → rank before last result
-function _snapRanks(){const lb=calcLeaderboard();lb.forEach((p,i)=>{_prevRanks[p.name]=i+1;});}
+function _snapRanks(){const lb=calcLeaderboard();lb.forEach(p=>{_prevRanks[p.name]=p.rank;});}
 let _baseRanks=null;  // persisted "start of today" ranks → movement (▲/▼) survives a page reload
 function _todayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function refreshRankBaseline(){
   let store={};try{store=JSON.parse(localStorage.getItem('wc26ranks')||'{}');}catch(e){}
   const today=_todayKey();
   if(store.date===today&&store.ranks){_baseRanks=store.ranks;return;}
-  const cur={};calcLeaderboard().forEach((p,i)=>{cur[p.name]=i+1;});  // first view of the day = today's baseline
+  const cur={};calcLeaderboard().forEach(p=>{cur[p.name]=p.rank;});  // first view of the day = today's baseline
   _baseRanks=cur;
   try{localStorage.setItem('wc26ranks',JSON.stringify({date:today,ranks:cur}));}catch(e){}
 }
@@ -1033,7 +1037,7 @@ function tickerItems(){
     const pick=arr=>pk(arr,0);
     const me=getMyName(),myLc=(me||"").toLowerCase();
     const teamMap={};lb.forEach(p=>p.breakdown.forEach(b=>{(teamMap[b.name]=teamMap[b.name]||{pts:b.pts,flag:b.flag,group:b.group,owners:[]}).owners.push(p.name);}));
-    const ownTxt=o=>o.length>2?pk([o.length+" owners buzzing",o.length+" owners chuffed",o.length+" owners happy"],3):"good for "+o.join(" & ");
+    const ownTxt=o=>o.length>2?pk([o.length+" desks celebrating",o.length+" owners buzzing",o.length+" of you cheering them on",o.length+" happy owners"],3):o.length===2?pk([o[0]+" & "+o[1]+" cheering them on",o[0]+" and "+o[1]+" sitting pretty",o[0]+" and "+o[1]+" won't be complaining",o[0]+" & "+o[1]+" riding the wave"],3):pk(["one for "+o[0],o[0]+" won't want them to stop","that's "+o[0]+"'s pick paying off",o[0]+" reaping the rewards",o[0]+" loving every minute"],3);
     liveAllIds().forEach(id=>{const f=liveFix(id);if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());if(s.sc&&s.sc.length){const e=s.sc[s.sc.length-1];const who=e.s==='h'?f.home:f.away;if(e.n)a.push((`⚽ ${e.m?e.m+' ':''}${e.n}${e.og?' (OG)':e.pk?' (pen)':''} — ${who}`).replace(/ +/g," ").trim());}});
     const _today=gamesToday().filter(id=>!state.grR[id]?.played);
     if(_today.length){const _l=_today.slice(0,4).map(id=>`${GF[id].home} v ${GF[id].away}`).join(", ");a.push((`⚽ ON TODAY: ${_l}${_today.length>4?` +${_today.length-4} more`:""}`).replace(/ +/g," ").trim());}
@@ -1066,7 +1070,7 @@ function tickerItems(){
       if(form){const o=form.owners;a.push(pk([`🌟 ${form.flag} ${form.name} flying on ${form.pts} pts, ${ownTxt(o)}`,`🔥 ${form.flag} ${form.name} on fire, ${form.pts} pts, ${ownTxt(o)}`,`📈 ${form.flag} ${form.name} delivering ${form.pts} pts, ${ownTxt(o)}`,`⚽ ${form.flag} ${form.name} can't stop scoring, ${form.pts} pts, ${ownTxt(o)}`,`🚀 ${form.flag} ${form.name} the form team of the tournament, ${form.pts} pts`],2).replace(/ +/g," ").trim());}
       const order=["r32","r16","qf","sf"],rn={r32:"the last 16",r16:"the quarters",qf:"the semis",sf:"the final"};
       let latest=null;order.forEach(r=>{if(Object.values(state.koR).some(m=>m&&m.played&&m.round===r))latest=r;});
-      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${o.length>2?o.length+" owners buzzing":"good for "+o.join(" & ")}`:""}`).replace(/ +/g," ").trim());}}
+      if(latest){const ws=Object.values(state.koR).filter(m=>m&&m.played&&m.round===latest&&m.winner).map(m=>m.winner);const w=ws[seed%Math.max(1,ws.length)];if(w){const o=(teamMap[w]||{}).owners||[];a.push((`${pk(["💥","🎉","🙌"],1)} ${(FLAGS[w]||"")} ${w} ${pk(["into","through to","are in"],1)} ${rn[latest]}${o.length?`, ${ownTxt(o)}`:""}`).replace(/ +/g," ").trim());}}
       if(bigWin&&bigWin.mar>=3)a.push(pk([`😱 Biggest win lately: ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}`,`💪 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ran riot, ${bigWin.ws}-${bigWin.ls} against ${bigWin.l}`,`🎯 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, ouch`,`🥅 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} stuck ${bigWin.ws} past ${bigWin.l}`,`🫣 ${(FLAGS[bigWin.w]||"")} ${bigWin.w} ${bigWin.ws}-${bigWin.ls} ${bigWin.l}, that escalated quickly`],1).replace(/ +/g," ").trim());
       // Feature 4: market odds as banter only (no card UI). Recent upsets where a clear favourite slipped up.
       const upsets=[];
@@ -1401,7 +1405,7 @@ function myPositionHTML(){
   const me=getMyName();if(!me)return'';
   const lb=calcLeaderboard();const myLc=me.toLowerCase();
   const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i<0)return'';
-  const p=lb[i],rank=i+1,n=lb.length,L=lb[0];
+  const p=lb[i],rank=p.rank,n=lb.length,L=lb[0];
   const started=lb.some(x=>x.total>0);
   const gapLead=Math.round((L.total-p.total)*10)/10;
   const ahead=i<n-1?Math.round((p.total-lb[i+1].total)*10)/10:0;
@@ -2018,7 +2022,7 @@ function calcLeaderboard(){
   const predMap={};if(state.predict.on)Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.prediction)predMap[s.name.toLowerCase()]=s.prediction;});
   const _bonus=calcBonusAwards();const awardByTeam={};
   if(_bonus){['most_goals','fewest_goals','best_def','worst_def'].forEach(k=>{const pp=(state.bonus&&state.bonus[k])||0;if(pp<=0||!_bonus[k])return;_bonus[k].teams.forEach(t=>{(awardByTeam[t]=awardByTeam[t]||[]).push({key:k,pts:pp});});});}
-  return state.draw.participants.map(p=>{
+  const lb=state.draw.participants.map(p=>{
     let total=0,pGoals=0,pKoWins=0;const breakdown=p.teams.map(team=>{
       let pts=0;const items=[];let gW=0,gD=0,gL=0,goals=0;
       Object.entries(GF).filter(([_,f])=>f.home===team.name||f.away===team.name).forEach(([id,f])=>{const r=state.grR[id];if(!r?.played)return;const isH=f.home===team.name,tf=isH?r.hg:r.ag,ta=isH?r.ag:r.hg;goals+=tf;if(tf>ta)gW++;else if(tf===ta)gD++;else gL++;});
@@ -2042,11 +2046,46 @@ function calcLeaderboard(){
     if(myPred&&champ){predCorrect=myPred===champ;if(predCorrect)predBonus=state.predict.bonus||0;}
     total+=predBonus;
     return{...p,total:Math.round(total*10)/10,breakdown,koWins:pKoWins,goalsFor:pGoals,pred:{team:myPred,correct:predCorrect,bonus:predBonus}};
-  // Tiebreakers so 1st place is always decisive & fair: points → correct champion prediction → knockout wins → goals scored → name
+  // Tiebreakers, fairest first: points → correct champion prediction → knockout wins → goals. Name is only a stable display
+  // order within a tie and never decides the rank number, so genuinely level players show as a joint placing.
   }).sort((a,b)=>b.total-a.total||((b.pred&&b.pred.correct?1:0)-(a.pred&&a.pred.correct?1:0))||b.koWins-a.koWins||b.goalsFor-a.goalsFor||a.name.localeCompare(b.name));
+  // Ranking: players level on points share a placing, and the number runs 1,1,2,3,… — a shared 1st is followed by 2nd, not 3rd.
+  // Tiebreakers still set the order within a shared placing (and decide the eventual winner); they just don't split the number.
+  const _started=lb.length>0&&lb[0].total>0;   // before anyone has scored, keep plain positional order (don't show the whole list as joint-1st)
+  let _r=0;lb.forEach((p,i)=>{if(i===0||lb[i-1].total!==p.total)_r++;p.rank=_started?_r:i+1;});
+  return lb;
 }
 
-// ── DEPARTMENTS (optional inter-team layer; individual board stays primary) ──
+// ── RUN-IN ENGINE (knockouts): who's still alive, points still on the table, who benefits from each tie ──
+const _KO_ORD=['r32','r16','qf','sf','final'];
+const _KO_WKEY={r32:'win_r32',r16:'win_r16',qf:'win_qf',sf:'win_sf',final:'win_final'};
+function koRoundPts(r){return (state.scoring&&state.scoring[_KO_WKEY[r]])||0;}
+function koPtsFrom(r){const i=_KO_ORD.indexOf(r);if(i<0)return 0;let s=0;for(let j=i;j<_KO_ORD.length;j++)s+=koRoundPts(_KO_ORD[j]);return s;}
+// The earliest unplayed knockout tie a team is in (the 3rd-place play-off scores nothing, so it's ignored). null = out or already champion.
+function teamNextKO(team,res){let best=null,bId=null;Object.keys(res).forEach(id=>{const sl=res[id],b=BRACKET[id];if(!sl||!b||b.r==='3rd')return;if((sl.teamA===team||sl.teamB===team)&&!(state.koR[id]&&state.koR[id].played)){const ri=_KO_ORD.indexOf(b.r);if(best===null||ri<_KO_ORD.indexOf(best)){best=b.r;bId=id;}}});return best?{round:best,id:bId}:null;}
+function teamAliveKO(team,res){return !!teamNextKO(team,res);}
+function ownersOfTeam(team){return state.draw?state.draw.participants.filter(p=>p.teams.some(t=>t.name===team)).map(p=>p.name):[];}
+function fmtOwners(arr){if(!arr.length)return'nobody in the office';if(arr.length<=4)return arr.join(', ');return arr.slice(0,4).join(', ')+' +'+(arr.length-4);}
+// Title race: each player's current total, the most they could still reach, and their teams still standing.
+function runInData(){
+  const lb=calcLeaderboard();const res=resolveBracket();
+  const champ=(state.koR.m104&&state.koR.m104.played)?state.koR.m104.winner:null;
+  const rows=lb.map(p=>{
+    let add=0;const alive=[];
+    p.breakdown.forEach(b=>{const nk=teamNextKO(b.name,res);if(nk){add+=koPtsFrom(nk.round);alive.push({name:b.name,flag:b.flag,round:nk.round});}});
+    let predAdd=0;if(!champ&&state.predict.on&&p.pred&&p.pred.team&&teamAliveKO(p.pred.team,res))predAdd=state.predict.bonus||0;
+    return{name:p.name,total:p.total,rank:p.rank,alive,ceiling:Math.round((p.total+add+predAdd)*10)/10};
+  });
+  return{lb,res,champ,rows};
+}
+// What a single upcoming tie does to the top of the table: who's top if teamA wins vs if teamB wins.
+function tieImpact(id,res,lb){
+  const sl=res[id],b=BRACKET[id];if(!sl||!sl.teamA||!sl.teamB||!b||(state.koR[id]&&state.koR[id].played))return null;
+  const pts=koRoundPts(b.r),isFinal=b.r==='final';
+  const topIf=w=>{let bn=null,bt=-Infinity;lb.forEach(p=>{let t=p.total;if(p.breakdown.some(x=>x.name===w))t+=pts;if(isFinal&&state.predict.on&&p.pred&&p.pred.team===w)t+=(state.predict.bonus||0);if(t>bt){bt=t;bn=p.name;}});return bn;};
+  const la=topIf(sl.teamA),lbn=topIf(sl.teamB);
+  return{teamA:sl.teamA,teamB:sl.teamB,round:b.r,pts,isFinal,leadA:la,leadB:lbn,swings:la!==lbn};
+}
 // Map of player name (lowercase) → their chosen department, taken from sign-ups.
 function deptMap(){const m={};Object.values(state.signups||{}).forEach(s=>{if(s&&s.name&&s.dept)m[s.name.toLowerCase()]=s.dept;});return m;}
 // Departments ranked by a confidence-weighted rating, so neither headcount nor a single lucky pick runs away with it.
@@ -2959,7 +2998,7 @@ function rulesHTML(onWelcome){
       ${[['most_goals','⚽ Scores the most goals'],['best_def','🛡️ Concedes the fewest'],['fewest_goals','🧊 Scores the fewest'],['worst_def','🥅 Concedes the most']].filter(([k])=>(state.bonus[k]||0)>0).map(([k,l],i,arr)=>row(l,state.bonus[k],i===arr.length-1)).join('')}
     </div>`:''}
     <div style="margin-top:14px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Level on points? It's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Whoever's highest when the tournament ends wins, and gets a winner's certificate. Level on points? It comes down to the champion prediction first, then most knockout wins, then goals, so there's always a clear winner.`}</div>
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize. Players level on points share a placing in the table; if it's still level at the finish, it's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Whoever's highest when the tournament ends wins, and gets a winner's certificate. Players level on points share a placing in the table (a joint 1st is followed by 2nd); if it's still level at the finish, it's settled by the champion prediction, then most knockout wins, then goals.`}</div>
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> There's an optional donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} if you'd like. We suggest £${state.charity.suggested||10} or more, but give whatever you're comfortable with. It's entirely up to you and has no effect on the draw or who wins.</div>
@@ -3039,6 +3078,7 @@ function drawByTeamHTML(){
 }
 let _fxAuto=true;
 function renderKOFixtures(res){
+  const _lb=state.draw?calcLeaderboard():[];   // for the "who benefits / decider" note on upcoming ties
   const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   let ids=Object.keys(KO_SCHED).filter(id=>{const rv=res[id]||{};return rv.teamA&&rv.teamB;});
   if(state.fT==='__MINE__')ids=ids.filter(id=>{const rv=res[id];return _myTeams.has(rv.teamA)||_myTeams.has(rv.teamB);});
@@ -3064,11 +3104,23 @@ function renderKOFixtures(res){
     const score=done?`${r.hg}-${r.ag}${r.pens?` (${r.pens.h}-${r.pens.a}p)`:''}`:liveOn?`${lv.hg||0}-${lv.ag||0}`:'v';
     const mid=`${mine?'⭐ ':''}${FLAGS[rv.teamA]||'⚽'} ${rv.teamA} <b style="color:${done?'var(--gr)':liveOn?'var(--amber)':'var(--txm)'}">${score}</b> ${rv.teamB} ${FLAGS[rv.teamB]||'⚽'}`;
     const when=done?'FT':liveOn?`<span class="live-dot"></span>${lv.min?lv.min+"'":'LIVE'}`:(sch.tm||'');
-    return`<div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:8px;margin-bottom:6px;font-size:.8rem">
+    const mainRow=`<div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:${mine?'var(--pill-gr)':'var(--cardh)'};border-radius:8px;margin-bottom:${(!done&&!liveOn)?'0':'6px'};font-size:.8rem">
       <span style="font-family:'Oswald',sans-serif;font-size:.64rem;color:${liveOn?'var(--amber)':'var(--txm)'};min-width:48px;text-align:center;line-height:1.3;display:flex;align-items:center;justify-content:center;gap:3px">${when}</span>
       <span style="flex:1;min-width:0">${mid}</span>
       <span style="font-size:.58rem;color:var(--txm);text-align:right;min-width:60px;line-height:1.35">${KO_RND[BRACKET[id].r]||''}${sch.ve&&sch.ve!=='TBC'?'<br>'+sch.ve:''}</span>
     </div>`;
+    // Who's rooting for whom + whether the result swings the lead — upcoming ties only, once both teams are known.
+    let root='';
+    if(!done&&!liveOn&&rv.teamA&&rv.teamB){
+      const oA=ownersOfTeam(rv.teamA),oB=ownersOfTeam(rv.teamB);
+      const imp=tieImpact(id,res,_lb);const pts=imp?imp.pts:koRoundPts(BRACKET[id].r);
+      root=`<div style="padding:7px 11px 9px;margin:0 0 6px;background:var(--card);border:1px solid var(--b);border-top:none;border-radius:0 0 8px 8px;font-size:.7rem;line-height:1.55">
+        <div style="color:var(--txm)"><b style="color:var(--tx)">${FLAGS[rv.teamA]||'⚽'} ${rv.teamA}</b> win → ${fmtOwners(oA)} <span style="color:var(--txd)">+${pts}</span></div>
+        <div style="color:var(--txm)"><b style="color:var(--tx)">${FLAGS[rv.teamB]||'⚽'} ${rv.teamB}</b> win → ${fmtOwners(oB)} <span style="color:var(--txd)">+${pts}</span></div>
+        ${imp&&imp.swings?`<div style="margin-top:5px;color:var(--amber);font-weight:600">🔑 Decider — ${rv.teamA} win puts ${imp.leadA} top; ${rv.teamB} win puts ${imp.leadB} top</div>`:''}
+      </div>`;
+    }
+    return mainRow+root;
   };
   return teamSel+jumpBtn+dates.map(dt=>{
     const dayIds=byDate[dt];const done=dayIds.filter(id=>state.koR[id]?.played).length;const isToday=isTodayDt(dt);
@@ -3303,6 +3355,35 @@ function bonusAwardsHTML(){
   const msg=done?'✓ Now added to everyone\'s totals.':liveOn?(live?'Counting towards the table now, provisional. They settle for good once the final\'s played.':'Set to count live · they\'ll start moving the table as soon as games are played.'):live?'Provisional — these don\'t change the table yet. They\'re added to totals when the tournament ends, so a single early game can\'t outweigh a win.':'Up for grabs · worked out automatically from results, and added at the very end.';
   return`<div class="card" style="padding:13px 14px;margin-top:16px"><div style="font-family:'Oswald',sans-serif;font-size:.74rem;letter-spacing:.06em;color:var(--tx);margin-bottom:3px">🏅 BONUS AWARDS</div><div style="font-size:.68rem;color:var(--txm);margin-bottom:9px">${msg}</div><div style="display:flex;flex-direction:column;gap:5px">${rows}</div></div>`;
 }
+function runInHTML(){
+  if(!state.draw)return'';
+  const koStarted=Object.values(state.koR||{}).some(m=>m&&m.played);
+  if(!koStarted)return'';                                  // only meaningful once the knockouts are under way
+  const {lb,champ,rows}=runInData();
+  if(champ||!lb.length||lb[0].total<=0)return'';           // once it's decided, the champion banner takes over
+  const L=rows[0];
+  const leadTies=rows.filter(r=>r.total===L.total);
+  const bonusOn=!!(state.bonus&&state.bonus.on);
+  let lead;
+  if(leadTies.length>1)lead=`${leadTies.slice(0,3).map(r=>r.name.split(' ')[0]).join(' & ')} level on ${L.total} at the top`;
+  else{const m=Math.round((L.total-rows[1].total)*10)/10;lead=rows.length>1?`${L.name.split(' ')[0]} leads by ${m} pt${m!==1?'s':''}, on ${L.total}`:`${L.name.split(' ')[0]} out in front on ${L.total}`;}
+  const inHunt=rows.filter(r=>r.ceiling>=L.total).length;
+  const show=rows.slice(0,6);
+  const rowHTML=r=>{
+    const aliveTxt=r.alive.length?r.alive.map(a=>`${a.flag} ${a.name}`).join(', '):'<span style="color:var(--txd)">out of teams</span>';
+    const ceilTxt=r.ceiling>r.total?`up to <b style="color:var(--tx)">${r.ceiling}</b>`:'—';
+    return`<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-top:1px solid var(--b)">
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--txm);min-width:18px;padding-top:1px">${r.rank}</span>
+      <span style="flex:1;min-width:0;line-height:1.4"><span style="color:var(--tx);font-weight:600">${r.name}</span> <span style="color:var(--txm);font-size:.72rem">· ${r.total} pts · ${ceilTxt}</span><br><span style="font-size:.68rem;color:var(--txm)">still in: ${aliveTxt}</span></span>
+    </div>`;
+  };
+  return`<div class="card" style="padding:14px 15px;margin-bottom:18px;box-shadow:var(--shadow)">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span style="font-size:1rem">🏁</span><span style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.06em;color:var(--tx)">THE RUN-IN</span></div>
+    <div style="font-size:.84rem;color:var(--tx);font-weight:600">${lead}.</div>
+    <div style="font-size:.72rem;color:var(--txm);margin-bottom:6px">${inHunt} player${inHunt!==1?'s':''} still mathematically in reach of top spot${bonusOn?'. Bonus awards could shift things too':''}.</div>
+    ${show.map(rowHTML).join('')}
+  </div>`;
+}
 function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
   const liveStripIds=state.draw?liveAllIds():[];   // group + knockout, for the LIVE NOW strip display only; the merge below stays group-only
@@ -3311,7 +3392,7 @@ function renderStandings(){
   const _todayHTML='';
   let _confRank=null;const _liveTeams=new Set();
   if(liveOn){
-    _confRank={};calcLeaderboard().forEach((p,i)=>{_confRank[p.name]=i+1;});           // ranks on confirmed results, before merging live
+    _confRank={};calcLeaderboard().forEach(p=>{_confRank[p.name]=p.rank;});           // ranks on confirmed results, before merging live
     const _merged={..._realGr};liveIds.forEach(id=>{const s=state.live[id]||{};if(!((s.hg||0)>0||(s.ag||0)>0))return;_merged[id]={hg:s.hg||0,ag:s.ag||0,played:true};});
     state.grR=_merged;                                                                  // provisional state for the whole render
     liveIds.forEach(id=>{if(GF[id]){_liveTeams.add(GF[id].home);_liveTeams.add(GF[id].away);}});
@@ -3350,9 +3431,10 @@ function renderStandings(){
     <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-d))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
     <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
   </div>`:''}
+  ${!showDeptView?runInHTML():''}
   ${!showDeptView?`${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">${Date.now()<KICKOFF_MS?'TOURNAMENT STARTS 11 JUNE 2026':'TOURNAMENT UNDERWAY'}</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">${Date.now()<KICKOFF_MS?'Points appear here once games kick off.':(isAdmin()?'Enter results in Fixtures and points update here.':'Points appear here as soon as the first games finish.')}</div></div>`:''}${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}`:''}
   ${liveStripIds.length>0&&!showDeptView?(()=>{
-    const moves=liveOn?lb.map((p,i)=>({name:p.name,r:i+1,d:(_confRank[p.name]||(i+1))-(i+1)})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d):[];
+    const moves=liveOn?lb.map((p)=>({name:p.name,r:p.rank,d:(_confRank[p.name]||p.rank)-p.rank})).filter(m=>m.d>0).sort((a,b)=>b.d-a.d):[];
     const ord=n=>{const v=n%100;return n+(v>=11&&v<=13?'th':(['th','st','nd','rd'][n%10]||'th'));};
     const top=moves[0];
     return`<div class="card live-card" style="padding:12px 14px;margin-bottom:14px;border-left:3px solid var(--amber)">
@@ -3362,17 +3444,17 @@ function renderStandings(){
     </div>`;
   })():''}
   ${(()=>{if(showDeptView)return deptTableHTML();const maxPts=Math.max(1,...lb.map(p=>p.total));return lbFiltered.map((p)=>{
-    const rank=lb.indexOf(p);
-    const isF=rank===0&&p.total>0;const prz=prizeAt(rank);const open=state.expanded===p.name;
+    const rank=lb.indexOf(p);const dRank=p.rank;
+    const isF=dRank===1&&p.total>0;const prz=prizeAt(rank);const open=state.expanded===p.name;
     const isMe=myName&&p.name===myName;
     const safeName=p.name.replace(/'/g,"\\'");
     const pctW=Math.round((p.total/maxPts)*100);
-    const medalBg=rank===0?'linear-gradient(135deg,#ffd86b,#e0a82e)':rank===1?'linear-gradient(135deg,#dde3ea,#aab4c0)':rank===2?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
-    return`<div class="sc${isF?' gold':''}${isMe?' me':''}${rank<3&&p.total>0?' podium':''}"${ownsLive(p)?' style="box-shadow:0 0 0 1.5px rgba(168,96,0,.5)"':''}>
+    const medalBg=dRank===1?'linear-gradient(135deg,#ffd86b,#e0a82e)':dRank===2?'linear-gradient(135deg,#dde3ea,#aab4c0)':dRank===3?'linear-gradient(135deg,#e0a875,#c07a44)':'var(--cardh)';
+    return`<div class="sc${isF?' gold':''}${isMe?' me':''}${dRank<=3&&p.total>0?' podium':''}"${ownsLive(p)?' style="box-shadow:0 0 0 1.5px rgba(168,96,0,.5)"':''}>
       <div class="sc-hdr" onclick="state.expanded=state.expanded==='${safeName}'?null:'${safeName}';render()">
-        <div style="width:30px;height:30px;border-radius:50%;background:${rank<3&&p.total>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:${rank<3?'.78rem':'.82rem'};color:${rank<3&&p.total>0?'#3a2a00':'var(--txm)'};box-shadow:${rank<3&&p.total>0?'0 2px 8px rgba(224,168,46,.35)':'none'};border:1px solid ${rank<3&&p.total>0?'transparent':'var(--b)'}">${rank<3&&p.total>0?['1','2','3'][rank]:rank+1}</div>
+        <div style="width:30px;height:30px;border-radius:50%;background:${dRank<=3&&p.total>0?medalBg:'var(--cardh)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Oswald',sans-serif;font-weight:700;font-size:${dRank<=3?'.78rem':'.82rem'};color:${dRank<=3&&p.total>0?'#3a2a00':'var(--txm)'};box-shadow:${dRank<=3&&p.total>0?'0 2px 8px rgba(224,168,46,.35)':'none'};border:1px solid ${dRank<=3&&p.total>0?'transparent':'var(--b)'}">${dRank}</div>
         <div style="display:flex;flex-direction:column;align-items:center;width:22px;flex-shrink:0">
-        ${(()=>{const base=liveOn?_confRank:(_baseRanks||{});const prev=base&&base[p.name];if(!prev||prev===rank+1)return'<span class="rank-chg rank-eq">–</span>';const d=prev-(rank+1);return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
+        ${(()=>{const base=liveOn?_confRank:(_baseRanks||{});const prev=base&&base[p.name];if(!prev||prev===dRank)return'<span class="rank-chg rank-eq">–</span>';const d=prev-dRank;return d>0?`<span class="rank-chg rank-up">▲${d}</span>`:`<span class="rank-chg rank-dn">▼${Math.abs(d)}</span>`;})()}
       </div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${ownsLive(p)?' <span class="live-dot" title="Has a team playing now"></span>':''}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
@@ -3385,7 +3467,7 @@ function renderStandings(){
       ${!open?`<div class="pill-wrap">${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div class="pill" style="background:${QCOL[q]}10;border:1px solid ${QCOL[q]}28;opacity:${out?.6:1}"><span style="font-size:.85rem;filter:${out?'grayscale(.8)':'none'}">${b.flag}</span><span style="color:${out?'var(--txm)':'var(--tx)'};${out?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${b.name}</span>${b.pts>0?`<span style="font-size:.63rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700">+${b.pts}</span>`:''}</div>`;}).join('')}</div>`:''}
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
-        ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span><span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span>${champ?`<span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:`<span style="font-size:.68rem;color:var(--txm)">awaiting Final</span>`}</div>`:''}
+        ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${champ&&p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span>${champ?`<span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:isMe?`<span style="flex:1;color:var(--txm)">Your champion pick: <b style="color:var(--tx)">${p.pred.team}</b> <span style="color:var(--txd);font-size:.68rem">· secret to others until the Final</span></span>`:`<span style="flex:1;color:var(--txm)">Champion pick — <b style="color:var(--tx)">revealed at the Final</b> 🤫</span>`}</div>`:''}
         ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(tN<=1||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} teams still in it`:aN===0?'All teams out':`${aN} of ${tN} teams still alive`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="padding:9px 10px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
           <div style="display:flex;gap:9px;align-items:center">
