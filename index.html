@@ -474,12 +474,12 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<!-- build 2026-07-14-final-week-v2 -->
+<!-- build 2026-07-14-final-week-v3 -->
 <footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span></footer>
 
 <script>
 // Build tag — kept in source for version control only (not rendered in the UI). Logged to the browser console so the live build can be confirmed after a deploy.
-const APP_BUILD='2026-07-14-final-week-v2';
+const APP_BUILD='2026-07-14-final-week-v3';
 try{console.log('Carlyle London Sweepstake — build '+APP_BUILD);}catch(e){}
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ENG_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#fff"/><rect x="25" width="10" height="42" fill="#ce1124"/><rect y="16" width="60" height="10" fill="#ce1124"/></svg>';
@@ -582,7 +582,7 @@ const TOURNAMENT_MATCHES=104;
 function currentPhaseLabel(){
   if(!state.draw)return'Pre-tournament';
   if(!groupStageDone())return'Group Stage';
-  if(state.koR&&state.koR.m104&&state.koR.m104.played)return'Complete';
+  if(state.koR&&state.koR.m103&&state.koR.m103.played&&state.koR.m104&&state.koR.m104.played)return'Complete';
   const res=resolveBracket();
   const order=['r32','r16','qf','sf','3rd','final'];
   const open=order.find(r=>Object.entries(BRACKET).some(([id,b])=>b.r===r&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)));
@@ -604,7 +604,7 @@ function nextTournamentKOId(res){
 }
 function nextScoringKOId(res){
   res=res||resolveBracket();
-  return Object.keys(KO_SCHED).filter(id=>BRACKET[id]&&BRACKET[id].r!=='3rd'&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)).sort((a,b)=>koKickoffMs(a)-koKickoffMs(b))[0]||null;
+  return Object.keys(KO_SCHED).filter(id=>BRACKET[id]&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)&&koRoundPts(BRACKET[id].r)>0).sort((a,b)=>koKickoffMs(a)-koKickoffMs(b))[0]||null;
 }
 // Knockout schedule — dates & venues are CONFIRMED; UK kick-off times shown where
 // confirmed (BST = US Eastern + 5h), else 'TBC'. UK TV channels for knockouts are
@@ -651,8 +651,8 @@ const KO_SCHED={
   m103:{dt:'18 Jul',tm:'22:00',ve:'Miami'},
   m104:{dt:'19 Jul',tm:'20:00',ve:'New York NJ'},
 };
-const DEF_SCR={group_win:2,group_draw:1,qualify_top2:5,qualify_3rd:2,win_r32:5,win_r16:7,win_qf:10,win_sf:15,win_final:20,goal_bonus:0};
-const SCR_LBL={group_win:'Group win',group_draw:'Group draw',qualify_top2:'Qualify (top 2)',qualify_3rd:'Qualify (best 3rd)',win_r32:'Win in R32',win_r16:'Win in R16',win_qf:'Win in QF',win_sf:'Win in SF',win_final:'Win the Final',goal_bonus:'Per goal (bonus)'};
+const DEF_SCR={group_win:2,group_draw:1,qualify_top2:5,qualify_3rd:2,win_r32:5,win_r16:7,win_qf:10,win_sf:15,win_3rd:10,win_final:20,goal_bonus:0};
+const SCR_LBL={group_win:'Group win',group_draw:'Group draw',qualify_top2:'Qualify (top 2)',qualify_3rd:'Qualify (best 3rd)',win_r32:'Win in R32',win_r16:'Win in R16',win_qf:'Win in QF',win_sf:'Win in SF',win_3rd:'Win 3rd-place play-off',win_final:'Win the Final',goal_bonus:'Per goal (bonus)'};
 const DEF_BONUS={on:true,live:false,most_goals:5,fewest_goals:3,best_def:5,worst_def:3};
 const BONUS_LBL={most_goals:'Most goals scored',fewest_goals:'Fewest goals scored',best_def:'Best defence (fewest conceded)',worst_def:'Leakiest defence (most conceded)'};
 const BONUS_ICON={most_goals:'\u26bd',fewest_goals:'\ud83e\uddca',best_def:'\ud83d\udee1\ufe0f',worst_def:'\ud83e\udd45'};
@@ -921,7 +921,7 @@ const OFFICE_BANTER=[
   "😴 The favourites are flattering to deceive, as ever",
   "🚩 Somewhere an offside flag is about to ruin a perfectly good celebration",
   "📺 VAR is checking. The office is holding its breath, coffee going cold",
-  "🥉 Reminder: the third-place playoff still pays exactly nothing",
+  "🥉 Third place still matters: goals count and the winner earns 10 points",
   "🧤 Clean sheets don't win tournaments. Except when they do",
   "🫠 Somewhere, a banker bet is quietly collapsing",
   "⚽ A goalless draw is somehow ruining four people's day",
@@ -1044,7 +1044,8 @@ function tickerStats(lb,qual){
   Object.entries(GF).forEach(([id,f])=>{const r=state.grR[id];if(!r||!r.played)return;bump(f.home,r.hg||0,r.ag||0);bump(f.away,r.ag||0,r.hg||0);});
   Object.values(state.koR||{}).forEach(m=>{if(m&&m.played&&m.home&&m.away){bump(m.home,m.hg||0,m.ag||0);bump(m.away,m.ag||0,m.hg||0);}});
   const koOut=new Set();Object.values(state.koR||{}).forEach(m=>{if(m&&m.played){if(m.home&&m.home!==m.winner)koOut.add(m.home);if(m.away&&m.away!==m.winner)koOut.add(m.away);}});
-  const alive=name=>!((qual[name]==='eliminated')||koOut.has(name));
+  const _tickerRes=resolveBracket();
+  const alive=name=>groupStageDone()?!!teamNextKO(name,_tickerRes):qual[name]!=='eliminated';
   const players=lb.map(p=>{let gf=0,ga=0,cs=0,w=0,d=0,l=0,aliveN=0;p.breakdown.forEach(b=>{const t=team[b.name];if(t){gf+=t.gf;ga+=t.ga;cs+=t.cs;w+=t.w;d+=t.d;l+=t.l;}if(alive(b.name))aliveN++;});return{name:p.name,total:p.total,teamsN:p.breakdown.length,aliveN,gf,ga,cs,w,d,l};});
   return{team,players,alive,koOut};
 }
@@ -1057,7 +1058,7 @@ function tickerItems(){
     const champ=(state.koR["m104"]&&state.koR["m104"].played)?state.koR["m104"].winner:null;
     const started=lb.some(p=>p.total>0);
     const _phase=currentPhaseLabel(),_finalWeek=_phase==='Semi-Finals'||_phase==='Final';
-    const _remainingScoring=Object.entries(BRACKET).filter(([id,b])=>b.r!=='3rd'&&!(state.koR[id]&&state.koR[id].played)).length;
+    const _remainingScoring=Object.entries(BRACKET).filter(([id,b])=>koRoundPts(b.r)>0&&!(state.koR[id]&&state.koR[id].played)).length;
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
     let goals=0,bigWin=null;
     const RECENT_DAYS=2;   // result-flavoured ticker lines only celebrate the last couple of days, never stale games
@@ -2092,12 +2093,13 @@ function calcLeaderboard(){
 
 // ── RUN-IN ENGINE (knockouts): who's still alive, points still on the table, who benefits from each tie ──
 const _KO_ORD=['r32','r16','qf','sf','final'];
-const _KO_WKEY={r32:'win_r32',r16:'win_r16',qf:'win_qf',sf:'win_sf',final:'win_final'};
+const _KO_WKEY={r32:'win_r32',r16:'win_r16',qf:'win_qf',sf:'win_sf','3rd':'win_3rd',final:'win_final'};
 function koRoundPts(r){return (state.scoring&&state.scoring[_KO_WKEY[r]])||0;}
-function koPtsFrom(r){const i=_KO_ORD.indexOf(r);if(i<0)return 0;let s=0;for(let j=i;j<_KO_ORD.length;j++)s+=koRoundPts(_KO_ORD[j]);return s;}
-// The earliest unplayed knockout tie a team is in (the 3rd-place play-off scores nothing, so it's ignored). null = out or already champion.
-function teamNextKO(team,res){let best=null,bId=null;Object.keys(res).forEach(id=>{const sl=res[id],b=BRACKET[id];if(!sl||!b||b.r==='3rd')return;if((sl.teamA===team||sl.teamB===team)&&!(state.koR[id]&&state.koR[id].played)){const ri=_KO_ORD.indexOf(b.r);if(best===null||ri<_KO_ORD.indexOf(best)){best=b.r;bId=id;}}});return best?{round:best,id:bId}:null;}
+function koPtsFrom(r){if(r==='3rd')return koRoundPts('3rd');const i=_KO_ORD.indexOf(r);if(i<0)return 0;let s=0;for(let j=i;j<_KO_ORD.length;j++)s+=koRoundPts(_KO_ORD[j]);return s;}
+// The next unplayed knockout match in which a team can still earn sweepstake points, including the third-place play-off.
+function teamNextKO(team,res){let bestId=null,bestMs=Number.MAX_SAFE_INTEGER;Object.keys(res).forEach(id=>{const sl=res[id],b=BRACKET[id];if(!sl||!b||koRoundPts(b.r)<=0)return;if((sl.teamA===team||sl.teamB===team)&&!(state.koR[id]&&state.koR[id].played)){const ms=koKickoffMs(id);if(ms<bestMs){bestMs=ms;bestId=id;}}});return bestId?{round:BRACKET[bestId].r,id:bestId}:null;}
 function teamAliveKO(team,res){return !!teamNextKO(team,res);}
+function teamCanStillChampion(team,res){return Object.keys(res).some(id=>{const sl=res[id],b=BRACKET[id];return sl&&b&&b.r!=='3rd'&&(sl.teamA===team||sl.teamB===team)&&!(state.koR[id]&&state.koR[id].played);});}
 function ownersOfTeam(team){return state.draw?state.draw.participants.filter(p=>p.teams.some(t=>t.name===team)).map(p=>p.name):[];}
 function fmtOwners(arr){if(!arr.length)return'nobody in the office';if(arr.length<=4)return arr.join(', ');return arr.slice(0,4).join(', ')+' +'+(arr.length-4);}
 // Title race: each player's current total, the most they could still reach, and their teams still standing.
@@ -2107,7 +2109,7 @@ function runInData(){
   const rows=lb.map(p=>{
     let add=0;const alive=[];
     p.breakdown.forEach(b=>{const nk=teamNextKO(b.name,res);if(nk){add+=koPtsFrom(nk.round);alive.push({name:b.name,flag:b.flag,round:nk.round});}});
-    let predAdd=0;if(!champ&&state.predict.on&&p.pred&&p.pred.team&&teamAliveKO(p.pred.team,res))predAdd=state.predict.bonus||0;
+    let predAdd=0;if(!champ&&state.predict.on&&p.pred&&p.pred.team&&teamCanStillChampion(p.pred.team,res))predAdd=state.predict.bonus||0;
     return{name:p.name,total:p.total,rank:p.rank,alive,ceiling:Math.round((p.total+add+predAdd)*10)/10};
   });
   return{lb,res,champ,rows};
@@ -3017,7 +3019,7 @@ function rulesHTML(onWelcome){
   const pill=v=>`<span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:.82rem;color:#fff;background:linear-gradient(135deg,#00c853,#00a838);border-radius:20px;padding:3px 11px;flex-shrink:0;margin-left:10px;min-width:30px;text-align:center;box-shadow:0 1px 4px rgba(0,128,42,.3)">+${v}</span>`;
   const row=(label,val,last)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;${last?'':'border-bottom:.5px solid var(--b)'}"><span style="font-size:.82rem;color:var(--tx)">${label}</span>${pill(val)}</div>`;
   const grp=[['group_win','Win a group match'],['group_draw','Draw a group match'],['qualify_top2','Finish top 2 (qualify)'],['qualify_3rd','Qualify as a best 3rd']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
-  const ko=[['win_r32','Win a Round of 32 tie'],['win_r16','Win a Round of 16 tie'],['win_qf','Win a quarter-final'],['win_sf','Win a semi-final'],['win_final','Win the Final 🏆']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
+  const ko=[['win_r32','Win a Round of 32 tie'],['win_r16','Win a Round of 16 tie'],['win_qf','Win a quarter-final'],['win_sf','Win a semi-final'],['win_3rd','Win the third-place play-off 🥉'],['win_final','Win the Final 🏆']].filter(([k])=>S[k]>0).sort((a,b)=>S[b[0]]-S[a[0]]);
   const teamsEach=state.draw?Math.floor(48/Math.max(1,state.draw.participantCount)):0;
   const panel=(title,emoji,rows)=>`<div style="background:var(--cardh);border:1px solid var(--b);border-radius:11px;padding:11px 14px"><div style="font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.1em;color:var(--gr);margin-bottom:4px">${emoji} ${title}</div>${rows.map(([k,l],i)=>row(l,S[k],i===rows.length-1)).join('')}</div>`;
   return `<div class="card" style="padding:18px 17px">
@@ -3336,7 +3338,7 @@ function renderKO(){
   <div class="card" style="padding:12px 8px 12px;margin-bottom:22px;overflow:hidden">
     <div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin-bottom:9px;padding-left:6px">TOURNAMENT BRACKET</div>
     <div class="bk-wrap"><div class="bk-inner" id="bk-inner" style="min-width:max-content">${bkHtml}</div></div>
-    <div style="font-size:.64rem;color:var(--txm);padding:9px 7px 0;line-height:1.45">The bracket shows the route to the trophy. The third-place play-off is listed separately below because it does not feed into the Final and awards no sweepstake match-win points.</div>
+    <div style="font-size:.64rem;color:var(--txm);padding:9px 7px 0;line-height:1.45">The bracket shows the route to the trophy. The third-place play-off is listed separately because it does not feed into the Final, but it still counts: goals are included and the winner earns <b style="color:var(--gr)">+${state.scoring.win_3rd||0}</b> points.</div>
   </div>
   ${koOverridePanelHTML()}
   ${KO_ROUNDS.map(round=>{
@@ -3410,15 +3412,14 @@ function runInHTML(){
   const show=rows.slice(0,6);
   const nextMatchId=nextTournamentKOId(res),nextId=nextScoringKOId(res);
   const showId=nextMatchId||nextId,nextRv=showId?(res[showId]||{}):null,nextSch=showId?(KO_SCHED[showId]||{}):null;
-  const isThird=!!(showId&&BRACKET[showId]&&BRACKET[showId].r==='3rd');
-  const nextImp=showId&&!isThird?tieImpact(showId,res,lb):null;
-  const nextHTML=showId&&nextRv&&nextRv.teamA&&nextRv.teamB?`<div style="margin:9px 0 4px;padding:9px 11px;background:var(--cardh);border:1px solid var(--b);border-radius:8px"><div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:${isThird?'var(--txm)':'var(--amber)'};margin-bottom:3px">${isThird?'NEXT MATCH':'NEXT DECIDER'} · ${KO_RND[BRACKET[showId].r]||KO_LABEL[BRACKET[showId].r]||'Knockout'} · ${relDate(nextSch.dt)} ${nextSch.tm||''}</div><div style="font-size:.78rem;color:var(--tx);font-weight:600">${FLAGS[nextRv.teamA]||'⚽'} ${esc(nextRv.teamA)} v ${esc(nextRv.teamB)} ${FLAGS[nextRv.teamB]||'⚽'}</div>${isThird?`<div style="font-size:.69rem;color:var(--txm);margin-top:4px;line-height:1.5">No sweepstake match-win points are awarded for the third-place play-off. The Final remains the next table decider.</div>`:(nextImp?`<div style="font-size:.69rem;color:${nextImp.swings?'var(--amber)':'var(--txm)'};margin-top:4px;line-height:1.5">${nextImp.swings?`${esc(nextRv.teamA)} win → <b>${esc(nextImp.leadA)}</b> top · ${esc(nextRv.teamB)} win → <b>${esc(nextImp.leadB)}</b> top`:`Both outcomes currently leave <b>${esc(nextImp.leadA)}</b> top · ${nextImp.pts} pts for the winner`}</div>`:'')}</div>`:'';
+  const nextImp=showId?tieImpact(showId,res,lb):null;
+  const nextHTML=showId&&nextRv&&nextRv.teamA&&nextRv.teamB?`<div style="margin:9px 0 4px;padding:9px 11px;background:var(--cardh);border:1px solid var(--b);border-radius:8px"><div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:var(--amber);margin-bottom:3px">NEXT DECIDER · ${KO_RND[BRACKET[showId].r]||KO_LABEL[BRACKET[showId].r]||'Knockout'} · ${relDate(nextSch.dt)} ${nextSch.tm||''}</div><div style="font-size:.78rem;color:var(--tx);font-weight:600">${FLAGS[nextRv.teamA]||'⚽'} ${esc(nextRv.teamA)} v ${esc(nextRv.teamB)} ${FLAGS[nextRv.teamB]||'⚽'}</div>${nextImp?`<div style="font-size:.69rem;color:${nextImp.swings?'var(--amber)':'var(--txm)'};margin-top:4px;line-height:1.5">${nextImp.swings?`${esc(nextRv.teamA)} win → <b>${esc(nextImp.leadA)}</b> top · ${esc(nextRv.teamB)} win → <b>${esc(nextImp.leadB)}</b> top`:`Both outcomes currently leave <b>${esc(nextImp.leadA)}</b> top · ${nextImp.pts} pts for the winner`}</div>`:''}</div>`:'';
   const rowHTML=r=>{
     const aliveTxt=r.alive.length?r.alive.map(a=>`${a.flag} ${a.name}`).join(', '):'<span style="color:var(--txd)">out of teams</span>';
     const ceilTxt=r.ceiling>r.total?`up to <b style="color:var(--tx)">${r.ceiling}</b>`:'—';
     return`<div style="display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-top:1px solid var(--b)">
       <span style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--txm);min-width:18px;padding-top:1px">${r.rank}</span>
-      <span style="flex:1;min-width:0;line-height:1.4"><span style="color:var(--tx);font-weight:600">${r.name}</span> <span style="color:var(--txm);font-size:.72rem">· ${r.total} pts · ${ceilTxt}</span><br><span style="font-size:.68rem;color:var(--txm)">still in: ${aliveTxt}</span></span>
+      <span style="flex:1;min-width:0;line-height:1.4"><span style="color:var(--tx);font-weight:600">${r.name}</span> <span style="color:var(--txm);font-size:.72rem">· ${r.total} pts · ${ceilTxt}</span><br><span style="font-size:.68rem;color:var(--txm)">points left with: ${aliveTxt}</span></span>
     </div>`;
   };
   return`<div class="card" style="padding:14px 15px;margin-bottom:18px;box-shadow:var(--shadow)">
@@ -3447,7 +3448,8 @@ function renderStandings(){
   const lb=calcLeaderboard();const{qual}=computeQual();
   const koOut=new Set();
   Object.values(state.koR||{}).forEach(r=>{if(r&&r.played&&r.winner){[r.home,r.away].forEach(t=>{if(t&&t!==r.winner)koOut.add(t);});}});
-  const teamAlive=nm=>qual[nm]!=='eliminated'&&!koOut.has(nm);
+  const _standRes=resolveBracket();
+  const teamAlive=nm=>groupStageDone()?!!teamNextKO(nm,_standRes):qual[nm]!=='eliminated';
   const np=state.draw?state.draw.participantCount:state.pc;
   const pot=state.prize.on?np*state.prize.buyin:0;
   const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;
@@ -3503,7 +3505,7 @@ function renderStandings(){
       </div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${ownsLive(p)?' <span class="live-dot" title="Has a team playing now"></span>':''}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
-          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${(()=>{const qn=p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length,an=p.breakdown.filter(b=>teamAlive(b.name)).length;if(champ){const ct=p.breakdown.find(b=>b.name===champ);return ct?`${ct.flag} ${esc(champ)} champions`:'Tournament complete';}if(groupStageDone())return an?`${an}/${p.teams.length} still alive`:'All teams out';return `${qn}/${p.teams.length} qualified`;})()}${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${(()=>{const qn=p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length,an=p.breakdown.filter(b=>teamAlive(b.name)).length;if(champ){const ct=p.breakdown.find(b=>b.name===champ);return ct?`${ct.flag} ${esc(champ)} champions`:'Tournament complete';}if(groupStageDone())return an?`${an}/${p.teams.length} still able to score`:'No matches left';return `${qn}/${p.teams.length} qualified`;})()}${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
           <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${isF?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
         </div>
         <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${isF?'var(--gold)':p.total>0?'var(--gr)':'var(--txm)'}">${p.total}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">POINTS</div></div>
@@ -3513,7 +3515,7 @@ function renderStandings(){
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
         ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${champ&&p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span>${champ?`<span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:isMe?`<span style="flex:1;color:var(--txm)">Your champion pick: <b style="color:var(--tx)">${p.pred.team}</b> <span style="color:var(--txd);font-size:.68rem">· secret to others until the Final</span></span>`:`<span style="flex:1;color:var(--txm)">Champion pick — <b style="color:var(--tx)">revealed at the Final</b> 🤫</span>`}</div>`:''}
-        ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(tN<=1||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} teams still in it`:aN===0?'All teams out':`${aN} of ${tN} teams still alive`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
+        ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(tN<=1||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} teams still able to score`:aN===0?'No matches left':`${aN} of ${tN} teams still able to score`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="padding:9px 10px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
           <div style="display:flex;gap:9px;align-items:center">
             <span style="font-size:1rem;flex-shrink:0;filter:${out?'grayscale(.7)':'none'}">${b.flag}</span>
