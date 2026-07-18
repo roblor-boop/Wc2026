@@ -474,12 +474,12 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<!-- build 2026-06-30-l (admin can override stuck-live knockout) -->
+<!-- build 2026-07-14-final-week-v2 -->
 <footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span></footer>
 
 <script>
 // Build tag — kept in source for version control only (not rendered in the UI). Logged to the browser console so the live build can be confirmed after a deploy.
-const APP_BUILD='2026-06-30-l (admin can override stuck-live knockout)';
+const APP_BUILD='2026-07-14-final-week-v2';
 try{console.log('Carlyle London Sweepstake — build '+APP_BUILD);}catch(e){}
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ENG_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#fff"/><rect x="25" width="10" height="42" fill="#ce1124"/><rect y="16" width="60" height="10" fill="#ce1124"/></svg>';
@@ -573,9 +573,39 @@ const SC={
   g_L_5:{dt:'27 Jun',tm:'22:00',ve:'Atlanta',ch:'ITV'}
 };
 const BRACKET={m73:{r:'r32',l:'Match 73',sA:{t:'runnerup',g:'A'},sB:{t:'runnerup',g:'B'},feeds:'m90',fs:'A'},m74:{r:'r32',l:'Match 74',sA:{t:'winner',g:'E'},sB:{t:'best3rd',gs:['A','B','C','D','F']},feeds:'m89',fs:'A'},m75:{r:'r32',l:'Match 75',sA:{t:'winner',g:'F'},sB:{t:'runnerup',g:'C'},feeds:'m90',fs:'B'},m76:{r:'r32',l:'Match 76',sA:{t:'winner',g:'C'},sB:{t:'runnerup',g:'F'},feeds:'m91',fs:'A'},m77:{r:'r32',l:'Match 77',sA:{t:'winner',g:'I'},sB:{t:'best3rd',gs:['C','D','F','G','H']},feeds:'m89',fs:'B'},m78:{r:'r32',l:'Match 78',sA:{t:'runnerup',g:'E'},sB:{t:'runnerup',g:'I'},feeds:'m91',fs:'B'},m79:{r:'r32',l:'Match 79',sA:{t:'winner',g:'A'},sB:{t:'best3rd',gs:['C','E','F','H','I']},feeds:'m92',fs:'A'},m80:{r:'r32',l:'Match 80',sA:{t:'winner',g:'L'},sB:{t:'best3rd',gs:['E','H','I','J','K']},feeds:'m92',fs:'B'},m81:{r:'r32',l:'Match 81',sA:{t:'winner',g:'D'},sB:{t:'best3rd',gs:['B','E','F','I','J']},feeds:'m93',fs:'A'},m82:{r:'r32',l:'Match 82',sA:{t:'winner',g:'G'},sB:{t:'best3rd',gs:['A','E','H','I','J']},feeds:'m93',fs:'B'},m83:{r:'r32',l:'Match 83',sA:{t:'runnerup',g:'K'},sB:{t:'runnerup',g:'L'},feeds:'m94',fs:'A'},m84:{r:'r32',l:'Match 84',sA:{t:'winner',g:'H'},sB:{t:'runnerup',g:'J'},feeds:'m94',fs:'B'},m85:{r:'r32',l:'Match 85',sA:{t:'winner',g:'B'},sB:{t:'best3rd',gs:['E','F','G','I','J']},feeds:'m95',fs:'A'},m86:{r:'r32',l:'Match 86',sA:{t:'winner',g:'J'},sB:{t:'runnerup',g:'H'},feeds:'m95',fs:'B'},m87:{r:'r32',l:'Match 87',sA:{t:'winner',g:'K'},sB:{t:'best3rd',gs:['D','E','I','J','L']},feeds:'m96',fs:'A'},m88:{r:'r32',l:'Match 88',sA:{t:'runnerup',g:'D'},sB:{t:'runnerup',g:'G'},feeds:'m96',fs:'B'},m89:{r:'r16',l:'Match 89',sA:{t:'prev',m:'m74'},sB:{t:'prev',m:'m77'},feeds:'m97',fs:'A'},m90:{r:'r16',l:'Match 90',sA:{t:'prev',m:'m73'},sB:{t:'prev',m:'m75'},feeds:'m97',fs:'B'},m91:{r:'r16',l:'Match 91',sA:{t:'prev',m:'m76'},sB:{t:'prev',m:'m78'},feeds:'m98',fs:'A'},m92:{r:'r16',l:'Match 92',sA:{t:'prev',m:'m79'},sB:{t:'prev',m:'m80'},feeds:'m98',fs:'B'},m93:{r:'r16',l:'Match 93',sA:{t:'prev',m:'m83'},sB:{t:'prev',m:'m84'},feeds:'m99',fs:'A'},m94:{r:'r16',l:'Match 94',sA:{t:'prev',m:'m81'},sB:{t:'prev',m:'m82'},feeds:'m99',fs:'B'},m95:{r:'r16',l:'Match 95',sA:{t:'prev',m:'m86'},sB:{t:'prev',m:'m88'},feeds:'m100',fs:'A'},m96:{r:'r16',l:'Match 96',sA:{t:'prev',m:'m85'},sB:{t:'prev',m:'m87'},feeds:'m100',fs:'B'},m97:{r:'qf',l:'Quarter-Final 1',sA:{t:'prev',m:'m89'},sB:{t:'prev',m:'m90'},feeds:'m101',fs:'A'},m98:{r:'qf',l:'Quarter-Final 2',sA:{t:'prev',m:'m93'},sB:{t:'prev',m:'m94'},feeds:'m101',fs:'B'},m99:{r:'qf',l:'Quarter-Final 3',sA:{t:'prev',m:'m91'},sB:{t:'prev',m:'m92'},feeds:'m102',fs:'A'},m100:{r:'qf',l:'Quarter-Final 4',sA:{t:'prev',m:'m95'},sB:{t:'prev',m:'m96'},feeds:'m102',fs:'B'},m101:{r:'sf',l:'Semi-Final 1',sA:{t:'prev',m:'m97'},sB:{t:'prev',m:'m98'},feeds:'m104',fs:'A'},m102:{r:'sf',l:'Semi-Final 2',sA:{t:'prev',m:'m99'},sB:{t:'prev',m:'m100'},feeds:'m104',fs:'B'},m103:{r:'3rd',l:'3rd Place',sA:{t:'loser',m:'m101'},sB:{t:'loser',m:'m102'}},m104:{r:'final',l:'THE FINAL',sA:{t:'prev',m:'m101'},sB:{t:'prev',m:'m102'}}};
-const KO_ROUNDS=['r32','r16','qf','sf','final'];
-const KO_LABEL={r32:'Round of 32',r16:'Round of 16',qf:'Quarter-Finals',sf:'Semi-Finals',final:'Final'};
-const KO_COL={r32:'#3b82f6',r16:'#8b5cf6',qf:'#f59e0b',sf:'#ef4444',final:'#ffd700'};
+const KO_ROUNDS=['r32','r16','qf','sf','3rd','final'];
+const KO_LABEL={r32:'Round of 32',r16:'Round of 16',qf:'Quarter-Finals',sf:'Semi-Finals','3rd':'Third-Place Play-Off',final:'Final'};
+const KO_COL={r32:'#3b82f6',r16:'#8b5cf6',qf:'#f59e0b',sf:'#ef4444','3rd':'#64748b',final:'#ffd700'};
+const TOURNAMENT_MATCHES=104;
+// Current competition phase, based on the earliest resolved knockout round still to be played.
+// This keeps the header accurate before the first match of a new round has finished.
+function currentPhaseLabel(){
+  if(!state.draw)return'Pre-tournament';
+  if(!groupStageDone())return'Group Stage';
+  if(state.koR&&state.koR.m104&&state.koR.m104.played)return'Complete';
+  const res=resolveBracket();
+  const order=['r32','r16','qf','sf','3rd','final'];
+  const open=order.find(r=>Object.entries(BRACKET).some(([id,b])=>b.r===r&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)));
+  if(open)return KO_LABEL[open]||'Knockouts';
+  const played=Object.values(state.koR||{}).filter(m=>m&&m.played&&order.includes(m.round)).sort((a,b)=>order.indexOf(b.round)-order.indexOf(a.round))[0];
+  return played?(KO_LABEL[played.round]||'Knockouts'):'Knockouts';
+}
+function koKickoffMs(id){
+  const sch=KO_SCHED[id];if(!sch||!sch.dt)return Number.MAX_SAFE_INTEGER;
+  const M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  const p=String(sch.dt).trim().split(/\s+/),day=parseInt(p[0],10),mo=M[p[1]];
+  const tm=String(sch.tm||'00:00').match(/(\d{1,2}):(\d{2})/);
+  if(isNaN(day)||mo==null)return Number.MAX_SAFE_INTEGER;
+  return new Date(2026,mo,day,tm?+tm[1]:0,tm?+tm[2]:0).getTime();
+}
+function nextTournamentKOId(res){
+  res=res||resolveBracket();
+  return Object.keys(KO_SCHED).filter(id=>BRACKET[id]&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)).sort((a,b)=>koKickoffMs(a)-koKickoffMs(b))[0]||null;
+}
+function nextScoringKOId(res){
+  res=res||resolveBracket();
+  return Object.keys(KO_SCHED).filter(id=>BRACKET[id]&&BRACKET[id].r!=='3rd'&&res[id]&&res[id].teamA&&res[id].teamB&&!(state.koR[id]&&state.koR[id].played)).sort((a,b)=>koKickoffMs(a)-koKickoffMs(b))[0]||null;
+}
 // Knockout schedule — dates & venues are CONFIRMED; UK kick-off times shown where
 // confirmed (BST = US Eastern + 5h), else 'TBC'. UK TV channels for knockouts are
 // announced nearer the tournament, so channel is 'TBC' throughout. Teams fill in
@@ -1026,6 +1056,8 @@ function tickerItems(){
     const {qual,tables}=computeQual();
     const champ=(state.koR["m104"]&&state.koR["m104"].played)?state.koR["m104"].winner:null;
     const started=lb.some(p=>p.total>0);
+    const _phase=currentPhaseLabel(),_finalWeek=_phase==='Semi-Finals'||_phase==='Final';
+    const _remainingScoring=Object.entries(BRACKET).filter(([id,b])=>b.r!=='3rd'&&!(state.koR[id]&&state.koR[id].played)).length;
     const gp=Object.values(state.grR).filter(r=>r&&r.played).length, kp=Object.values(state.koR).filter(m=>m&&m.played).length;
     let goals=0,bigWin=null;
     const RECENT_DAYS=2;   // result-flavoured ticker lines only celebrate the last couple of days, never stale games
@@ -1041,6 +1073,8 @@ function tickerItems(){
     liveAllIds().forEach(id=>{const f=liveFix(id);if(!f)return;const s=state.live[id]||{};a.push((`🔴 LIVE: ${(FLAGS[f.home]||"")} ${f.home} ${s.hg||0}-${s.ag||0} ${f.away} ${(FLAGS[f.away]||"")}`).replace(/ +/g," ").trim());if(s.sc&&s.sc.length){const e=s.sc[s.sc.length-1];const who=e.s==='h'?f.home:f.away;if(e.n)a.push((`⚽ ${e.m?e.m+' ':''}${e.n}${e.og?' (OG)':e.pk?' (pen)':''} — ${who}`).replace(/ +/g," ").trim());}});
     const _today=gamesToday().filter(id=>!state.grR[id]?.played);
     if(_today.length){const _l=_today.slice(0,4).map(id=>`${GF[id].home} v ${GF[id].away}`).join(", ");a.push((`⚽ ON TODAY: ${_l}${_today.length>4?` +${_today.length-4} more`:""}`).replace(/ +/g," ").trim());}
+    const _koToday=koGamesToday();
+    if(_koToday.length){const _kr=resolveBracket();const _l=_koToday.slice(0,3).map(id=>{const rv=_kr[id]||{},sch=KO_SCHED[id]||{},rnd=KO_LABEL[BRACKET[id].r]||KO_RND[BRACKET[id].r]||'Knockout';return `${rnd.toUpperCase()}: ${rv.teamA} v ${rv.teamB}${sch.tm?' · '+sch.tm:''}`;}).join(' · ');a.push((`🔥 ON TODAY: ${_l}${_koToday.length>3?` +${_koToday.length-3} more`:''}`).replace(/ +/g,' ').trim());}
     if(champ){
       a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
       a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`,`🏆 ${champ} lift the trophy, ${lb[0].name} lifts the office crown`]));
@@ -1107,12 +1141,12 @@ function tickerItems(){
         const _scT=Object.entries(_sc2).filter(([_,v])=>v>0).sort((x,y)=>y[1]-x[1])[0];
         if(_scT)a.push(pk([`🧤 ${_scT[0]} have the tightest defence, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`,`🛡️ ${_scT[0]} keeping it tight as a squad, ${_scT[1]} clean sheet${_scT[1]>1?'s':''}`],40));
       }
-      if(shaped&&lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc)a.push(pick([`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} bottom for now on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`]));}
+      if(shaped&&lb.length>3){const last=lb[lb.length-1];if(last.name.toLowerCase()!==myLc){const _lastLines=_finalWeek?[`🥄 ${last.name} bottom on ${last.total}, with ${_remainingScoring} scoring game${_remainingScoring===1?'':'s'} left`,`🥄 Wooden spoon watch: ${last.name} needs a proper late swing`,`📉 ${last.name} bottom heading into the business end`,`🪑 ${last.name} keeping the bottom seat warm at exactly the wrong time`]:[`🥄 ${last.name} holding up the table on ${last.total}. Only way is up`,`🥄 Someone's got to prop it up. ${last.name} on ${last.total}, still time`,`🐢 ${last.name} taking the scenic route on ${last.total}`,`🪑 ${last.name} keeping the bottom seat warm on ${last.total}`,`☕ Wooden spoon watch: ${last.name} on ${last.total}. Teas on you?`,`📉 ${last.name} bottom for now on ${last.total}`,`🆘 ${last.name} could do with a result or two, ${last.total} pts`,`🥄 ${last.name} anchoring the table on ${last.total}. Second half to play`];a.push(pick(_lastLines));}}
       if(shaped&&lb.length>=6){const mid=lb[Math.floor(lb.length/2)];if(mid&&mid.name!==L.name&&mid.name!==lb[lb.length-1].name)a.push(pick([`😎 ${mid.name} cruising in mid-table`,`😌 ${mid.name} settled in the pack on ${mid.total}`,`🛋️ ${mid.name} comfy in mid-table on ${mid.total}`,`🤷 ${mid.name} doing just enough, ${mid.total}`]));}
       if(shaped&&me){const i=lb.findIndex(p=>p.name.toLowerCase()===myLc);if(i>=0){const r=i+1,gapTop=Math.round((L.total-lb[i].total)*10)/10;
         if(r===1)a.push(pick([`👀 You're top, ${me}. Don't look back`,`🔥 Top of the office, ${me}`,`👑 You're number one, ${me}`,`🔒 Top spot's yours, ${me}. Don't let it slip`,`👑 You're top, ${me}. Try not to mention it every 12 minutes`]));
         else if(r<=3)a.push(pick([`🙌 You're ${ordinal(r)}, ${me}, ${gapTop} off the lead`,`🥁 Podium spot, ${me}, ${ordinal(r)} and climbing`,`😏 ${ordinal(r)}, ${me}, the lead's in sight`,`🥁 On the podium, ${me}, ${gapTop} to the summit`]));
-        else if(i===lb.length-1&&lb.length>3)a.push(pick([`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`,`🥄 Character-building tournament so far, ${me}`]));
+        else if(i===lb.length-1&&lb.length>3)a.push(pick(_finalWeek?[`🙈 Bottom heading into the final week, ${me}`,`🥄 The spoon's yours for now, ${me}. You need a late swing`,`🔄 ${_remainingScoring} scoring game${_remainingScoring===1?'':'s'} left, ${me}. Make them count`,`🥄 Character-building tournament, ${me}. Very character-building`]:[`💪 You're last, ${me}, but there's plenty of time`,`🙈 Bottom for now, ${me}`,`🥄 The spoon's yours for now, ${me}. Turn it round`,`🔄 Only way is up, ${me}. Long way to the final`,`🥄 Character-building tournament so far, ${me}`]));
         else a.push(pick([`📈 You're ${ordinal(r)}, ${me}, ${gapTop} off the top`,`👟 ${ordinal(r)}, ${me}, a bit of work to do`,`🎯 ${ordinal(r)}, ${me}, ${gapTop} to the top`]));}}
       if(!shaped&&me){const _ip=lb.some(p=>p.name.toLowerCase()===myLc&&p.total===L.total);if(_ip)a.push(pk([`👀 Right in the mix at the top, ${me}`,`🙌 Up there with the leaders, ${me}, nothing in it`,`😏 Top of the pile jointly, ${me}. Go and make it yours`],2));}
       // ── Department race (optional; the individual board still leads the ticker) ──
@@ -2523,8 +2557,10 @@ function updateHdr(){
   const pw=document.getElementById('prog-wrap');
   if(state.draw&&gp>0){
     pw.style.display='block';
-    const pct=Math.round(gp/72*100);const rnd=ko>0?` · ${KO_LABEL[Object.values(state.koR).filter(m=>m.played).sort((a,b)=>KO_ROUNDS.indexOf(b.round)-KO_ROUNDS.indexOf(a.round))[0]?.round]||''}`:' · Group Stage';
-    document.getElementById('prog-label').textContent=`${pct}% COMPLETE${rnd}`;
+    const played=gp+ko;
+    const pct=state.koR['m104']?.played?100:Math.min(99,Math.round(played/TOURNAMENT_MATCHES*100));
+    const phase=currentPhaseLabel();
+    document.getElementById('prog-label').textContent=`${pct}% COMPLETE · ${phase.toUpperCase()}`;
     document.getElementById('prog-fill').style.width=pct+'%';
   } else pw.style.display='none';
 }
@@ -3256,7 +3292,7 @@ function renderTables(){
 
 function renderKO(){
   const res=resolveBracket();const champ=state.koR['m104']?.winner;
-  const koByRound={};KO_ROUNDS.forEach(r=>{koByRound[r]=[];});Object.entries(BRACKET).filter(([_,b])=>b.r!=='3rd').forEach(([id,b])=>{if(koByRound[b.r])koByRound[b.r].push(id);});
+  const koByRound={};KO_ROUNDS.forEach(r=>{koByRound[r]=[];});Object.entries(BRACKET).forEach(([id,b])=>{if(koByRound[b.r])koByRound[b.r].push(id);});
   // order each round's entry cards by actual kick-off (UK time) so they read as a schedule, not by match number
   const _koMo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   const _koTs=id=>{const s=KO_SCHED[id];if(!s||!s.dt)return 8.64e15;const p=String(s.dt).trim().split(/\s+/);const d=parseInt(p[p.length-2],10),mo=_koMo[p[p.length-1]];if(isNaN(d)||mo==null)return 8.64e15;const t=String(s.tm||'00:00').match(/(\d{1,2}):(\d{2})/);return new Date(2026,mo,d,t?+t[1]:0,t?+t[2]:0).getTime();};
@@ -3300,6 +3336,7 @@ function renderKO(){
   <div class="card" style="padding:12px 8px 12px;margin-bottom:22px;overflow:hidden">
     <div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.1em;color:var(--txd);margin-bottom:9px;padding-left:6px">TOURNAMENT BRACKET</div>
     <div class="bk-wrap"><div class="bk-inner" id="bk-inner" style="min-width:max-content">${bkHtml}</div></div>
+    <div style="font-size:.64rem;color:var(--txm);padding:9px 7px 0;line-height:1.45">The bracket shows the route to the trophy. The third-place play-off is listed separately below because it does not feed into the Final and awards no sweepstake match-win points.</div>
   </div>
   ${koOverridePanelHTML()}
   ${KO_ROUNDS.map(round=>{
@@ -3360,16 +3397,22 @@ function runInHTML(){
   if(!state.draw)return'';
   const koStarted=Object.values(state.koR||{}).some(m=>m&&m.played);
   if(!koStarted)return'';                                  // only meaningful once the knockouts are under way
-  const {lb,champ,rows}=runInData();
+  const {lb,res,champ,rows}=runInData();
   if(champ||!lb.length||lb[0].total<=0)return'';           // once it's decided, the champion banner takes over
   const L=rows[0];
   const leadTies=rows.filter(r=>r.total===L.total);
   const bonusOn=!!(state.bonus&&state.bonus.on);
   let lead;
   if(leadTies.length>1)lead=`${leadTies.slice(0,3).map(r=>r.name.split(' ')[0]).join(' & ')} level on ${L.total} at the top`;
-  else{const m=Math.round((L.total-rows[1].total)*10)/10;lead=rows.length>1?`${L.name.split(' ')[0]} leads by ${m} pt${m!==1?'s':''}, on ${L.total}`:`${L.name.split(' ')[0]} out in front on ${L.total}`;}
+  else if(rows.length>1){const m=Math.round((L.total-rows[1].total)*10)/10;lead=`${L.name.split(' ')[0]} leads by ${m} pt${m!==1?'s':''}, on ${L.total}`;}
+  else lead=`${L.name.split(' ')[0]} out in front on ${L.total}`;
   const inHunt=rows.filter(r=>r.ceiling>=L.total).length;
   const show=rows.slice(0,6);
+  const nextMatchId=nextTournamentKOId(res),nextId=nextScoringKOId(res);
+  const showId=nextMatchId||nextId,nextRv=showId?(res[showId]||{}):null,nextSch=showId?(KO_SCHED[showId]||{}):null;
+  const isThird=!!(showId&&BRACKET[showId]&&BRACKET[showId].r==='3rd');
+  const nextImp=showId&&!isThird?tieImpact(showId,res,lb):null;
+  const nextHTML=showId&&nextRv&&nextRv.teamA&&nextRv.teamB?`<div style="margin:9px 0 4px;padding:9px 11px;background:var(--cardh);border:1px solid var(--b);border-radius:8px"><div style="font-family:'Oswald',sans-serif;font-size:.66rem;letter-spacing:.08em;color:${isThird?'var(--txm)':'var(--amber)'};margin-bottom:3px">${isThird?'NEXT MATCH':'NEXT DECIDER'} · ${KO_RND[BRACKET[showId].r]||KO_LABEL[BRACKET[showId].r]||'Knockout'} · ${relDate(nextSch.dt)} ${nextSch.tm||''}</div><div style="font-size:.78rem;color:var(--tx);font-weight:600">${FLAGS[nextRv.teamA]||'⚽'} ${esc(nextRv.teamA)} v ${esc(nextRv.teamB)} ${FLAGS[nextRv.teamB]||'⚽'}</div>${isThird?`<div style="font-size:.69rem;color:var(--txm);margin-top:4px;line-height:1.5">No sweepstake match-win points are awarded for the third-place play-off. The Final remains the next table decider.</div>`:(nextImp?`<div style="font-size:.69rem;color:${nextImp.swings?'var(--amber)':'var(--txm)'};margin-top:4px;line-height:1.5">${nextImp.swings?`${esc(nextRv.teamA)} win → <b>${esc(nextImp.leadA)}</b> top · ${esc(nextRv.teamB)} win → <b>${esc(nextImp.leadB)}</b> top`:`Both outcomes currently leave <b>${esc(nextImp.leadA)}</b> top · ${nextImp.pts} pts for the winner`}</div>`:'')}</div>`:'';
   const rowHTML=r=>{
     const aliveTxt=r.alive.length?r.alive.map(a=>`${a.flag} ${a.name}`).join(', '):'<span style="color:var(--txd)">out of teams</span>';
     const ceilTxt=r.ceiling>r.total?`up to <b style="color:var(--tx)">${r.ceiling}</b>`:'—';
@@ -3382,6 +3425,7 @@ function runInHTML(){
     <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><span style="font-size:1rem">🏁</span><span style="font-family:'Oswald',sans-serif;font-size:.8rem;letter-spacing:.06em;color:var(--tx)">THE RUN-IN</span></div>
     <div style="font-size:.84rem;color:var(--tx);font-weight:600">${lead}.</div>
     <div style="font-size:.72rem;color:var(--txm);margin-bottom:6px">${inHunt} player${inHunt!==1?'s':''} still mathematically in reach of top spot${bonusOn?'. Bonus awards could shift things too':''}.</div>
+    ${nextHTML}
     ${show.map(rowHTML).join('')}
   </div>`;
 }
@@ -3409,7 +3453,7 @@ function renderStandings(){
   const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;
   const collected=state.prize.on?paidCount*state.prize.buyin:0;
   const prizeAt=rank=>state.prize.on&&rank<3?Math.round(pot*state.prize.pay[rank]/100):0;
-  const champ=state.koR['m104']?.winner;const champP=champ?lb.find(p=>p.breakdown.some(b=>b.name===champ)):null;
+  const champ=state.koR['m104']?.winner;const sweepWinner=champ?lb[0]:null;
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const dmap=deptMap();const deptsActive=!!(state.depts&&state.depts.on&&(state.depts.names||[]).length&&lb.length);
@@ -3424,10 +3468,10 @@ function renderStandings(){
     <button onclick="state.standView='depts';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView==='depts'?'var(--card)':'transparent'};color:${state.standView==='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView==='depts'?'var(--shadow)':'none'}">${esc((state.depts.label||'DEPARTMENTS').toUpperCase())}</button>
   </div>`:''}
   ${!showDeptView?`${lb.length>6?`<div style="position:sticky;top:var(--hdr-h,96px);z-index:10;background:var(--bg);margin-bottom:14px;padding:6px 0"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}${_todayHTML}`:`${dsCount>6?`<div style="position:sticky;top:var(--hdr-h,96px);z-index:10;background:var(--bg);margin-bottom:14px;padding:6px 0"><input type="text" placeholder="🔍 Find a ${esc(_deptSing)}…" value="${(state.deptQ||'').replace(/"/g,'&quot;')}" oninput="state.deptQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${(state.deptQ||'')?`<button onclick="state.deptQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}`}
-  ${champ&&champP?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
+  ${champ&&sweepWinner?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
     <div style="font-size:2rem;margin-bottom:6px">🏆</div>
     <div style="font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:.04em">${champ} ARE WORLD CHAMPIONS</div>
-    <div style="font-size:.85rem;color:var(--tx);margin-top:5px">${champP.name} wins with <b>${champP.total}</b> points!</div>
+    <div style="font-size:.85rem;color:var(--tx);margin-top:5px">${sweepWinner.name} wins the sweepstake with <b>${sweepWinner.total}</b> points!</div>
     ${isAdmin()?`<button onclick="downloadCert(calcLeaderboard()[0])" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold-d));border:none;border-radius:6px;color:#fff;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">🏆 WINNER CERTIFICATE</button>`:''}
     <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-d))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
     <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
@@ -3459,7 +3503,7 @@ function renderStandings(){
       </div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${ownsLive(p)?' <span class="live-dot" title="Has a team playing now"></span>':''}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${rank===lb.length-1&&lb.length>3&&p.total>0&&rank!==0?'<span title="Bottom of the table" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 WOODEN SPOON</span>':''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
-          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length}/${p.teams.length} qualified${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${(()=>{const qn=p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length,an=p.breakdown.filter(b=>teamAlive(b.name)).length;if(champ){const ct=p.breakdown.find(b=>b.name===champ);return ct?`${ct.flag} ${esc(champ)} champions`:'Tournament complete';}if(groupStageDone())return an?`${an}/${p.teams.length} still alive`:'All teams out';return `${qn}/${p.teams.length} qualified`;})()}${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
           <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${isF?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
         </div>
         <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${isF?'var(--gold)':p.total>0?'var(--gr)':'var(--txm)'}">${p.total}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">POINTS</div></div>
@@ -3769,12 +3813,14 @@ function buildSnapshot(){
   const stat=t=>{const q=qual[t.name]||t.qual;if(q==='eliminated'||koOut.has(t.name))return'OUT';if(q==='top2'||q==='best3rd')return'through';return'';};
   const now=new Date().toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
   const fin=!!(state.koR&&state.koR['m104']&&state.koR['m104'].played);
-  const phase=fin?'Tournament finished':groupStageDone()?'Knockouts':'Group stage';
+  const phase=fin?'Tournament finished':currentPhaseLabel();
   const np=(state.draw&&state.draw.participantCount)||lb.length;
   const playedG=Object.values(state.grR||{}).filter(r=>r&&r.played).length;
+  const playedK=Object.values(state.koR||{}).filter(r=>r&&r.played).length;
+  const playedAll=fin?TOURNAMENT_MATCHES:playedG+playedK;
   const L=[];
   L.push(`WC2026 SWEEPSTAKE — SNAPSHOT (${now})`);
-  L.push(`Phase: ${phase}${phase==='Group stage'?` · ${playedG}/72 group games played`:''} · ${np} players`);
+  L.push(`Phase: ${phase} · ${playedAll}/${TOURNAMENT_MATCHES} matches complete · ${np} players`);
   if(state.prize&&state.prize.on){const paid=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;L.push(`Pot: £${(paid*state.prize.buyin).toLocaleString()} of £${(np*state.prize.buyin).toLocaleString()} (${paid}/${np} paid)`);}
   if(state.charity&&state.charity.on)L.push(`Charity raised: £${(state.charity.total||0).toLocaleString()}${state.charity.name?' for '+state.charity.name:''}`);
   L.push('');L.push('STANDINGS  (rank. name — points | teams [status] (team pts))');
