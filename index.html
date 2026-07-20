@@ -70,7 +70,15 @@
   --pill-grbr:rgba(0,128,42,.30);
   --accent:   #00a838;
   --bg-grad:  radial-gradient(1200px 600px at 50% -10%, rgba(0,168,56,.05), transparent 70%), linear-gradient(180deg, #f7f9fc 0%, #eef2f8 100%);
+  --champ-bg: linear-gradient(90deg,rgba(168,120,0,.12),rgba(168,120,0,.03));
+  --champ-border:rgba(168,120,0,.34);
+  --final-bg:radial-gradient(700px 260px at 50% -20%,rgba(168,120,0,.15),transparent 70%),linear-gradient(145deg,#ffffff 0%,#f8f4e8 52%,#f5f8fc 100%);
+  --final-border:rgba(168,120,0,.38);
+  --final-shadow:0 10px 34px rgba(74,55,0,.10),var(--shadow);
+  --final-chip:rgba(168,120,0,.09);
+  --gold-btn-tx:#211900;
 }
+
 html.dark {
   /* ── Dark mode palette ──────────────────────────────── */
   --bg:       #06091a;
@@ -108,7 +116,15 @@ html.dark {
   --pill-grbr:rgba(0,230,118,.28);
   --accent:   #00e676;
   --bg-grad:  radial-gradient(1200px 600px at 50% -10%, rgba(0,230,118,.06), transparent 70%), linear-gradient(180deg, #070c1c 0%, #04071400 100%);
+  --champ-bg:linear-gradient(90deg,rgba(255,215,0,.14),rgba(255,215,0,.025));
+  --champ-border:rgba(255,215,0,.38);
+  --final-bg:radial-gradient(700px 260px at 50% -20%,rgba(255,215,0,.15),transparent 70%),linear-gradient(145deg,#11182c 0%,#0b1225 52%,#090f20 100%);
+  --final-border:rgba(255,215,0,.34);
+  --final-shadow:0 14px 42px rgba(0,0,0,.48),var(--shadow);
+  --final-chip:rgba(255,215,0,.09);
+  --gold-btn-tx:#211900;
 }
+
 /* ── RESET & BASE ────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -138,10 +154,10 @@ input,select,button{font-family:'Barlow',sans-serif;outline:none}
 .hbtn:hover{background:var(--hdr-btnbr)}
 .hbtn.dim{opacity:.38}
 /* ── CHAMP BAR + PROGRESS ────────────────────────────── */
-.champ-bar{margin-bottom:7px;padding:5px 11px;background:linear-gradient(90deg,rgba(255,215,0,.14),transparent);border:1px solid rgba(255,215,0,.38);border-radius:7px;display:flex;align-items:center;gap:7px;font-size:.75rem;color:#ffd700;letter-spacing:.03em}
+.champ-bar{margin-bottom:7px;padding:5px 11px;background:var(--champ-bg);border:1px solid var(--champ-border);border-radius:7px;display:flex;align-items:center;gap:7px;font-size:.75rem;color:var(--gold);letter-spacing:.03em}
 .prog-wrap{margin-bottom:7px}
-.prog-lbl{font-size:.57rem;color:rgba(255,255,255,.32);font-family:'Oswald',sans-serif;letter-spacing:.1em;margin-bottom:3px;display:flex;justify-content:space-between}
-.prog-track{height:3px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.prog-lbl{font-size:.57rem;color:var(--hdr-dim);font-family:'Oswald',sans-serif;letter-spacing:.1em;margin-bottom:3px;display:flex;justify-content:space-between}
+.prog-track{height:3px;background:var(--hdr-btnbr);border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;background:linear-gradient(90deg,#00e676,#00c853);border-radius:3px;transition:width .6s ease}
 /* ── TABS ────────────────────────────────────────────── */
 .tab-nav{display:flex;overflow-x:auto;gap:2px;padding:2px 0 0}
@@ -162,6 +178,33 @@ main{max-width:1180px;margin:0 auto;padding:16px 12px 70px}
 .sub{color:var(--txd);font-size:.82rem;margin-bottom:16px;line-height:1.6}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
 .grid-wide{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px}
+/* ── FINAL RESULTS HERO ─────────────────────────────── */
+.final-hero{position:relative;overflow:hidden;background:var(--final-bg);border:1px solid var(--final-border);border-radius:18px;box-shadow:var(--final-shadow);padding:22px 22px 19px;margin-bottom:16px;text-align:center}
+.final-hero::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 18%,rgba(255,255,255,.11) 48%,transparent 72%);transform:translateX(-120%);animation:finalSheen 7s ease-in-out infinite;pointer-events:none}
+html.dark .final-hero::before{background:linear-gradient(115deg,transparent 18%,rgba(255,255,255,.045) 48%,transparent 72%)}
+.final-kicker{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--final-chip);border:1px solid var(--final-border);font-family:'Oswald',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.13em;color:var(--gold);margin-bottom:12px}
+.final-grid{position:relative;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.35fr);gap:14px;align-items:stretch;text-align:left}
+.final-panel{background:color-mix(in srgb,var(--card) 86%,transparent);border:1px solid var(--b);border-radius:13px;padding:15px 16px;min-width:0}
+.final-world{display:flex;align-items:center;gap:12px}
+.final-world-flag{font-size:2.45rem;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.12));flex-shrink:0}
+.final-label{font-family:'Oswald',sans-serif;font-size:.58rem;letter-spacing:.12em;color:var(--txm);margin-bottom:3px}
+.final-name{font-family:'Oswald',sans-serif;font-size:1.18rem;font-weight:700;color:var(--tx);line-height:1.12}
+.final-winner-name{font-family:'Oswald',sans-serif;font-size:clamp(1.25rem,3vw,1.75rem);font-weight:700;color:var(--gold);line-height:1.15;overflow-wrap:anywhere}
+.final-meta{font-size:.73rem;color:var(--txd);line-height:1.55;margin-top:5px}
+.final-podium{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.final-podium span{padding:4px 9px;border-radius:16px;background:var(--card);border:1px solid var(--b);font-size:.67rem;color:var(--txd)}
+.final-actions{position:relative;display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:15px}
+.btn-cert-gold,.btn-cert-main,.btn-cert-ghost{padding:9px 16px;border-radius:8px;font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.055em;cursor:pointer;transition:transform .15s,filter .15s,background .15s;border:1px solid transparent}
+.btn-cert-gold{background:linear-gradient(135deg,#ffd94c,#d9a500);color:var(--gold-btn-tx);box-shadow:0 4px 15px rgba(168,120,0,.22)}
+.btn-cert-main{background:linear-gradient(135deg,var(--accent),var(--grd));color:var(--btn-tx);box-shadow:0 3px 12px rgba(0,128,42,.2)}
+.btn-cert-ghost{background:var(--card);border-color:var(--b);color:var(--txd)}
+.btn-cert-gold:hover,.btn-cert-main:hover,.btn-cert-ghost:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.cert-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--b);align-items:center}
+.cert-actions-note{font-size:.65rem;color:var(--txm);line-height:1.35}
+.final-unlock{font-size:.67rem;color:var(--txm);margin-top:10px;line-height:1.45}
+@media(max-width:640px){.final-hero{padding:17px 13px 15px;border-radius:14px}.final-grid{grid-template-columns:1fr;gap:8px}.final-panel{text-align:center;padding:13px}.final-world{justify-content:center}.final-actions>*{flex:1;min-width:145px}.cert-actions>*{flex:1;min-width:135px}.cert-actions-note{flex-basis:100%;min-width:100%;text-align:left}}
+@keyframes finalSheen{0%,68%{transform:translateX(-120%)}82%,100%{transform:translateX(120%)}}
+@media (prefers-reduced-motion:reduce){.final-hero::before{animation:none}}
 /* ── BUTTONS ─────────────────────────────────────────── */
 .btn{padding:8px 18px;border:none;border-radius:7px;cursor:pointer;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:.07em;transition:all .15s}
 .btn:hover:not(:disabled){filter:brightness(1.08)}
@@ -250,7 +293,7 @@ html.dark .sc.gold{border-color:rgba(255,215,0,.3);background:linear-gradient(13
 .bk-inner{display:flex;align-items:stretch}
 .bk-col{display:flex;flex-direction:column;flex-shrink:0}
 .bk-col-body{flex:1;display:flex;flex-direction:column}
-.bk-rnd-hdr{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.1em;color:rgba(255,255,255,.28);text-align:center;padding:5px 4px;white-space:nowrap}
+.bk-rnd-hdr{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.1em;color:var(--txm);text-align:center;padding:5px 4px;white-space:nowrap}
 .bk-match{width:170px;margin:2px 10px;border:1px solid var(--b);border-radius:8px;overflow:hidden;background:var(--card);flex-shrink:0;position:relative;box-shadow:var(--shadow)}
 .bk-match.final{border-color:rgba(168,120,0,.5);box-shadow:0 0 20px rgba(168,120,0,.15)}
 html.dark .bk-match.final{border-color:rgba(255,215,0,.45);box-shadow:0 0 20px rgba(255,215,0,.1)}
@@ -474,12 +517,12 @@ html.dark .assign-person-card.active-target{background:rgba(0,230,118,.04)}
   <div id="res-banner" style="display:none;background:rgba(0,122,61,.07);border:1px solid rgba(0,122,61,.25);border-radius:8px;padding:9px 13px;margin-bottom:13px"></div>
   <div id="content"></div>
 </main>
-<!-- build 2026-07-19-personal-certificates-v5 -->
+<!-- build 2026-07-19-final-polish-certificates-v9 -->
 <footer style="max-width:800px;margin:22px auto 34px;padding:0 8px;text-align:center;font-size:.63rem;color:var(--txm);line-height:1.55">An unofficial staff sweepstake, just for fun. Not affiliated with or endorsed by The Carlyle Group.<br><span style="opacity:.85">Built by Robert Taylor</span></footer>
 
 <script>
 // Build tag — kept in source for version control only (not rendered in the UI). Logged to the browser console so the live build can be confirmed after a deploy.
-const APP_BUILD='2026-07-19-personal-certificates-v5';
+const APP_BUILD='2026-07-19-final-polish-certificates-v9';
 try{console.log('Carlyle London Sweepstake — build '+APP_BUILD);}catch(e){}
 // ── DATA ──────────────────────────────────────────────────────────────────────
 const ENG_SVG='<svg class="fl" viewBox="0 0 60 42"><rect width="60" height="42" fill="#fff"/><rect x="25" width="10" height="42" fill="#ce1124"/><rect y="16" width="60" height="10" fill="#ce1124"/></svg>';
@@ -834,40 +877,49 @@ function naturalNameList(names){
   if(names.length===2)return names[0]+' and '+names[1];
   return names.slice(0,-1).join(', ')+', and '+names[names.length-1];
 }
+function finalWinnerPlayers(lb){lb=lb||calcLeaderboard();return tournamentComplete()?lb.filter(p=>p.rank===1):(lb.length?[lb[0]]:[]);}
+function finalRankPlayers(lb,rank){return (lb||calcLeaderboard()).filter(p=>p.rank===rank);}
+function selectedPlayer(lb){const me=(getMyName()||'').toLowerCase();return me?(lb||calcLeaderboard()).find(p=>p.name.toLowerCase()===me)||null:null;}
 
 // ── CERTIFICATES ──────────────────────────────────────────────────────────────
-// The official champion certificate remains admin-only. Every participant can also
-// generate a personal final-result certificate after selecting their name on this device.
-function certificateDateText(){return tournamentComplete()?'19 July 2026':new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}
+// Everyone can download a personal result certificate once both closing-weekend
+// matches are recorded. The selected sweepstake winner can also download the
+// official winner certificate; admins retain the same access for administration.
+function certificateDateText(){return'19 July 2026';}
 function certificateSafeName(name){return String(name||'participant').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'participant';}
-function certificateFlag(flag,name){if(typeof flag==='string'&&flag.trim().startsWith('<'))return name==='England'?'ENG':name==='Scotland'?'SCO':'';return String(flag||'');}
+function certificateFlag(flag,name){if(typeof flag==='string'&&flag.trim().startsWith('<'))return'';return String(flag||'');}
 function certificateOrdinal(n){const v=n%100;if(v>=11&&v<=13)return n+'th';return n+({1:'st',2:'nd',3:'rd'}[n%10]||'th');}
+// Published final tiebreaks: points, correct champion prediction, knockout wins, then goals scored.
+// Alphabetical order is only a stable display order and never creates a separate finishing position.
+function finalStandingKey(p){return [Number(p&&p.total)||0,p&&p.pred&&p.pred.correct?1:0,Number(p&&p.koWins)||0,Number(p&&p.goalsFor)||0].join('|');}
+function sameFinalStanding(a,b){return finalStandingKey(a)===finalStandingKey(b);}
 function certificateFitText(ctx,text,maxWidth,start,min,weight='bold',family='Oswald,Arial'){
   let size=start;ctx.font=`${weight} ${size}px ${family}`;
-  while(size>min&&ctx.measureText(text).width>maxWidth){size-=2;ctx.font=`${weight} ${size}px ${family}`;}
+  while(size>min&&ctx.measureText(String(text||'')).width>maxWidth){size-=2;ctx.font=`${weight} ${size}px ${family}`;}
   return size;
 }
-function certificateWrapLines(ctx,text,maxWidth,maxLines=3){
-  const words=String(text||'').split(/\s+/).filter(Boolean),lines=[];let line='';
-  words.forEach(word=>{const test=line?line+' '+word:word;if(!line||ctx.measureText(test).width<=maxWidth)line=test;else{lines.push(line);line=word;}});
-  if(line)lines.push(line);
-  if(lines.length>maxLines){const kept=lines.slice(0,maxLines);let last=kept[maxLines-1];while(last.length&&ctx.measureText(last+'…').width>maxWidth)last=last.slice(0,-1);kept[maxLines-1]=last+'…';return kept;}
-  return lines;
+function certificateWrapAllLines(ctx,text,maxWidth){const words=String(text||'').split(/\s+/).filter(Boolean),lines=[];let line='';words.forEach(word=>{const test=line?line+' '+word:word;if(!line||ctx.measureText(test).width<=maxWidth)line=test;else{lines.push(line);line=word;}});if(line)lines.push(line);return lines.length?lines:[''];}
+async function certificateFontsReady(){try{if(document.fonts&&document.fonts.ready)await document.fonts.ready;}catch(e){}}
+function certificateDownloadCanvas(cv,filename){const a=document.createElement('a');a.download=filename;a.href=cv.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();}
+async function certificateShareCanvas(cv,filename,title,text){
+  return new Promise(resolve=>cv.toBlob(async blob=>{if(!blob){certificateDownloadCanvas(cv,filename);resolve(false);return;}try{const file=new File([blob],filename,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title,text});resolve(true);return;}}catch(e){if(e&&e.name==='AbortError'){resolve(true);return;}}const url=URL.createObjectURL(blob),a=document.createElement('a');a.download=filename;a.href=url;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);showToast('Saved image (sharing is not available here)','gold');resolve(false);},'image/png'));
 }
-function certificateDrawWrapped(ctx,text,x,y,maxWidth,lineHeight,maxLines=3){const lines=certificateWrapLines(ctx,text,maxWidth,maxLines);lines.forEach((line,i)=>ctx.fillText(line,x,y+i*lineHeight));return y+lines.length*lineHeight;}
-function certificateDownloadCanvas(cv,filename){const a=document.createElement('a');a.download=filename;a.href=cv.toDataURL('image/png');a.click();}
 function personalCertificateProfile(player,lb){
-  lb=lb||calcLeaderboard();const idx=lb.findIndex(p=>p.name===player.name);const peers=lb.filter(p=>p.total===player.total);const spoons=bottomPlayers(lb);const isSpoon=spoons.some(p=>p.name===player.name);
+  lb=lb||calcLeaderboard();const idx=lb.findIndex(p=>p.name===player.name);const pointsPeers=lb.filter(p=>p.total===player.total);const finalPeers=lb.filter(p=>sameFinalStanding(p,player));const spoons=bottomPlayers(lb);const isSpoon=spoons.some(p=>p.name===player.name);const overallRank=player.rank||idx+1;const finalJoint=finalPeers.length>1;
   let icon='📜',title='FINAL RESULT',subtitle='WORLD CUP 2026 SWEEPSTAKE',accent='#00e676';
-  if(idx===0){icon='🏆';title='SWEEPSTAKE CHAMPION';subtitle='FIRST PLACE';accent='#ffd700';}
-  else if(idx===1){icon='🥈';title='RUNNER-UP';subtitle='SECOND PLACE';accent='#cdd6e0';}
-  else if(idx===2){icon='🥉';title='THIRD PLACE';subtitle='PODIUM FINISH';accent='#e0a875';}
+  if(overallRank===1){icon='🏆';title=finalJoint?'JOINT SWEEPSTAKE CHAMPION':'SWEEPSTAKE CHAMPION';subtitle=finalJoint?'SHARED FIRST PLACE':'FIRST PLACE';accent='#ffd700';}
+  else if(overallRank===2){icon='🥈';title=finalJoint?'JOINT RUNNER-UP':'RUNNER-UP';subtitle=finalJoint?'SHARED SECOND PLACE':'SECOND PLACE';accent='#cdd6e0';}
+  else if(overallRank===3){icon='🥉';title=finalJoint?'JOINT THIRD PLACE':'THIRD PLACE';subtitle=finalJoint?'SHARED PODIUM FINISH':'PODIUM FINISH';accent='#e0a875';}
   else if(isSpoon){icon='🥄';title=spoons.length>1?'JOINT WOODEN SPOON':'WOODEN SPOON';subtitle='LAST BUT NOT LEAST';accent='#d4a843';}
-  let placement;
-  if(isSpoon&&spoons.length>1)placement=`${spoons.length} PLAYERS SHARE LAST PLACE · ${player.total} POINTS`;
-  else if(peers.length>1){const tied=`JOINT ${certificateOrdinal(player.rank).toUpperCase()} ON POINTS`;placement=idx===0?`${tied} · WON ON TIEBREAK`: `${tied} · ${certificateOrdinal(idx+1).toUpperCase()} AFTER TIEBREAKS`;}
-  else placement=`${certificateOrdinal(idx+1).toUpperCase()} OF ${lb.length}`;
-  return{idx,icon,title,subtitle,accent,placement,isSpoon,spoonCount:spoons.length};
+  let placement,tieNote='';
+  if(isSpoon&&spoons.length>1){placement=`JOINT LAST · ${player.total} POINTS`;tieNote=`${spoons.length} PLAYERS SHARE THE WOODEN SPOON`;}
+  else if(isSpoon){placement=`LAST PLACE · ${player.total} POINTS`;}
+  else{
+    placement=`${finalJoint?'JOINT ':''}${certificateOrdinal(overallRank).toUpperCase()} OVERALL · ${player.total} POINTS`;
+    if(finalJoint){const others=finalPeers.length-1;tieNote=`LEVEL WITH ${others} OTHER PLAYER${others===1?'':'S'} AFTER ALL PUBLISHED TIEBREAKERS`;}
+    else if(pointsPeers.length>1){const others=pointsPeers.length-1;tieNote=`TIED ON POINTS WITH ${others} OTHER PLAYER${others===1?'':'S'} · SEPARATED BY TIEBREAKERS`;}
+  }
+  return{idx,overallRank,finalJoint,icon,title,subtitle,accent,placement,tieNote,isSpoon,spoonCount:spoons.length};
 }
 function personalCertificateAwards(player){
   const names=['Most goals scored','Fewest goals scored','Best defence','Leakiest defence'];const out=[];
@@ -875,91 +927,77 @@ function personalCertificateAwards(player){
   if(player.pred&&player.pred.correct)out.push(`Correct champion prediction · ${player.pred.team} (+${player.pred.bonus})`);
   return[...new Set(out)];
 }
+function drawCertificateTeamGrid(ctx,teams,startY,accent){
+  const cols=teams.length>1?2:1,colW=cols===1?970:470,gap=30,rowH=43,rows=Math.max(1,Math.ceil(teams.length/cols));
+  if(!teams.length){ctx.fillStyle='#c7d1df';ctx.font='18px Barlow,Arial';ctx.fillText('No allocated teams recorded.',115,startY+25);return startY+rowH;}
+  teams.forEach((t,i)=>{const col=i%cols,row=Math.floor(i/cols),x=115+col*(colW+gap),y=startY+row*rowH;ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(x,y,colW,rowH-7);ctx.strokeStyle='rgba(255,255,255,.09)';ctx.lineWidth=1;ctx.strokeRect(x,y,colW,rowH-7);ctx.textAlign='left';ctx.fillStyle='#fff';const label=`${certificateFlag(t.flag,t.name)} ${t.name}`.trim();certificateFitText(ctx,label,colW-105,19,12,'600','Barlow,Arial');ctx.fillText(label,x+12,y+25);ctx.textAlign='right';ctx.fillStyle=accent;ctx.font='bold 18px Oswald,Arial';ctx.fillText(`${t.pts} pts`,x+colW-12,y+25);});
+  ctx.textAlign='left';return startY+rows*rowH;
+}
 function buildPersonalCertificateCanvas(player){
-  if(!tournamentComplete())return null;const lb=calcLeaderboard();const p=lb.find(x=>x.name===player.name);if(!p)return null;const pr=personalCertificateProfile(p,lb),awards=personalCertificateAwards(p);
-  const cv=document.createElement('canvas');cv.width=1200;cv.height=850;const ctx=cv.getContext('2d');
-  const bg=ctx.createLinearGradient(0,0,1200,850);bg.addColorStop(0,'#06091a');bg.addColorStop(1,'#101a32');ctx.fillStyle=bg;ctx.fillRect(0,0,1200,850);
-  ctx.fillStyle=pr.accent;ctx.fillRect(0,0,1200,10);ctx.strokeStyle=pr.accent;ctx.lineWidth=6;ctx.strokeRect(18,18,1164,814);ctx.globalAlpha=.24;ctx.lineWidth=2;ctx.strokeRect(30,30,1140,790);ctx.globalAlpha=1;
+  if(!tournamentComplete())return null;const lb=calcLeaderboard();const p=lb.find(x=>x.name===player.name);if(!p)return null;const pr=personalCertificateProfile(p,lb),awards=personalCertificateAwards(p),teams=p.breakdown||[];
+  const teamRows=Math.max(1,Math.ceil(teams.length/(teams.length>1?2:1))),awardRows=Math.max(1,awards.length),charityOn=!!(state.charity&&state.charity.on&&(state.charity.total||0)>0);
+  const height=Math.max(920,700+teamRows*43+awardRows*29+(charityOn?48:0)+92);
+  const cv=document.createElement('canvas');cv.width=1200;cv.height=height;const ctx=cv.getContext('2d');
+  const bg=ctx.createLinearGradient(0,0,1200,height);bg.addColorStop(0,'#06091a');bg.addColorStop(1,'#101a32');ctx.fillStyle=bg;ctx.fillRect(0,0,1200,height);
+  ctx.fillStyle=pr.accent;ctx.fillRect(0,0,1200,10);ctx.strokeStyle=pr.accent;ctx.lineWidth=6;ctx.strokeRect(18,18,1164,height-36);ctx.globalAlpha=.24;ctx.lineWidth=2;ctx.strokeRect(30,30,1140,height-60);ctx.globalAlpha=1;
   ctx.textAlign='center';ctx.font='72px serif';ctx.fillStyle='#fff';ctx.fillText(pr.icon,600,112);
-  ctx.fillStyle=pr.accent;ctx.font='bold 25px Oswald,Arial';ctx.fillText('FIFA WORLD CUP 2026',600,164);
+  ctx.fillStyle=pr.accent;ctx.font='bold 25px Oswald,Arial';ctx.fillText('WORLD CUP 2026',600,164);
   ctx.fillStyle='#fff';certificateFitText(ctx,pr.title,980,42,28);ctx.fillText(pr.title,600,214);
   ctx.fillStyle='#8898aa';ctx.font='20px Oswald,Arial';ctx.fillText(pr.subtitle,600,244);
-  ctx.fillStyle='rgba(255,255,255,.045)';ctx.fillRect(105,275,990,115);
+  ctx.fillStyle='rgba(255,255,255,.045)';ctx.fillRect(105,275,990,128);
   ctx.fillStyle='#fff';certificateFitText(ctx,p.name.toUpperCase(),900,62,34);ctx.fillText(p.name.toUpperCase(),600,338);
-  ctx.fillStyle=pr.accent;ctx.font='bold 22px Oswald,Arial';ctx.fillText(pr.placement,600,372);
-  const boxY=420,boxW=296,boxH=94,gap=16,startX=140;
-  const pred=state.predict&&state.predict.on?(p.pred&&p.pred.team?(p.pred.team+(p.pred.correct?' ✓':'')):'No prediction'):'Not used';
-  [[String(p.total),'FINAL POINTS'],[String((p.teams||[]).length),'TEAM'+((p.teams||[]).length===1?'':'S')],[pred,'CHAMPION PICK']].forEach((v,i)=>{const x=startX+i*(boxW+gap);ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(x,boxY,boxW,boxH);ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;ctx.strokeRect(x,boxY,boxW,boxH);ctx.fillStyle=i===0?pr.accent:'#fff';certificateFitText(ctx,v[0],boxW-26,i===2?25:34,18);ctx.fillText(v[0],x+boxW/2,boxY+43);ctx.fillStyle='#6f819c';ctx.font='14px Oswald,Arial';ctx.fillText(v[1],x+boxW/2,boxY+72);});
-  ctx.textAlign='left';ctx.fillStyle=pr.accent;ctx.font='bold 17px Oswald,Arial';ctx.fillText('YOUR TEAM'+((p.breakdown||[]).length===1?'':'S'),115,555);
-  ctx.fillStyle='#fff';ctx.font='22px Barlow,Arial';const teamText=(p.breakdown||[]).map(t=>`${certificateFlag(t.flag,t.name)} ${t.name} — ${t.pts} pts`.trim()).join('   ·   ');let y=certificateDrawWrapped(ctx,teamText,115,588,970,29,3);
-  ctx.fillStyle=pr.accent;ctx.font='bold 17px Oswald,Arial';ctx.fillText('BONUS AWARDS & HIGHLIGHTS',115,y+17);y+=50;
-  ctx.fillStyle='#c7d1df';ctx.font='20px Barlow,Arial';certificateDrawWrapped(ctx,awards.length?awards.join('   ·   '):'Final position earned without an individual bonus award.',115,y,970,27,3);
-  if(state.charity&&state.charity.on&&(state.charity.total||0)>0){ctx.textAlign='center';ctx.fillStyle='#00e676';ctx.font='20px Oswald,Arial';ctx.fillText(`❤ £${Number(state.charity.total).toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`,600,765);}
-  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.22)';ctx.font='15px Barlow,Arial';ctx.fillText(`${CONFIG.title||'Carlyle London Office Sweepstake'} · ${certificateDateText()}`,600,810);
+  ctx.fillStyle=pr.accent;certificateFitText(ctx,pr.placement,950,22,16);ctx.fillText(pr.placement,600,372);
+  if(pr.tieNote){ctx.fillStyle='#8898aa';certificateFitText(ctx,pr.tieNote,950,15,11,'600');ctx.fillText(pr.tieNote,600,399);}
+  const boxY=430,boxW=296,boxH=94,gap=16,startX=140;const pred=state.predict&&state.predict.on?(p.pred&&p.pred.team?(p.pred.team+(p.pred.correct?' ✓':'')):'No prediction'):'Not used';
+  [[String(p.total),'FINAL POINTS'],[String(teams.length),'TEAM'+(teams.length===1?'':'S')],[pred,'CHAMPION PICK']].forEach((v,i)=>{const x=startX+i*(boxW+gap);ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(x,boxY,boxW,boxH);ctx.strokeStyle='rgba(255,255,255,.1)';ctx.strokeRect(x,boxY,boxW,boxH);ctx.fillStyle=i===0?pr.accent:'#fff';certificateFitText(ctx,v[0],boxW-26,i===2?25:34,16);ctx.fillText(v[0],x+boxW/2,boxY+43);ctx.fillStyle='#6f819c';ctx.font='14px Oswald,Arial';ctx.fillText(v[1],x+boxW/2,boxY+72);});
+  let y=570;ctx.textAlign='left';ctx.fillStyle=pr.accent;ctx.font='bold 17px Oswald,Arial';ctx.fillText('TEAM CONTRIBUTIONS',115,y);y=drawCertificateTeamGrid(ctx,teams,y+16,pr.accent)+16;
+  ctx.fillStyle=pr.accent;ctx.font='bold 17px Oswald,Arial';ctx.fillText('BONUS AWARDS & HIGHLIGHTS',115,y);y+=28;ctx.fillStyle='#c7d1df';ctx.font='18px Barlow,Arial';const awardLines=awards.length?awards:['No individual bonus award — final position reflects match points and the published tiebreakers.'];awardLines.forEach(line=>{certificateFitText(ctx,line,970,18,12,'normal','Barlow,Arial');ctx.fillText(line,115,y);y+=29;});
+  ctx.fillStyle='rgba(255,255,255,.045)';ctx.fillRect(105,y+4,990,45);ctx.fillStyle='#8d9bb0';ctx.font='14px Oswald,Arial';ctx.fillText('FINAL RANKING: POINTS → CHAMPION PREDICTION → KNOCKOUT WINS → GOALS SCORED',125,y+32);y+=66;
+  if(charityOn){ctx.textAlign='center';ctx.fillStyle='#00e676';ctx.font='20px Oswald,Arial';ctx.fillText(`❤ £${Number(state.charity.total).toLocaleString()} raised${state.charity.name?' for '+state.charity.name:''}`,600,y+13);}
+  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.25)';ctx.font='14px Barlow,Arial';ctx.fillText(`${CONFIG.title||'Carlyle London Office Sweepstake'} · Final standings · ${certificateDateText()}`,600,height-70);ctx.fillStyle='rgba(255,255,255,.18)';ctx.font='12px Barlow,Arial';ctx.fillText('Unofficial staff sweepstake certificate generated from the recorded final results.',600,height-45);
   return cv;
 }
-function downloadPersonalCertificate(name){
-  if(!tournamentComplete()){showToast('Certificates unlock after the third-place play-off and Final are recorded','error');return;}
-  const who=name||getMyName();if(!who){showToast('Choose your name first','error');return;}const player=calcLeaderboard().find(p=>p.name.toLowerCase()===who.toLowerCase());if(!player){showToast('Player not found','error');return;}
-  const cv=buildPersonalCertificateCanvas(player);if(!cv)return;certificateDownloadCanvas(cv,`wc2026-${certificateSafeName(player.name)}-certificate.png`);
+async function downloadPersonalCertificate(name){
+  if(!tournamentComplete()){showToast('Certificates unlock after the third-place play-off and Final are recorded','error');return;}const who=name||getMyName();if(!who){showToast('Choose your name first','error');return;}const player=calcLeaderboard().find(p=>p.name.toLowerCase()===who.toLowerCase());if(!player){showToast('Player not found','error');return;}await certificateFontsReady();const cv=buildPersonalCertificateCanvas(player);if(!cv)return;certificateDownloadCanvas(cv,`wc2026-${certificateSafeName(player.name)}-certificate.png`);
 }
 async function sharePersonalCertificate(name){
-  if(!tournamentComplete()){showToast('Certificates unlock after the third-place play-off and Final are recorded','error');return;}
-  const who=name||getMyName();if(!who){showToast('Choose your name first','error');return;}const player=calcLeaderboard().find(p=>p.name.toLowerCase()===who.toLowerCase());if(!player){showToast('Player not found','error');return;}
-  const cv=buildPersonalCertificateCanvas(player);if(!cv)return;cv.toBlob(async blob=>{if(!blob){downloadPersonalCertificate(player.name);return;}const filename=`wc2026-${certificateSafeName(player.name)}-certificate.png`;try{const file=new File([blob],filename,{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:CONFIG.title||'Sweepstake',text:`${player.name}'s final World Cup sweepstake result`});return;}}catch(e){if(e&&e.name==='AbortError')return;}const a=document.createElement('a');a.download=filename;a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);showToast('Saved certificate (sharing is not available here)','gold');});
+  if(!tournamentComplete()){showToast('Certificates unlock after the third-place play-off and Final are recorded','error');return;}const who=name||getMyName();if(!who){showToast('Choose your name first','error');return;}const player=calcLeaderboard().find(p=>p.name.toLowerCase()===who.toLowerCase());if(!player){showToast('Player not found','error');return;}await certificateFontsReady();const cv=buildPersonalCertificateCanvas(player);if(!cv)return;const filename=`wc2026-${certificateSafeName(player.name)}-certificate.png`;await certificateShareCanvas(cv,filename,CONFIG.title||'Sweepstake',`${player.name}'s final World Cup sweepstake result`);
 }
-function downloadCert(winner){
-  if(!isAdmin()){showToast('Admin sign-in required','error');return;}if(!tournamentComplete()){showToast('The official certificate unlocks when both closing-weekend matches are recorded','error');return;}
-  winner=winner||calcLeaderboard()[0];if(!winner)return;
-  const cv=document.createElement('canvas');cv.width=1200;cv.height=750;const ctx=cv.getContext('2d');
-  const gr=ctx.createLinearGradient(0,0,1200,750);gr.addColorStop(0,'#06091a');gr.addColorStop(1,'#0d1326');ctx.fillStyle=gr;ctx.fillRect(0,0,1200,750);
-  ctx.strokeStyle='#ffd700';ctx.lineWidth=6;ctx.strokeRect(16,16,1168,718);ctx.strokeStyle='rgba(255,215,0,.25)';ctx.lineWidth=2;ctx.strokeRect(26,26,1148,698);
-  ctx.font='80px serif';ctx.textAlign='center';ctx.fillText('🏆',600,128);
-  ctx.fillStyle='#ffd700';ctx.font='bold 36px Oswald,Arial';ctx.fillText('FIFA WORLD CUP 2026',600,196);
-  ctx.fillStyle='#00e676';ctx.font='24px Oswald,Arial';ctx.fillText('OFFICIAL SWEEPSTAKE CHAMPION',600,238);
-  ctx.fillStyle='rgba(255,215,0,.12)';ctx.beginPath();ctx.ellipse(600,336,340,56,0,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#fff';certificateFitText(ctx,winner.name.toUpperCase(),960,72,40);ctx.fillText(winner.name.toUpperCase(),600,362);
-  ctx.fillStyle='#00e676';ctx.font='32px Oswald,Arial';ctx.fillText(winner.total+' POINTS',600,418);
-  ctx.fillStyle='#8898aa';ctx.font='26px Arial';const teams=winner.breakdown.map(t=>`${certificateFlag(t.flag,t.name)} ${t.name}`.trim()).join('   ·   ');certificateFitText(ctx,teams,980,26,17,'normal','Arial');ctx.fillText(teams,600,478);
-  ctx.fillStyle='rgba(255,255,255,.16)';ctx.font='16px Barlow,Arial';ctx.fillText((CONFIG.title||'Carlyle London Office Sweepstake')+' · '+certificateDateText(),600,640);
-  certificateDownloadCanvas(cv,`wc2026-official-champion-${certificateSafeName(winner.name)}.png`);
+function resolveOfficialWinner(ref){const lb=calcLeaderboard();let p=null;if(ref&&typeof ref==='object'&&ref.name)p=lb.find(x=>x.name===ref.name);else if(typeof ref==='string'&&ref)p=lb.find(x=>x.name.toLowerCase()===ref.toLowerCase());if(!p){const mine=selectedPlayer(lb);p=mine&&mine.rank===1?mine:finalWinnerPlayers(lb)[0];}return p&&p.rank===1?p:null;}
+function canAccessOfficialWinnerCertificate(player){if(!player||player.rank!==1)return false;if(isAdmin())return true;const me=(getMyName()||'').toLowerCase();return !!me&&me===player.name.toLowerCase();}
+function buildOfficialWinnerCertificateCanvas(player){
+  if(!tournamentComplete())return null;const lb=calcLeaderboard(),winner=lb.find(p=>p.name===player.name);if(!winner||winner.rank!==1)return null;const winners=finalWinnerPlayers(lb),pointsPeers=lb.filter(p=>p.total===winner.total),joint=winners.length>1,champ=state.koR&&state.koR.m104&&state.koR.m104.winner;const teams=(winner.breakdown||[]).map(t=>`${certificateFlag(t.flag,t.name)} ${t.name} (${t.pts} pts)`.trim()).join('   ·   ')||'No allocated teams recorded.';
+  const measure=document.createElement('canvas').getContext('2d');measure.font='20px Barlow,Arial';const teamLines=certificateWrapAllLines(measure,teams,980),extra=Math.max(0,teamLines.length-1)*27,height=800+extra;
+  const cv=document.createElement('canvas');cv.width=1200;cv.height=height;const ctx=cv.getContext('2d'),gr=ctx.createLinearGradient(0,0,1200,height);gr.addColorStop(0,'#050817');gr.addColorStop(1,'#121a30');ctx.fillStyle=gr;ctx.fillRect(0,0,1200,height);
+  ctx.fillStyle='#ffd700';ctx.fillRect(0,0,1200,11);ctx.strokeStyle='#ffd700';ctx.lineWidth=6;ctx.strokeRect(16,16,1168,height-32);ctx.strokeStyle='rgba(255,215,0,.25)';ctx.lineWidth=2;ctx.strokeRect(28,28,1144,height-56);
+  ctx.textAlign='center';ctx.font='82px serif';ctx.fillStyle='#fff';ctx.fillText('🏆',600,126);ctx.fillStyle='#ffd700';ctx.font='bold 35px Oswald,Arial';ctx.fillText('WORLD CUP 2026',600,188);ctx.fillStyle='#00e676';ctx.font='24px Oswald,Arial';ctx.fillText(joint?'OFFICIAL JOINT SWEEPSTAKE CHAMPION':'OFFICIAL SWEEPSTAKE CHAMPION',600,229);
+  ctx.fillStyle='rgba(255,215,0,.11)';ctx.beginPath();ctx.ellipse(600,330,390,68,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';certificateFitText(ctx,winner.name.toUpperCase(),960,72,38);ctx.fillText(winner.name.toUpperCase(),600,351);ctx.fillStyle='#ffd700';ctx.font='bold 33px Oswald,Arial';ctx.fillText(winner.total+' POINTS',600,405);
+  const resultNote=joint?`SHARED FIRST PLACE WITH ${winners.length-1} OTHER PLAYER${winners.length===2?'':'S'}`:(pointsPeers.length>1?'WINNER AFTER THE PUBLISHED TIEBREAKERS':'FIRST PLACE');ctx.fillStyle='#a7b3c6';certificateFitText(ctx,resultNote,940,18,13,'600');ctx.fillText(resultNote,600,438);
+  ctx.fillStyle='#fff';ctx.font='20px Barlow,Arial';teamLines.forEach((line,i)=>ctx.fillText(line,600,505+i*27));
+  const afterTeams=548+extra;if(winner.pred&&winner.pred.correct){ctx.fillStyle='#00e676';ctx.font='19px Oswald,Arial';ctx.fillText(`Correct champion prediction: ${winner.pred.team} (+${winner.pred.bonus})`,600,afterTeams);}
+  if(champ){ctx.fillStyle='#8898aa';ctx.font='18px Barlow,Arial';ctx.fillText(`World champions on the pitch: ${champ}`,600,afterTeams+42);}
+  ctx.fillStyle='rgba(255,255,255,.055)';ctx.fillRect(110,afterTeams+74,980,54);ctx.fillStyle='#92a0b4';ctx.font='14px Oswald,Arial';ctx.fillText('FINAL RANKING: POINTS → CHAMPION PREDICTION → KNOCKOUT WINS → GOALS SCORED',600,afterTeams+106);
+  ctx.fillStyle='rgba(255,255,255,.24)';ctx.font='15px Barlow,Arial';ctx.fillText((CONFIG.title||'Carlyle London Office Sweepstake')+' · '+certificateDateText(),600,height-70);ctx.fillStyle='rgba(255,255,255,.16)';ctx.font='12px Barlow,Arial';ctx.fillText('Unofficial staff sweepstake certificate generated from the recorded final results.',600,height-44);return cv;
+}
+async function downloadCert(ref){
+  if(!tournamentComplete()){showToast('The winner certificate unlocks when both closing-weekend matches are recorded','error');return;}const winner=resolveOfficialWinner(ref);if(!winner){showToast('Sweepstake winner not found','error');return;}if(!canAccessOfficialWinnerCertificate(winner)){showToast('Select the winning name on this device, or sign in as admin','error');return;}await certificateFontsReady();const cv=buildOfficialWinnerCertificateCanvas(winner);if(!cv)return;certificateDownloadCanvas(cv,`wc2026-official-champion-${certificateSafeName(winner.name)}.png`);
+}
+async function shareOfficialWinnerCertificate(ref){
+  if(!tournamentComplete()){showToast('The winner certificate unlocks when both closing-weekend matches are recorded','error');return;}const winner=resolveOfficialWinner(ref);if(!winner){showToast('Sweepstake winner not found','error');return;}if(!canAccessOfficialWinnerCertificate(winner)){showToast('Select the winning name on this device, or sign in as admin','error');return;}await certificateFontsReady();const cv=buildOfficialWinnerCertificateCanvas(winner);if(!cv)return;const filename=`wc2026-official-champion-${certificateSafeName(winner.name)}.png`;await certificateShareCanvas(cv,filename,CONFIG.title||'Sweepstake',`${winner.name} — World Cup 2026 sweepstake champion`);
 }
 // Full results keepsake: 🥇🥈🥉 podium + 🥄 Golden Spoon — one shareable image.
 function buildResultsCanvas(){
-  const lb=calcLeaderboard();if(!lb.length)return null;
-  const champTeam=state.koR['m104']?.winner;
-  const cv=document.createElement('canvas');cv.width=1200;cv.height=900;const ctx=cv.getContext('2d');
-  const g=ctx.createLinearGradient(0,0,1200,900);g.addColorStop(0,'#06091a');g.addColorStop(1,'#0d1326');ctx.fillStyle=g;ctx.fillRect(0,0,1200,900);
-  ctx.strokeStyle='#ffd700';ctx.lineWidth=6;ctx.strokeRect(16,16,1168,868);ctx.strokeStyle='rgba(255,215,0,.25)';ctx.lineWidth=2;ctx.strokeRect(26,26,1148,848);
-  ctx.textAlign='center';
-  ctx.font='62px serif';ctx.fillText('🏆',600,108);
-  ctx.fillStyle='#ffd700';ctx.font='bold 40px Oswald,Arial';ctx.fillText((CONFIG.title||'WORLD CUP SWEEPSTAKE').toUpperCase(),600,168);
-  ctx.fillStyle='#00e676';ctx.font='24px Oswald,Arial';ctx.fillText('FINAL STANDINGS · WORLD CUP 2026',600,204);
-  if(champTeam){ctx.fillStyle='#fff';ctx.font='26px Oswald,Arial';ctx.fillText('Champions on the pitch: '+champTeam,600,246);}
-  const medals=['🥇','🥈','🥉'],labels=['CHAMPION','RUNNER-UP','THIRD PLACE'],cols=['#ffd700','#cdd6e0','#e0a875'];
-  let y=330;
-  for(let i=0;i<3&&i<lb.length;i++){const p=lb[i];
-    ctx.textAlign='left';ctx.font='52px serif';ctx.fillStyle='#fff';ctx.fillText(medals[i],110,y+8);
-    ctx.fillStyle=cols[i];ctx.font='bold 46px Oswald,Arial';ctx.fillText(p.name.toUpperCase(),200,y);
-    ctx.fillStyle='#8898aa';ctx.font='20px Oswald,Arial';ctx.fillText(labels[i],202,y+32);
-    ctx.textAlign='right';ctx.fillStyle=cols[i];ctx.font='bold 42px Oswald,Arial';ctx.fillText(p.total+' pts',1090,y);
-    y+=112;
-  }
-  if(lb.length>3){const spoons=bottomPlayers(lb),last=spoons[spoons.length-1],spoonNames=naturalNameList(spoons.map(p=>p.name)).toUpperCase();
-    ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(110,y-18);ctx.lineTo(1090,y-18);ctx.stroke();
-    ctx.textAlign='left';ctx.font='46px serif';ctx.fillStyle='#fff';ctx.fillText('🥄',112,y+30);
-    ctx.fillStyle='#d4a843';let spoonFont=40;ctx.font='bold '+spoonFont+'px Oswald,Arial';while(ctx.measureText(spoonNames).width>720&&spoonFont>24){spoonFont-=2;ctx.font='bold '+spoonFont+'px Oswald,Arial';}ctx.fillText(spoonNames,200,y+22);
-    ctx.fillStyle='#8898aa';ctx.font='20px Oswald,Arial';ctx.fillText((spoons.length>1?'JOINT WOODEN SPOON':'THE WOODEN SPOON')+' · last but not least',202,y+52);
-    ctx.textAlign='right';ctx.fillStyle='#d4a843';ctx.font='bold 36px Oswald,Arial';ctx.fillText(last.total+' pts',1090,y+22);
-    y+=118;
-  }
-  if(state.charity.on&&(state.charity.total||0)>0){ctx.textAlign='center';ctx.fillStyle='#00e676';ctx.font='24px Oswald,Arial';ctx.fillText('❤  £'+(state.charity.total).toLocaleString()+' raised'+(state.charity.name?' for '+state.charity.name:' for charity'),600,Math.min(y+14,824));}
-  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.13)';ctx.font='16px Barlow,Arial';ctx.fillText((CONFIG.title||'')+' · '+certificateDateText(),600,862);
-  return cv;
+  const lb=calcLeaderboard();if(!lb.length)return null;const champTeam=state.koR['m104']?.winner;const rankGroups=[1,2,3].map(rank=>({rank,players:finalRankPlayers(lb,rank)})).filter(g=>g.players.length);const spoons=lb.length>3?bottomPlayers(lb):[];
+  const cv=document.createElement('canvas');cv.width=1200;cv.height=930;const ctx=cv.getContext('2d'),g=ctx.createLinearGradient(0,0,1200,930);g.addColorStop(0,'#06091a');g.addColorStop(1,'#0d1326');ctx.fillStyle=g;ctx.fillRect(0,0,1200,930);ctx.strokeStyle='#ffd700';ctx.lineWidth=6;ctx.strokeRect(16,16,1168,898);ctx.strokeStyle='rgba(255,215,0,.25)';ctx.lineWidth=2;ctx.strokeRect(26,26,1148,878);ctx.textAlign='center';ctx.font='62px serif';ctx.fillStyle='#fff';ctx.fillText('🏆',600,105);ctx.fillStyle='#ffd700';ctx.font='bold 38px Oswald,Arial';certificateFitText(ctx,(CONFIG.title||'WORLD CUP SWEEPSTAKE').toUpperCase(),1040,38,26);ctx.fillText((CONFIG.title||'WORLD CUP SWEEPSTAKE').toUpperCase(),600,164);ctx.fillStyle='#00e676';ctx.font='23px Oswald,Arial';ctx.fillText('FINAL STANDINGS · WORLD CUP 2026',600,201);if(champTeam){ctx.fillStyle='#fff';ctx.font='24px Oswald,Arial';ctx.fillText('World champions on the pitch: '+champTeam,600,241);}
+  const medals={1:'🥇',2:'🥈',3:'🥉'},cols={1:'#ffd700',2:'#cdd6e0',3:'#e0a875'},single={1:'CHAMPION',2:'RUNNER-UP',3:'THIRD PLACE'},joint={1:'JOINT CHAMPIONS',2:'JOINT RUNNERS-UP',3:'JOINT THIRD PLACE'};let y=318;
+  rankGroups.forEach(gr=>{const names=naturalNameList(gr.players.map(p=>p.name)).toUpperCase(),label=gr.players.length>1?joint[gr.rank]:single[gr.rank],pts=gr.players[0].total;ctx.textAlign='left';ctx.font='50px serif';ctx.fillStyle='#fff';ctx.fillText(medals[gr.rank],105,y+8);ctx.fillStyle=cols[gr.rank];certificateFitText(ctx,names,730,43,24);ctx.fillText(names,195,y);ctx.fillStyle='#8898aa';ctx.font='19px Oswald,Arial';ctx.fillText(label,197,y+31);ctx.textAlign='right';ctx.fillStyle=cols[gr.rank];ctx.font='bold 39px Oswald,Arial';ctx.fillText(pts+' pts',1090,y);y+=108;});
+  if(spoons.length){const spoonNames=naturalNameList(spoons.map(p=>p.name)).toUpperCase(),last=spoons[0];ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(110,y-17);ctx.lineTo(1090,y-17);ctx.stroke();ctx.textAlign='left';ctx.font='45px serif';ctx.fillStyle='#fff';ctx.fillText('🥄',108,y+28);ctx.fillStyle='#d4a843';certificateFitText(ctx,spoonNames,720,39,22);ctx.fillText(spoonNames,195,y+20);ctx.fillStyle='#8898aa';ctx.font='19px Oswald,Arial';ctx.fillText((spoons.length>1?'JOINT WOODEN SPOON':'THE WOODEN SPOON')+' · LAST BUT NOT LEAST',197,y+49);ctx.textAlign='right';ctx.fillStyle='#d4a843';ctx.font='bold 34px Oswald,Arial';ctx.fillText(last.total+' pts',1090,y+20);y+=105;}
+  if(state.charity.on&&(state.charity.total||0)>0){ctx.textAlign='center';ctx.fillStyle='#00e676';ctx.font='23px Oswald,Arial';ctx.fillText('❤ £'+Number(state.charity.total).toLocaleString()+' raised'+(state.charity.name?' for '+state.charity.name:' for charity'),600,Math.min(y+12,850));}
+  ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='14px Barlow,Arial';ctx.fillText('Final ranking: points → champion prediction → knockout wins → goals scored',600,858);ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='14px Barlow,Arial';ctx.fillText((CONFIG.title||'')+' · '+certificateDateText(),600,884);return cv;
 }
-function downloadResultsCert(){const cv=buildResultsCanvas();if(!cv)return;const a=document.createElement('a');a.download='wc2026-final-standings.png';a.href=cv.toDataURL();a.click();}
+async function downloadResultsCert(){await certificateFontsReady();const cv=buildResultsCanvas();if(!cv)return;certificateDownloadCanvas(cv,'wc2026-final-standings.png');}
 async function shareResultsImage(){
-  const cv=buildResultsCanvas();if(!cv)return;
+  await certificateFontsReady();const cv=buildResultsCanvas();if(!cv)return;
   cv.toBlob(async blob=>{
     if(!blob){downloadResultsCert();return;}
     try{
@@ -1167,9 +1205,10 @@ function tickerItems(){
     const _koToday=koGamesToday();
     if(_koToday.length){const _kr=resolveBracket();const _l=_koToday.slice(0,3).map(id=>{const rv=_kr[id]||{},sch=KO_SCHED[id]||{},rnd=KO_LABEL[BRACKET[id].r]||KO_RND[BRACKET[id].r]||'Knockout';return `${rnd.toUpperCase()}: ${rv.teamA} v ${rv.teamB}${sch.tm?' · '+sch.tm:''}`;}).join(' · ');a.push((`🔥 ON TODAY: ${_l}${_koToday.length>3?` +${_koToday.length-3} more`:''}`).replace(/ +/g,' ').trim());}
     if(champ){
-      a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${lb[0].name} wins the sweepstake!`).replace(/ +/g," ").trim());
-      a.push(pick([`🎉 ${lb[0].name} is the office champion`,`👑 Take a bow, ${lb[0].name}`,`🏅 ${lb[0].name} takes the lot. Someone find a trophy`,`🏆 ${champ} lift the trophy, ${lb[0].name} lifts the office crown`]));
-      if(lb.length>1)a.push(`🥈 ${lb[1].name} takes silver${lb.length>2?`, ${lb[2].name} bronze`:""}`);
+      const winners=finalWinnerPlayers(lb),winnerNames=naturalNameList(winners.map(p=>p.name)),silver=finalRankPlayers(lb,2),bronze=finalRankPlayers(lb,3);
+      a.push((`🏆 ${(FLAGS[champ]||"")} ${champ} are world champions. ${winnerNames} ${winners.length>1?'share':'wins'} the sweepstake!`).replace(/ +/g," ").trim());
+      a.push(winners.length>1?pick([`🎉 ${winnerNames} share the office crown`,`👑 Joint champions: ${winnerNames}`,`🏅 Nothing split ${winnerNames} after every tiebreak`]):pick([`🎉 ${winnerNames} is the office champion`,`👑 Take a bow, ${winnerNames}`,`🏅 ${winnerNames} takes the lot. Someone find a trophy`,`🏆 ${champ} lift the trophy, ${winnerNames} lifts the office crown`]));
+      if(silver.length||bronze.length){const bits=[];if(silver.length)bits.push(`🥈 ${naturalNameList(silver.map(p=>p.name))} ${silver.length>1?'share silver':'takes silver'}`);if(bronze.length)bits.push(`🥉 ${naturalNameList(bronze.map(p=>p.name))} ${bronze.length>1?'share bronze':'takes bronze'}`);a.push(bits.join(' · '));}
       const callers=lb.filter(p=>p.pred&&p.pred.team===champ);
       if(callers.length)a.push(`🔮 ${pick(["Called it.","Take a bow."])} ${callers.slice(0,3).map(p=>p.name).join(", ")} backed ${champ} from the start`);
       if(lb.length>3){const spoons=bottomPlayers(lb),spoonNames=naturalNameList(spoons.map(p=>p.name));a.push(spoons.length>1?pick([`🥄 Joint wooden spoon for ${spoonNames}. There's always next year`,`🥄 The wooden spoon is shared by ${spoonNames}. Chin up`]):pick([`🥄 ${spoonNames} finishes bottom. There's always next year`,`🥄 Wooden spoon goes to ${spoonNames}. Chin up`]));}
@@ -1537,14 +1576,14 @@ function myPositionHTML(){
   const base=(_baseRanks||{})[p.name];let mv='';
   if(started&&!complete&&base&&base!==rank){const d=base-rank;mv=d>0?` <span style="color:var(--gr);font-weight:700">▲${d} today</span>`:` <span style="color:#e0245e;font-weight:700">▼${Math.abs(d)} today</span>`;}
   let status;
-  if(complete){const pr=personalCertificateProfile(p,lb);status=`Final result: <b style="color:var(--tx)">${pr.title.toLowerCase()}</b> · ${pr.placement.toLowerCase()}`;}
+  if(complete){const pr=personalCertificateProfile(p,lb);status=`Final result: <b style="color:var(--tx)">${pr.title.toLowerCase()}</b> · ${pr.placement.toLowerCase()}${pr.tieNote?` · ${pr.tieNote.toLowerCase()}`:''}`;}
   else if(!started)status=`You're all set with ${p.teams.length} team${p.teams.length>1?'s':''}. ${Date.now()<KICKOFF_MS?'Tournament kicks off 11 June!':`Points land here as your team${p.teams.length>1?'s':''} play${p.teams.length>1?'':'s'}.`}`;
   else if(rank===1)status=n>1?`Top of the table, ${ahead} pt${ahead!==1?'s':''} clear 🏆`:`Top of the table 🏆`;
   else status=`${gapLead} pt${gapLead!==1?'s':''} behind the leader${i<n-1?` · ${ahead} clear of ${ordinal(rank+1)}`:''}`;
   const myNext=!complete&&started?p.breakdown.filter(b=>b.qual!=='eliminated').map(b=>({team:b.name,nx:teamNextFix(b.name)})).filter(x=>x.nx).sort((a,b)=>a.nx.ms-b.nx.ms)[0]:null;
   const nextLine=myNext?(myNext.nx.live?`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-right:5px;vertical-align:middle"></span><b style="color:var(--tx)">${esc(myNext.team)}</b> playing now`:`⚽ <b style="color:var(--tx)">${esc(myNext.team)}</b> next: ${myNext.nx.oppFlag} ${esc(myNext.nx.opp)} · ${myNext.nx.dt} ${myNext.nx.tm}`):'';
-  const rc=rank===1&&started?'var(--gold)':'var(--gr)';
-  const certActions=complete?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--b)"><button onclick="downloadPersonalCertificate()" style="padding:8px 15px;background:linear-gradient(135deg,var(--accent),var(--grd));border:none;border-radius:7px;color:var(--btn-tx);font-family:'Oswald',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.05em;cursor:pointer">📜 MY CERTIFICATE</button><button onclick="sharePersonalCertificate()" class="btn btn-ghost" style="font-size:.7rem;padding:7px 14px">↗ SHARE</button><span style="font-size:.65rem;color:var(--txm);align-self:center">PNG · personalised from the final standings</span></div>`:'';
+  const rc=rank===1&&started?'var(--gold)':'var(--gr)',safeMe=p.name.replace(/'/g,"\\'");
+  const certActions=complete?(rank===1?`<div class="cert-actions"><button class="btn-cert-gold" onclick="downloadCert('${safeMe}')">🏆 WINNER CERTIFICATE</button><button class="btn-cert-ghost" onclick="shareOfficialWinnerCertificate('${safeMe}')">↗ SHARE WINNER CERTIFICATE</button><button class="btn-cert-main" onclick="downloadPersonalCertificate()">📜 RESULT CERTIFICATE</button><span class="cert-actions-note">Official winner certificate plus your detailed result certificate.</span></div>`:`<div class="cert-actions"><button class="btn-cert-main" onclick="downloadPersonalCertificate()">📜 MY CERTIFICATE</button><button class="btn-cert-ghost" onclick="sharePersonalCertificate()">↗ SHARE</button><span class="cert-actions-note">PNG · generated from the recorded final standings.</span></div>`):'';
   return `<div class="card" style="padding:13px 15px;margin-bottom:13px;border:1px solid var(--pill-grbr);background:linear-gradient(135deg,var(--pill-gr),transparent);box-shadow:var(--shadow)">`
     +`<div style="display:flex;align-items:center;gap:14px">`
     +`<div style="text-align:center;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.7rem;line-height:1;color:${rc}">${started?'#'+rank:'—'}</div><div style="font-size:.5rem;color:var(--txm);letter-spacing:.1em;font-family:'Oswald',sans-serif">OF ${n}</div></div>`
@@ -2177,10 +2216,15 @@ function calcLeaderboard(){
   // Tiebreakers, fairest first: points → correct champion prediction → knockout wins → goals. Name is only a stable display
   // order within a tie and never decides the rank number, so genuinely level players show as a joint placing.
   }).sort((a,b)=>b.total-a.total||((b.pred&&b.pred.correct?1:0)-(a.pred&&a.pred.correct?1:0))||b.koWins-a.koWins||b.goalsFor-a.goalsFor||a.name.localeCompare(b.name));
-  // Ranking: players level on points share a placing, and the number runs 1,1,2,3,… — a shared 1st is followed by 2nd, not 3rd.
-  // Tiebreakers still set the order within a shared placing (and decide the eventual winner); they just don't split the number.
-  const _started=lb.length>0&&lb[0].total>0;   // before anyone has scored, keep plain positional order (don't show the whole list as joint-1st)
-  let _r=0;lb.forEach((p,i)=>{if(i===0||lb[i-1].total!==p.total)_r++;p.rank=_started?_r:i+1;});
+  // During the tournament the table groups equal point totals using dense ranks (1,1,2,3…).
+  // Once both closing-weekend matches are complete, final positions apply the published tiebreaks above.
+  // Players still identical after every published tiebreak share a conventional competition rank (1,1,3…).
+  const _started=lb.length>0&&lb[0].total>0;
+  if(tournamentComplete()){
+    let _rank=0,_key=null;lb.forEach((p,i)=>{const k=finalStandingKey(p);if(i===0||k!==_key)_rank=i+1;p.rank=_rank;_key=k;});
+  }else{
+    let _r=0;lb.forEach((p,i)=>{if(i===0||lb[i-1].total!==p.total)_r++;p.rank=_started?_r:i+1;});
+  }
   return lb;
 }
 
@@ -2645,9 +2689,9 @@ function updateHdr(){
   const champ=state.koR['m104']?.winner;
   const gp=Object.values(state.grR).filter(r=>r.played).length;
   const ko=Object.values(state.koR).filter(m=>m.played).length;
-  document.getElementById('hdr-info').innerHTML=state.draw?`<div style="color:${champ?'#ffd700':'#00e676'};font-family:'Oswald',sans-serif;letter-spacing:.05em;font-size:.65rem">${champ?`🏆 ${champ}`:`${gp}/72 group · ${ko} KO`}</div><div style="color:rgba(255,255,255,.3);font-size:.62rem">${state.draw.participantCount} players${state.draw.manual?' · Manual':''}</div>`:'';
+  document.getElementById('hdr-info').innerHTML=state.draw?`<div style="color:${champ?'var(--gold)':'var(--hdr-accent)'};font-family:'Oswald',sans-serif;letter-spacing:.05em;font-size:.65rem">${champ?`🏆 ${champ}`:`${gp}/72 group · ${ko} KO`}</div><div style="color:var(--hdr-dim);font-size:.62rem">${state.draw.participantCount} players${state.draw.manual?' · Manual':''}</div>`:'';
   const cb=document.getElementById('champ-bar');
-  if(champ){cb.style.display='flex';cb.innerHTML=`<span style="font-family:'Oswald',sans-serif;letter-spacing:.05em;color:#ffd700">🏆 WORLD CHAMPIONS:</span><span style="font-size:.95rem">${FLAGS[champ]}</span><span style="color:#fff;font-weight:600">${champ}</span>`;}
+  if(champ){cb.style.display='flex';cb.innerHTML=`<span style="font-family:'Oswald',sans-serif;letter-spacing:.05em;color:var(--gold)">🏆 WORLD CHAMPIONS:</span><span style="font-size:.95rem">${FLAGS[champ]}</span><span style="color:var(--hdr-tx);font-weight:600">${champ}</span>`;}
   else cb.style.display='none';
   const pw=document.getElementById('prog-wrap');
   if(state.draw&&gp>0){
@@ -2655,7 +2699,7 @@ function updateHdr(){
     const played=gp+ko;
     const pct=tournamentComplete()?100:Math.min(99,Math.round(played/TOURNAMENT_MATCHES*100));
     const phase=currentPhaseLabel();
-    document.getElementById('prog-label').textContent=`${pct}% COMPLETE · ${phase.toUpperCase()}`;
+    document.getElementById('prog-label').textContent=tournamentComplete()?'TOURNAMENT COMPLETE':`${pct}% COMPLETE · ${phase.toUpperCase()}`;
     document.getElementById('prog-fill').style.width=pct+'%';
   } else pw.style.display='none';
 }
@@ -3129,7 +3173,7 @@ function rulesHTML(onWelcome){
       ${[['most_goals','⚽ Scores the most goals'],['best_def','🛡️ Concedes the fewest'],['fewest_goals','🧊 Scores the fewest'],['worst_def','🥅 Concedes the most']].filter(([k])=>(state.bonus[k]||0)>0).map(([k,l],i,arr)=>row(l,state.bonus[k],i===arr.length-1)).join('')}
     </div>`:''}
     <div style="margin-top:14px;padding:13px;background:var(--pill-gr);border:1px solid var(--pill-grbr);border-radius:10px">
-      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize and the official winner's certificate. Once the third-place play-off and Final are recorded, every player can download a personalised result certificate. Players level on points share a placing in the table; if it's still level at the finish, it's settled by the champion prediction, then most knockout wins, then goals.`:`<b>Winning:</b> add up the points from all your teams. Whoever's highest when the tournament ends wins and gets the official winner's certificate. Once the third-place play-off and Final are recorded, every player can download a personalised result certificate. Players level on points share a placing in the table (a joint 1st is followed by 2nd); if it's still level at the finish, it's settled by the champion prediction, then most knockout wins, then goals.`}</div>
+      <div style="font-size:.8rem;color:var(--tx);line-height:1.6">${state.prize.on?`<b>Winning:</b> add up the points from all your teams. Highest total when the tournament ends takes the prize and the official winner's certificate. Once the third-place play-off and Final are recorded, every player can download a personalised result certificate. The live table groups equal point totals; final positions then apply the published tiebreaks in order: correct champion prediction, knockout wins, and goals scored. Players still level after all three share the final position.`:`<b>Winning:</b> add up the points from all your teams. Whoever's highest when the tournament ends wins and gets the official winner's certificate. Once the third-place play-off and Final are recorded, every player can download a personalised result certificate. The live table groups equal point totals; final positions then apply the published tiebreaks in order: correct champion prediction, knockout wins, and goals scored. Players still level after all three share the final position.`}</div>
     </div>
     ${state.charity.on?`<div style="margin-top:10px;padding:13px;background:var(--card);border:1px solid var(--b);border-radius:10px">
       <div style="font-size:.8rem;color:var(--tx);line-height:1.6"><b>Free to enter.</b> There's an optional donation${state.charity.name?` to <b>${state.charity.name}</b>`:' to charity'} if you'd like. We suggest £${state.charity.suggested||10} or more, but give whatever you're comfortable with. It's entirely up to you and has no effect on the draw or who wins.</div>
@@ -3408,7 +3452,7 @@ function renderKO(){
     if(isFinal)col.ms.forEach(m=>groups.push([m]));
     else for(let i=0;i<col.ms.length;i+=2)groups.push(col.ms.slice(i,i+2));
     return`<div class="bk-col">
-      <div class="bk-rnd-hdr" style="color:${col.h==='FINAL'?'var(--gold)':'rgba(255,255,255,.3)'}">${col.h}</div>
+      <div class="bk-rnd-hdr" style="color:${col.h==='FINAL'?'var(--gold)':'var(--txm)'}">${col.h}</div>
       <div class="bk-col-body">
         ${groups.map(grp=>`<div class="${isFinal?'bk-fin':'bk-pair'}">
           ${grp.map(mId=>{
@@ -3523,6 +3567,11 @@ function runInHTML(){
     ${show.map(rowHTML).join('')}
   </div>`;
 }
+function finalHeroHTML(lb,champ,myName){
+  if(!tournamentComplete()||!champ||!lb||!lb.length)return'';const winners=finalWinnerPlayers(lb),winnerNames=naturalNameList(winners.map(p=>p.name)),viewer=selectedPlayer(lb),viewerWinner=viewer&&viewer.rank===1,adminWinner=isAdmin()?winners[0]:null,certWinner=viewerWinner?viewer:adminWinner;const silver=finalRankPlayers(lb,2),bronze=finalRankPlayers(lb,3),safe=certWinner?certWinner.name.replace(/'/g,"\\'"):'';const podium=[];if(silver.length)podium.push(`🥈 ${esc(naturalNameList(silver.map(p=>p.name)))}`);if(bronze.length)podium.push(`🥉 ${esc(naturalNameList(bronze.map(p=>p.name)))}`);const championVerb=winners.length>1?'share the sweepstake':'wins the sweepstake';
+  return`<section class="final-hero" aria-label="Final sweepstake result"><div class="final-kicker">✓ TOURNAMENT COMPLETE</div><div class="final-grid"><div class="final-panel final-world"><div class="final-world-flag">${FLAGS[champ]||'🏆'}</div><div><div class="final-label">WORLD CHAMPIONS</div><div class="final-name">${esc(champ)}</div><div class="final-meta">Final result recorded · all ${TOURNAMENT_MATCHES} matches complete</div></div></div><div class="final-panel"><div class="final-label">CARLYLE LONDON OFFICE SWEEPSTAKE</div><div class="final-winner-name">${esc(winnerNames)}</div><div class="final-meta">${championVerb} with <b style="color:var(--tx)">${winners[0].total} points</b>${winners.length>1?' after remaining level through every published tiebreak':''}.</div>${podium.length?`<div class="final-podium">${podium.map(x=>`<span>${x}</span>`).join('')}</div>`:''}</div></div><div class="final-actions">${certWinner?`<button class="btn-cert-gold" onclick="downloadCert('${safe}')">🏆 ${viewerWinner?'MY ':''}WINNER CERTIFICATE</button><button class="btn-cert-ghost" onclick="shareOfficialWinnerCertificate('${safe}')">↗ SHARE CERTIFICATE</button>`:''}<button class="btn-cert-main" onclick="downloadResultsCert()">📜 FINAL STANDINGS</button><button class="btn-cert-ghost" onclick="shareResultsImage()">↗ SHARE RESULTS</button>${state.charity&&state.charity.on&&donateShow('standings')?donateBtnHTML({label:'Donate'}):''}</div>${!certWinner?`<div class="final-unlock">${viewer?`Your personal certificate is available in your result card above. The official winner certificate is reserved for ${esc(winnerNames)}.`:`Select your name above to open your personal certificate${winners.length===1?' — the winner also unlocks the official winner certificate':''}.`}</div>`:''}</section>`;
+}
+
 function renderStandings(){
   const liveIds=state.draw?liveMatchIds():[];
   const liveStripIds=state.draw?liveAllIds():[];   // group + knockout, for the LIVE NOW strip display only; the merge below stays group-only
@@ -3549,29 +3598,22 @@ function renderStandings(){
   const paidCount=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;
   const collected=state.prize.on?paidCount*state.prize.buyin:0;
   const prizeAt=rank=>state.prize.on&&rank<3?Math.round(pot*state.prize.pay[rank]/100):0;
-  const champ=state.koR['m104']?.winner;const sweepWinner=champ?lb[0]:null;
+  const champ=state.koR['m104']?.winner;
   const q=(state.standQ||'').toLowerCase();
   const myName=getMyName();
   const dmap=deptMap();const deptsActive=!!(state.depts&&state.depts.on&&(state.depts.names||[]).length&&lb.length);
   const showDeptView=deptsActive&&state.standView==='depts';
   const dsCount=showDeptView?deptStandings().length:0;const _deptSing=((state.depts&&state.depts.label)||'Squad').toLowerCase().replace(/s$/,'');
   const lbFiltered=q?lb.filter(p=>p.name.toLowerCase().includes(q)):lb;
-  return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}${(state.prize.on||state.charity.on||donateShow('standings'))?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+  return`<div style="max-width:800px;margin:0 auto">${countdownHTML()}${myPositionHTML()||mePickerHTML(false)}${!showDeptView?finalHeroHTML(lb,champ,myName):''}${!tournamentComplete()&&(state.prize.on||state.charity.on||donateShow('standings'))?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
     ${state.prize.on?`<span style="font-family:'Oswald',sans-serif;font-size:1.05rem;font-weight:700;color:var(--gold)">£${collected.toLocaleString()}</span><span style="font-size:.64rem;color:var(--txm)">in the pot${collected<pot?` · of £${pot.toLocaleString()}`:' · all paid ✓'}</span>`:state.charity.on?`<span style="font-family:'Oswald',sans-serif;font-size:1.05rem;font-weight:700;color:var(--gold)">£${(state.charity.total||0).toLocaleString()}</span><span style="font-size:.64rem;color:var(--txm)">raised${state.charity.name?' for '+state.charity.name:''} ❤</span>${donateShow('standings')?donateBtnHTML({label:'Donate'}):''}`:donateShow('standings')?donateBtnHTML({label:'Donate'}):''}
   </div>`:''}
   ${deptsActive?`<div style="display:flex;gap:4px;margin-bottom:14px;background:var(--inp);border-radius:9px;padding:3px;width:fit-content">
     <button onclick="state.standView='players';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView!=='depts'?'var(--card)':'transparent'};color:${state.standView!=='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView!=='depts'?'var(--shadow)':'none'}">PLAYERS</button>
     <button onclick="state.standView='depts';render()" style="padding:6px 16px;border:none;border-radius:7px;font-family:'Oswald',sans-serif;font-size:.72rem;letter-spacing:.04em;cursor:pointer;background:${state.standView==='depts'?'var(--card)':'transparent'};color:${state.standView==='depts'?'var(--tx)':'var(--txm)'};box-shadow:${state.standView==='depts'?'var(--shadow)':'none'}">${esc((state.depts.label||'DEPARTMENTS').toUpperCase())}</button>
   </div>`:''}
+  ${tournamentComplete()&&!showDeptView?`<div style="padding:9px 12px;margin-bottom:12px;background:var(--cardh);border:1px solid var(--b);border-radius:8px;font-size:.7rem;color:var(--txm);line-height:1.5"><b style="color:var(--tx)">Final ranking order:</b> points, correct champion prediction, knockout wins, then goals scored. Players still identical after every published tiebreak remain joint.</div>`:''}
   ${!showDeptView?`${lb.length>6?`<div style="position:sticky;top:var(--hdr-h,96px);z-index:10;background:var(--bg);margin-bottom:14px;padding:6px 0"><input type="text" placeholder="🔍 Find a name…" value="${(state.standQ||'').replace(/"/g,'&quot;')}" oninput="state.standQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${q?`<button onclick="state.standQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}${_todayHTML}`:`${dsCount>6?`<div style="position:sticky;top:var(--hdr-h,96px);z-index:10;background:var(--bg);margin-bottom:14px;padding:6px 0"><input type="text" placeholder="🔍 Find a ${esc(_deptSing)}…" value="${(state.deptQ||'').replace(/"/g,'&quot;')}" oninput="state.deptQ=this.value;_rerenderStandings()" style="width:100%;padding:10px 13px;background:var(--card);border:1px solid var(--b);border-radius:9px;color:var(--tx);font-size:.88rem;box-shadow:var(--shadow)"/>${(state.deptQ||'')?`<button onclick="state.deptQ='';render()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--txm);cursor:pointer;font-size:.9rem">✕</button>`:''}</div>`:''}`}
-  ${champ&&sweepWinner?`<div class="card" style="padding:14px;margin-bottom:18px;background:linear-gradient(135deg,rgba(176,120,0,.07),transparent);border-color:rgba(176,120,0,.3);text-align:center;box-shadow:var(--shadow)">
-    <div style="font-size:2rem;margin-bottom:6px">🏆</div>
-    <div style="font-family:'Oswald',sans-serif;font-size:1.05rem;color:var(--gold);letter-spacing:.04em">${champ} ARE WORLD CHAMPIONS</div>
-    <div style="font-size:.85rem;color:var(--tx);margin-top:5px">${sweepWinner.name} wins the sweepstake with <b>${sweepWinner.total}</b> points!</div>
-    ${isAdmin()?`<button onclick="downloadCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold-d));border:none;border-radius:6px;color:#fff;font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">🏆 OFFICIAL WINNER CERTIFICATE</button>`:''}
-    <button onclick="downloadResultsCert()" style="margin-top:12px;margin-right:8px;padding:8px 18px;background:${isAdmin()?'transparent':'linear-gradient(135deg,var(--gold),var(--gold-d))'};border:1px solid var(--gold);border-radius:6px;color:${isAdmin()?'var(--gold)':'#fff'};font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">📜 FINAL STANDINGS</button>
-    <button onclick="shareResultsImage()" style="margin-top:12px;padding:8px 18px;background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;letter-spacing:.06em">↗ SHARE</button>
-  </div>`:''}
   ${!showDeptView?runInHTML():''}
   ${!showDeptView?`${lb.every(p=>p.total===0)?`<div class="card" style="padding:16px 14px;margin-bottom:18px;text-align:center;box-shadow:var(--shadow)"><div style="font-size:1.4rem;margin-bottom:6px">⚽</div><div style="font-family:'Oswald',sans-serif;font-size:.82rem;color:var(--txd);letter-spacing:.05em">${Date.now()<KICKOFF_MS?'TOURNAMENT STARTS 11 JUNE 2026':'TOURNAMENT UNDERWAY'}</div><div style="font-size:.74rem;color:var(--txm);margin-top:4px">${Date.now()<KICKOFF_MS?'Points appear here once games kick off.':(isAdmin()?'Enter results in Fixtures and points update here.':'Points appear here as soon as the first games finish.')}</div></div>`:''}${lbFiltered.length===0?`<div class="card" style="padding:20px;text-align:center;color:var(--txm);font-size:.85rem">No players match "${state.standQ}"</div>`:''}`:''}
   ${liveStripIds.length>0&&!showDeptView?(()=>{
@@ -3586,7 +3628,7 @@ function renderStandings(){
   })():''}
   ${(()=>{if(showDeptView)return deptTableHTML();const maxPts=Math.max(1,...lb.map(p=>p.total));return lbFiltered.map((p)=>{
     const rank=lb.indexOf(p);const dRank=p.rank;
-    const isF=dRank===1&&p.total>0;const prz=prizeAt(rank);const open=state.expanded===p.name;
+    const isF=dRank===1&&p.total>0;const prz=prizeAt(Math.max(0,dRank-1));const open=state.expanded===p.name;
     const isMe=myName&&p.name===myName;
     const safeName=p.name.replace(/'/g,"\\'");
     const pctW=Math.round((p.total/maxPts)*100);
@@ -3599,7 +3641,7 @@ function renderStandings(){
       </div>
         <div style="flex:1;min-width:0">
           <div style="font-family:'Oswald',sans-serif;font-size:.97rem;font-weight:600;color:var(--tx);display:flex;align-items:center;gap:6px">${p.name}${ownsLive(p)?' <span class="live-dot" title="Has a team playing now"></span>':''}${(()=>{const dd=deptsActive?dmap[p.name.toLowerCase()]:null;return dd?`<span style="font-size:.55rem;background:var(--inp);color:var(--txd);border:1px solid var(--b);padding:1px 6px;border-radius:10px;font-weight:600;letter-spacing:.02em">${esc(dd)}</span>`:'';})()}${isMe?'<span style="font-size:.55rem;background:var(--gr);color:var(--btn-tx);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.05em">YOU</span>':''}${state.prize.on&&state.paid&&state.paid[p.name]?'<span title="Paid up" style="display:inline-flex;align-items:center;gap:2px;font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">✓ PAID</span>':''}${spoonSet.has(p.name)&&lb.length>3&&(tournamentComplete()||p.total>0)?`<span title="${spoonSet.size>1?'Joint bottom of the table':'Bottom of the table'}" style="font-size:.52rem;background:rgba(168,96,0,.12);color:var(--amber);border:1px solid rgba(168,96,0,.3);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🥄 ${spoonSet.size>1?'JOINT WOODEN SPOON':'WOODEN SPOON'}</span>`:''}${state.predict.on&&p.pred&&p.pred.correct?'<span title="Correctly predicted the champion" style="font-size:.52rem;background:var(--pill-gr);color:var(--gr);border:1px solid var(--pill-grbr);padding:1px 6px;border-radius:10px;font-weight:700;letter-spacing:.04em">🔮 NAILED IT</span>':''}</div>
-          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${(()=>{const qn=p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length,an=p.breakdown.filter(b=>teamAlive(b.name)).length;if(champ){const ct=p.breakdown.find(b=>b.name===champ);return ct?`${ct.flag} ${esc(champ)} champions`:'Tournament complete';}if(groupStageDone())return an?`${an}/${p.teams.length} still able to score`:'No matches left';return `${qn}/${p.teams.length} qualified`;})()}${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&rank<3&&p.total>0&&state.podium.prizes[rank]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[rank])}</span>`:''}</div>
+          <div style="font-size:.68rem;color:var(--txm);margin-bottom:4px">${(()=>{const qn=p.breakdown.filter(b=>b.qual==='top2'||b.qual==='best3rd').length,an=p.breakdown.filter(b=>teamAlive(b.name)).length;if(champ){const ct=p.breakdown.find(b=>b.name===champ);return ct?`${ct.flag} ${esc(champ)} champions`:'Tournament complete';}if(groupStageDone())return an?`${an}/${p.teams.length} still able to score`:'No matches left';return `${qn}/${p.teams.length} qualified`;})()}${prz>0?` · <b style="color:var(--gold)">£${prz}</b>`:''}${state.podium.on&&dRank<=3&&p.total>0&&state.podium.prizes[dRank-1]?` · <span style="color:var(--gold)">🏆 ${esc(state.podium.prizes[dRank-1])}</span>`:''}</div>
           <div style="height:4px;background:var(--inp);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pctW}%;background:${isF?'linear-gradient(90deg,var(--gold),var(--gold-d))':'linear-gradient(90deg,var(--accent),var(--gr))'};border-radius:3px;transition:width .6s ease"></div></div>
         </div>
         <div style="text-align:right;flex-shrink:0"><div style="font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;color:${isF?'var(--gold)':p.total>0?'var(--gr)':'var(--txm)'}">${p.total}</div><div style="font-size:.55rem;color:var(--txm);font-family:'Oswald',sans-serif;letter-spacing:.08em">POINTS</div></div>
@@ -3608,7 +3650,7 @@ function renderStandings(){
       ${!open?`<div class="pill-wrap">${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div class="pill" style="background:${QCOL[q]}10;border:1px solid ${QCOL[q]}28;opacity:${out?.6:1}"><span style="font-size:.85rem;filter:${out?'grayscale(.8)':'none'}">${b.flag}</span><span style="color:${out?'var(--txm)':'var(--tx)'};${out?'text-decoration:line-through;text-decoration-color:var(--txm)':''}">${b.name}</span>${b.pts>0?`<span style="font-size:.63rem;color:var(--gr);font-family:'Oswald',sans-serif;font-weight:700">+${b.pts}</span>`:''}</div>`;}).join('')}</div>`:''}
       ${open?`<div style="border-top:1px solid var(--b);padding:10px 13px 12px;background:var(--cardh)">
         <button onclick="event.stopPropagation();setMyName('${safeName}')" style="width:100%;padding:7px;margin-bottom:10px;background:${isMe?'var(--pill-gr)':'transparent'};border:1px solid ${isMe?'var(--gr)':'var(--b)'};border-radius:7px;color:${isMe?'var(--gr)':'var(--txd)'};font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.05em;cursor:pointer">${isMe?'✓ THIS IS ME · TAP TO UNPIN':'⭐ MARK AS ME'}</button>
-        ${tournamentComplete()&&isAdmin()?`<button onclick="event.stopPropagation();downloadPersonalCertificate('${safeName}')" style="width:100%;padding:7px;margin:-3px 0 10px;background:transparent;border:1px solid var(--pill-grbr);border-radius:7px;color:var(--gr);font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.05em;cursor:pointer">📜 ADMIN · DOWNLOAD THIS CERTIFICATE</button>`:''}
+        ${tournamentComplete()&&isAdmin()?`${dRank===1?`<button onclick="event.stopPropagation();downloadCert('${safeName}')" style="width:100%;padding:7px;margin:-3px 0 7px;background:var(--final-chip);border:1px solid var(--final-border);border-radius:7px;color:var(--gold);font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.05em;cursor:pointer">🏆 ADMIN · OFFICIAL WINNER CERTIFICATE</button>`:''}<button onclick="event.stopPropagation();downloadPersonalCertificate('${safeName}')" style="width:100%;padding:7px;margin:0 0 10px;background:transparent;border:1px solid var(--pill-grbr);border-radius:7px;color:var(--gr);font-family:'Oswald',sans-serif;font-size:.68rem;font-weight:700;letter-spacing:.05em;cursor:pointer">📜 ADMIN · RESULT CERTIFICATE</button>`:''}
         ${state.predict.on&&p.pred&&p.pred.team?`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--card);border:1px solid ${champ&&p.pred.correct?'var(--pill-grbr)':'var(--b)'};border-radius:7px;font-size:.78rem"><span style="font-size:1rem">🔮</span>${champ?`<span style="flex:1;color:var(--txm)">Predicted winner: <b style="color:var(--tx)">${p.pred.team}</b></span><span style="font-family:'Oswald',sans-serif;font-weight:700;color:${p.pred.correct?'var(--gr)':'var(--txm)'}">${p.pred.correct?'✓ +'+p.pred.bonus:'✗ missed'}</span>`:isMe?`<span style="flex:1;color:var(--txm)">Your champion pick: <b style="color:var(--tx)">${p.pred.team}</b> <span style="color:var(--txd);font-size:.68rem">· secret to others until the Final</span></span>`:`<span style="flex:1;color:var(--txm)">Champion pick — <b style="color:var(--tx)">revealed at the Final</b> 🤫</span>`}</div>`:''}
         ${(()=>{const aN=p.breakdown.filter(b=>teamAlive(b.name)).length,tN=p.breakdown.length,started=lb.some(x=>x.total>0);if(tN<=1||(aN===tN&&!started))return'';const txt=aN===tN?`All ${tN} teams still able to score`:aN===0?'No matches left':`${aN} of ${tN} teams still able to score`;const col=aN===0?'var(--txm)':'var(--gr)';return`<div style="display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:.72rem;color:${col};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>${txt}</div>`;})()}
         ${p.breakdown.map(b=>{const q=b.qual||'pending';const out=q==='eliminated';return`<div style="padding:9px 10px;background:var(--card);border-radius:7px;border:1px solid ${out?'var(--b)':QCOL[q]+'25'};margin-bottom:6px;opacity:${out?.65:1};box-shadow:var(--shadow)">
@@ -3921,7 +3963,7 @@ function buildSnapshot(){
   if(state.prize&&state.prize.on){const paid=state.draw?state.draw.participants.filter(p=>state.paid&&state.paid[p.name]).length:0;L.push(`Pot: £${(paid*state.prize.buyin).toLocaleString()} of £${(np*state.prize.buyin).toLocaleString()} (${paid}/${np} paid)`);}
   if(state.charity&&state.charity.on)L.push(`Charity raised: £${(state.charity.total||0).toLocaleString()}${state.charity.name?' for '+state.charity.name:''}`);
   L.push('');L.push('STANDINGS  (rank. name — points | teams [status] (team pts))');
-  lb.forEach((p,i)=>{const ts=p.breakdown.map(t=>{const s=stat(t);return`${t.name}${s?' ['+s+']':''} (${t.pts})`;}).join(', ');L.push(`${i+1}. ${p.name} — ${p.total} | ${ts}`);});
+  lb.forEach((p,i)=>{const ts=p.breakdown.map(t=>{const s=stat(t);return`${t.name}${s?' ['+s+']':''} (${t.pts})`;}).join(', ');L.push(`${p.rank||i+1}. ${p.name} — ${p.total} | ${ts}`);});
   const dp=state.depts;
   if(dp&&dp.on&&(dp.names||[]).length){const ds=deptStandings();if(ds&&ds.length){L.push('');L.push(`${(dp.label||'SQUADS').toUpperCase()}  (by rating)`);ds.forEach((d,i)=>L.push(`${i+1}. ${d.name} — ${d.rating} rating (${d.total} total, ${d.count} player${d.count===1?'':'s'})`));}}
   const out=[];lb.forEach(p=>p.breakdown.forEach(t=>{if(stat(t)==='OUT')out.push(`${t.name} (${p.name})`);}));
